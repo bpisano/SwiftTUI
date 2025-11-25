@@ -102,40 +102,45 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         outgoingEdges.append(edge)
     }
 
+    func removeOutgoingEdge(to target: AttributeRef) {
+        outgoingEdges.removeAll { edge in
+            edge.to.ref.id == target.ref.id
+        }
+    }
+
     func evaluateIfNeeded() {
         // Ensure all dependencies are up to date
         for edge in incomingEdges {
             edge.from.ref.evaluateIfNeeded()
         }
 
-        // Check if any incoming edge is still pending
-        // Or if is initial evaluation
+        // Check if needs evaluation
         let isInitialEvaluation: Bool = metadata.value == nil
-        guard metadata.state == .potentiallyDirty || isInitialEvaluation else { return }
+        let needsEvaluation: Bool = metadata.state == .potentiallyDirty || isInitialEvaluation
+        guard needsEvaluation else { return }
 
         metadata.state = .clean
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(ref)
         print("Re-evaluating attribute \(metadata.label)")
-        if isInitialEvaluation {
-            Graph.current.withDependencyCapture(of: ref) {
-                metadata.value = rule.evaluate()
-            }
-        } else {
+
+        // Capture dependencies and diff (works for both initial and re-evaluation)
+        let oldEdges: Set<Edge> = Set(incomingEdges)
+        let newDependencies: Set<UUID> = Graph.current.withDependencyCapture(of: ref) {
             metadata.value = rule.evaluate()
         }
 
-        if !isInitialEvaluation {
-            // Mark incoming edges as clean
-            for edge in incomingEdges {
-                edge.state = .clean
-            }
+        updateEdges(oldEdges: oldEdges, newDependencies: newDependencies)
 
-            // Mark outgoing edges as dirty
-            for edge in outgoingEdges {
-                edge.state = .dirty
-            }
+        // Mark incoming edges as clean
+        for edge in incomingEdges {
+            edge.state = .clean
+        }
+
+        // Mark outgoing edges as dirty
+        for edge in outgoingEdges {
+            edge.state = .dirty
         }
     }
 
@@ -143,6 +148,37 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         metadata.state = .potentiallyDirty
         for edge in outgoingEdges {
             edge.to.ref.makePotentiallyDirty()
+        }
+    }
+
+    private func updateEdges(oldEdges: Set<Edge>, newDependencies: Set<UUID>) {
+        // Build set of new edges from dependency IDs
+        var newEdges: Set<Edge> = []
+        for dependencyId in newDependencies {
+            guard let sourceAttribute = Graph.current.findAttribute(by: dependencyId) else {
+                continue
+            }
+            newEdges.insert(Edge(from: sourceAttribute, to: ref))
+        }
+
+        // Remove edges that are no longer dependencies
+        let toRemove: Set<Edge> = oldEdges.subtracting(newEdges)
+        if !toRemove.isEmpty {
+            incomingEdges.removeAll { edge in
+                let shouldRemove = toRemove.contains(edge)
+                if shouldRemove {
+                    // Also remove from the source attribute's outgoing edges
+                    edge.from.ref.removeOutgoingEdge(to: ref)
+                }
+                return shouldRemove
+            }
+        }
+
+        // Add new edges that weren't there before
+        let toAdd: Set<Edge> = newEdges.subtracting(oldEdges)
+        for edge in toAdd {
+            edge.from.ref.addOutgoing(edge: edge)
+            addIncoming(edge: edge)
         }
     }
 }
@@ -167,9 +203,25 @@ extension Attribute {
     public var description: String {
         let formattedId: String = metadata.id.uuidString.replacingOccurrences(of: "-", with: "")
         var properties: [String] = []
-        if !metadata.label.isEmpty {
-            properties.append("label=\"\(metadata.label)\"")
+
+        // Build HTML-like label for better formatting
+        if !metadata.label.isEmpty || metadata.value != nil {
+            var labelHTML = "<"
+            labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\">"
+
+            if !metadata.label.isEmpty {
+                labelHTML += "<TR><TD><B>\(metadata.label)</B></TD></TR>"
+            }
+
+            if let value = metadata.value {
+                labelHTML += "<TR><TD><FONT POINT-SIZE=\"10\">\(value)</FONT></TD></TR>"
+            }
+
+            labelHTML += "</TABLE>"
+            labelHTML += ">"
+            properties.append("label=\(labelHTML)")
         }
+
         if metadata.state == .potentiallyDirty {
             properties.append("style=dashed")
         }

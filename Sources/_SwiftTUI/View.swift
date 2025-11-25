@@ -151,7 +151,7 @@ struct ViewRenderingRule<Content: View>: Rule {
     let graph: Graph = .init()
     graph.makeCurrent()
 
-    var rootView = TestView()
+    let rootView = TestView()
 
     let rootRendering = Attribute<String>(rule: ViewRenderingRule(rootView))
     rootRendering.label = "\(type(of: rootView))"

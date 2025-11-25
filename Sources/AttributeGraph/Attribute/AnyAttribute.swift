@@ -16,5 +16,6 @@ protocol AnyAttribute: CustomStringConvertible {
     func evaluateIfNeeded()
     func addIncoming(edge: Edge)
     func addOutgoing(edge: Edge)
+    func removeOutgoingEdge(to: AttributeRef)
     func makePotentiallyDirty()
 }

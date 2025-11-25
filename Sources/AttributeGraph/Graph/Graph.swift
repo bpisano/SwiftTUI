@@ -13,11 +13,12 @@ public final class Graph {
 
     private var attributes: [AttributeRef] = []
     private var currentComputation: AttributeRef?
+    private var newlyCaptureDependencies: Set<UUID>?
 
     private var tracksTransaction: Bool = false
     private(set) var transaction: Transaction = .init()
 
-    public init() { }
+    public init() {}
 
     public func makeCurrent() {
         Graph.current = self
@@ -37,22 +38,33 @@ public final class Graph {
         attributes.append(attribute)
     }
 
-    func registerDependency(_ attribute: AttributeRef) {
-        guard let currentComputation else { return }
+    func findAttribute(by id: UUID) -> AttributeRef? {
+        return attributes.first { $0.ref.id == id }
+    }
 
-        let edge: Edge = .init(from: attribute, to: currentComputation)
-        attribute.ref.addOutgoing(edge: edge)
-        currentComputation.ref.addIncoming(edge: edge)
+    func registerDependency(_ attribute: AttributeRef) {
+        guard currentComputation != nil else { return }
+        // Track this dependency during capture
+        newlyCaptureDependencies?.insert(attribute.ref.id)
     }
 
     func withDependencyCapture(
         of attribute: AttributeRef,
         perform: () throws -> Void
-    ) rethrows {
+    ) rethrows -> Set<UUID> {
         let previousComputation: AttributeRef? = currentComputation
+        let previousCapture: Set<UUID>? = newlyCaptureDependencies
+
         currentComputation = attribute
+        newlyCaptureDependencies = []
+
         try perform()
+
+        let capturedDependencies = newlyCaptureDependencies ?? []
         currentComputation = previousComputation
+        newlyCaptureDependencies = previousCapture
+
+        return capturedDependencies
     }
 
     func invalidate(_ attribute: AttributeRef) {
@@ -68,21 +80,23 @@ public final class Graph {
 
 extension Graph: CustomStringConvertible {
     public var description: String {
-        let attributesDescription = attributes
+        let attributesDescription =
+            attributes
             .map(\.ref.description)
             .joined(separator: "\n    ")
-        let edgesDescription = attributes
+        let edgesDescription =
+            attributes
             .flatMap { attribute in
                 attribute.ref.outgoingEdges.map(\.description)
             }
             .joined(separator: "\n    ")
 
         return """
-        digraph {
-            \(attributesDescription)
-            \(edgesDescription)
-        }
-        """
+            digraph {
+                \(attributesDescription)
+                \(edgesDescription)
+            }
+            """
     }
 }
 
@@ -95,20 +109,22 @@ extension Graph {
 
 extension Graph.Transaction: CustomStringConvertible {
     public var description: String {
-        let invalidationsDescription = invalidations
+        let invalidationsDescription =
+            invalidations
             .map(\.ref.label)
             .joined(separator: "\n    ")
-        let reevaluationsDescription = reevaluations
+        let reevaluationsDescription =
+            reevaluations
             .map(\.ref.label)
             .joined(separator: "\n    ")
 
         return """
-        Transaction:
-          Changed:
-            \(invalidationsDescription)
-          Reevaluated:
-            \(reevaluationsDescription)
-        """
+            Transaction:
+              Changed:
+                \(invalidationsDescription)
+              Reevaluated:
+                \(reevaluationsDescription)
+            """
     }
 }
 
@@ -136,16 +152,16 @@ extension Graph.Transaction: CustomStringConvertible {
 
     _ = c
 
-    print(graph.description) // Initial graph
+    print(graph.description)  // Initial graph
 
     graph.beginTransactionTracking()
     x = 3
 
-    print(graph.description) // Graph after changing 'x'
+    print(graph.description)  // Graph after changing 'x'
 
     _ = c
 
-    print(graph.description) // Graph after reevaluating 'c'
+    print(graph.description)  // Graph after reevaluating 'c'
 
     let transaction = graph.endTransactionTracking()
 
