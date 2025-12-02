@@ -102,45 +102,40 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         outgoingEdges.append(edge)
     }
 
-    func removeOutgoingEdge(to target: AttributeRef) {
-        outgoingEdges.removeAll { edge in
-            edge.to.ref.id == target.ref.id
-        }
-    }
-
     func evaluateIfNeeded() {
         // Ensure all dependencies are up to date
         for edge in incomingEdges {
             edge.from.ref.evaluateIfNeeded()
         }
 
-        // Check if needs evaluation
+        // Check if any incoming edge is still pending
+        // Or if is initial evaluation
         let isInitialEvaluation: Bool = metadata.value == nil
-        let needsEvaluation: Bool = metadata.state == .potentiallyDirty || isInitialEvaluation
-        guard needsEvaluation else { return }
+        guard metadata.state == .potentiallyDirty || isInitialEvaluation else { return }
 
         metadata.state = .clean
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(ref)
         print("Re-evaluating attribute \(metadata.label)")
-
-        // Capture dependencies and diff (works for both initial and re-evaluation)
-        let oldEdges: Set<Edge> = Set(incomingEdges)
-        let newDependencies: Set<UUID> = Graph.current.withDependencyCapture(of: ref) {
+        if isInitialEvaluation {
+            Graph.current.withDependencyCapture(of: ref) {
+                metadata.value = rule.evaluate()
+            }
+        } else {
             metadata.value = rule.evaluate()
         }
 
-        updateEdges(oldEdges: oldEdges, newDependencies: newDependencies)
+        if !isInitialEvaluation {
+            // Mark incoming edges as clean
+            for edge in incomingEdges {
+                edge.state = .clean
+            }
 
-        // Mark incoming edges as clean
-        for edge in incomingEdges {
-            edge.state = .clean
-        }
-
-        // Mark outgoing edges as dirty
-        for edge in outgoingEdges {
-            edge.state = .dirty
+            // Mark outgoing edges as dirty
+            for edge in outgoingEdges {
+                edge.state = .dirty
+            }
         }
     }
 
@@ -148,37 +143,6 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         metadata.state = .potentiallyDirty
         for edge in outgoingEdges {
             edge.to.ref.makePotentiallyDirty()
-        }
-    }
-
-    private func updateEdges(oldEdges: Set<Edge>, newDependencies: Set<UUID>) {
-        // Build set of new edges from dependency IDs
-        var newEdges: Set<Edge> = []
-        for dependencyId in newDependencies {
-            guard let sourceAttribute = Graph.current.findAttribute(by: dependencyId) else {
-                continue
-            }
-            newEdges.insert(Edge(from: sourceAttribute, to: ref))
-        }
-
-        // Remove edges that are no longer dependencies
-        let toRemove: Set<Edge> = oldEdges.subtracting(newEdges)
-        if !toRemove.isEmpty {
-            incomingEdges.removeAll { edge in
-                let shouldRemove = toRemove.contains(edge)
-                if shouldRemove {
-                    // Also remove from the source attribute's outgoing edges
-                    edge.from.ref.removeOutgoingEdge(to: ref)
-                }
-                return shouldRemove
-            }
-        }
-
-        // Add new edges that weren't there before
-        let toAdd: Set<Edge> = newEdges.subtracting(oldEdges)
-        for edge in toAdd {
-            edge.from.ref.addOutgoing(edge: edge)
-            addIncoming(edge: edge)
         }
     }
 }

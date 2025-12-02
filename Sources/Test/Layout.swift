@@ -15,7 +15,7 @@ struct ViewInputs {
 
 extension ViewInputs: CustomStringConvertible {
     var description: String {
-        "ViewInputs(frame: \(frame.wrappedValue))"
+        "ViewInputs<br />frame: \(frame.wrappedValue)"
     }
 }
 

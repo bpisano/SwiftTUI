@@ -13,7 +13,6 @@ public final class Graph {
 
     private var attributes: [AttributeRef] = []
     private var currentComputation: AttributeRef?
-    private var newlyCaptureDependencies: Set<UUID>?
 
     private var tracksTransaction: Bool = false
     private(set) var transaction: Transaction = .init()
@@ -38,33 +37,22 @@ public final class Graph {
         attributes.append(attribute)
     }
 
-    func findAttribute(by id: UUID) -> AttributeRef? {
-        return attributes.first { $0.ref.id == id }
-    }
-
     func registerDependency(_ attribute: AttributeRef) {
-        guard currentComputation != nil else { return }
-        // Track this dependency during capture
-        newlyCaptureDependencies?.insert(attribute.ref.id)
+        guard let currentComputation else { return }
+
+        let edge: Edge = .init(from: attribute, to: currentComputation)
+        attribute.ref.addOutgoing(edge: edge)
+        currentComputation.ref.addIncoming(edge: edge)
     }
 
     func withDependencyCapture(
         of attribute: AttributeRef,
         perform: () throws -> Void
-    ) rethrows -> Set<UUID> {
+    ) rethrows {
         let previousComputation: AttributeRef? = currentComputation
-        let previousCapture: Set<UUID>? = newlyCaptureDependencies
-
         currentComputation = attribute
-        newlyCaptureDependencies = []
-
         try perform()
-
-        let capturedDependencies = newlyCaptureDependencies ?? []
         currentComputation = previousComputation
-        newlyCaptureDependencies = previousCapture
-
-        return capturedDependencies
     }
 
     func invalidate(_ attribute: AttributeRef) {

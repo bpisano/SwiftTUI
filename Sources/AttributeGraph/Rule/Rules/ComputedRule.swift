@@ -6,6 +6,7 @@
 //
 
 import Foundation
+
 public struct ComputedRule<T>: Rule {
     private let compute: () -> T
 

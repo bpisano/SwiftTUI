@@ -10,18 +10,21 @@ import AttributeGraph
 import Geometry
 
 struct Text: UnaryView {
-    private let text: String
+    private let text: () -> String
 
-    init(_ text: String) {
+    init(_ text: @autoclosure @escaping () -> String) {
         self.text = text
     }
 }
 
 extension Text {
     static func makeView(_ view: Attribute<Text>, inputs: ViewInputs) -> ViewOutputs {
-        @Attribute var resolvedText = view.wrappedValue.text
+        let resolvedText = Attribute {
+            view.wrappedValue.text()
+        }
 
         let layoutComputer = Attribute {
+            let resolvedText = resolvedText.wrappedValue
             let textLength = resolvedText.count
             return LayoutComputer { proposal in
                 if let proposedWidth = proposal.width {
@@ -55,20 +58,25 @@ extension Text {
             }
         }
 
-        let displayList = Attribute {
-            let viewSize: Size = layoutComputer.wrappedValue.sizeThatFits(.init(inputs.frame.wrappedValue.size))
-            let lines: [String] = split(resolvedText, by: Int(viewSize.width))
-            let commands = lines.enumerated().map { index, line in
-                DisplayList.Command(
-                    .putLine(line),
-                    in: .init(x: 0, y: Double(index), width: viewSize.width, height: 1)
-                )
-            }
-            return DisplayList(commands: commands)
+        let textGeometry = Attribute {
+            layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)[0]
         }
 
-        $resolvedText.label = "Resolved Text"
+        let displayList = Attribute {
+            let viewSize: Size = textGeometry.wrappedValue.frame.size
+            let lines: [String] = split(resolvedText.wrappedValue, by: Int(viewSize.width))
+            let items = lines.enumerated().map { index, line in
+                DisplayList.Item(
+                    content: .command(.putLine(line)),
+                    frame: .init(x: 0, y: Double(index), width: viewSize.width, height: 1)
+                )
+            }
+            return DisplayList(items)
+        }
+
+        resolvedText.label = "Resolved Text"
         layoutComputer.label = "Text Layout Computer"
+        textGeometry.label = "Text Geometry"
         displayList.label = "Text Display List"
 
         return ViewOutputs(

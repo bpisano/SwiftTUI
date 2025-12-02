@@ -32,7 +32,7 @@ import AttributeGraph
 //        )
 //    }
 //
-//    static func makeViewList(_ view: Attribute<TupleView<repeat each V>>, inputs: ViewInputs) -> ViewOutputsList {
+//    static func makeViewList(_ view: Attribute<TupleView<repeat each V>>, inputs: ViewInputs) -> ViewListOutputs {
 //        var layoutComputers: [Attribute<LayoutComputer>] = []
 //
 //        func process<Child: View>(_ child: Child) {
@@ -62,7 +62,7 @@ import AttributeGraph
 //
 //        @Attribute var displayList = DisplayList(commands: [])
 //
-//        return ViewOutputsList(
+//        return ViewListOutputs(
 //            layoutComputers: layoutComputers,
 //            displayList: $displayList
 //        )

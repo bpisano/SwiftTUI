@@ -34,17 +34,6 @@ final class Edge {
     }
 }
 
-extension Edge: Hashable {
-    static func == (lhs: Edge, rhs: Edge) -> Bool {
-        lhs.from.ref.id == rhs.from.ref.id && lhs.to.ref.id == rhs.to.ref.id
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(from.ref.id)
-        hasher.combine(to.ref.id)
-    }
-}
-
 extension Edge: CustomStringConvertible {
     var description: String {
         let fromId: String = from.ref.id.uuidString.replacingOccurrences(of: "-", with: "")

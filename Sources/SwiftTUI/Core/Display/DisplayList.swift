@@ -9,27 +9,39 @@ import Foundation
 import Geometry
 
 struct DisplayList {
-    let commands: [Command]
+    let items: [Item]
+
+    init(_ items: [Item]) {
+        self.items = items
+    }
 }
 
 extension DisplayList {
-    struct Command {
+    struct Item {
+        enum Content {
+            case empty
+            case command(DrawCommand)
+            case childList(DisplayList)
+        }
+
+        let content: Content
         let frame: Rect
-        let drawCommand: DrawCommand
-
-        init(_ drawCommand: DrawCommand, in frame: Rect) {
-            self.frame = frame
-            self.drawCommand = drawCommand
-        }
-
-        func draw() {
-            drawCommand.draw(in: frame)
-        }
     }
 }
 
 extension DisplayList: CustomStringConvertible {
     var description: String {
-        "\(commands.map { "\($0.drawCommand) in \($0.frame)" }.joined(separator: "<br />"))"
+        let parts: [String] = items.map { item in
+            switch item.content {
+            case .empty:
+                return "empty in \(item.frame)"
+            case .command(let drawCommand):
+                return "\(drawCommand) in \(item.frame)"
+            case .childList(let list):
+                return "childList(\(list.items.count) items) in \(item.frame)"
+            }
+        }
+
+        return parts.joined(separator: "<br />")
     }
 }

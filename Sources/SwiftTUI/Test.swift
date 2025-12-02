@@ -35,14 +35,27 @@ struct ViewOutputsRule<V: View>: Rule {
     @Attribute var screenRect = Rect(origin: .zero, size: screenSize)
     let inputs = ViewInputs(frame: $screenRect)
 
-    @Attribute var view = Text("Hello")
+    @Attribute var count: Int = 0
+    @Attribute var view = TupleView(
+        Text("Hello \(count)"),
+        Text("Test")
+    )
     var outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenSize.label = "Screen Size"
     $screenRect.label = "Screen Rect"
-    $view.label = "Text View"
+    $count.label = "@State count"
+    $view.label = "TupleView View"
 
     let _ = outputs.displayList.wrappedValue
 
-    print(graph)
+    print(graph) // Initial state
+
+//    count = 1
+//
+//    print(graph) // After state change
+//
+//    let _ = outputs.displayList.wrappedValue
+//
+//    print(graph) // After re-evaluation
 }

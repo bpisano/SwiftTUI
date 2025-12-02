@@ -14,7 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../Geometry"),
+        .package(path: "~/Dev/Packages/Geometry"),
     ],
     targets: [
         .target(
