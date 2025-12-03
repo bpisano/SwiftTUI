@@ -25,7 +25,8 @@ extension Layout {
         var geometries: [ViewGeometry] = Array(repeating: .zero, count: subviews.count)
         let proxies: [LayoutProxy] = subviews.enumerated().map { index, computer in
             LayoutProxy(layoutComputer: computer) { rect, proposal in
-                geometries[index] = .init(frame: rect)
+                let dimensions: ViewDimensions = .init(frame: rect)
+                geometries[index] = .init(dimensions: dimensions)
             }
         }
 

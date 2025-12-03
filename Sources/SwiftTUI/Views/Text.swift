@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 25/11/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 import Geometry
 
 struct Text: UnaryView {
@@ -33,7 +33,7 @@ extension Text {
                     } else {
                         var width: Double = 0
                         var height: Double = 1
-                        
+
                         for character in resolvedText {
                             if character == "\n" {
                                 height += 1
@@ -41,7 +41,7 @@ extension Text {
                             } else {
                                 width += 1
                             }
-                            
+
                             if width >= proposedWidth {
                                 width = 0
                                 height += 1
@@ -54,16 +54,22 @@ extension Text {
                     return Size(width: Double(textLength), height: 1)
                 }
             } childGeometries: { rect in
-                [ViewGeometry(frame: rect)]
+                let dimensions: ViewDimensions = .init(frame: rect)
+                return [ViewGeometry(dimensions: dimensions)]
             }
         }
 
         let textGeometry = Attribute {
-            layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)[0]
+            switch inputs.storage {
+            case .geometry(let geometry):
+                return geometry.wrappedValue
+            case .frame(let frame):
+                return layoutComputer.wrappedValue.childGeometries(in: frame.wrappedValue)[0]
+            }
         }
 
         let displayList = Attribute {
-            let viewSize: Size = textGeometry.wrappedValue.frame.size
+            let viewSize: Size = textGeometry.wrappedValue.dimensions.size
             let lines: [String] = split(resolvedText.wrappedValue, by: Int(viewSize.width))
             let items = lines.enumerated().map { index, line in
                 DisplayList.Item(
@@ -92,11 +98,12 @@ extension Text {
         var currentIndex: String.Index = text.startIndex
 
         while currentIndex < text.endIndex {
-            let endIndex: String.Index = text.index(
-                currentIndex,
-                offsetBy: count,
-                limitedBy: text.endIndex
-            ) ?? text.endIndex
+            let endIndex: String.Index =
+                text.index(
+                    currentIndex,
+                    offsetBy: count,
+                    limitedBy: text.endIndex
+                ) ?? text.endIndex
 
             let chunk: String = .init(text[currentIndex..<endIndex])
             result.append(chunk)

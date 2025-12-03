@@ -43,7 +43,7 @@ extension TupleView {
 
         let childGeometries = Attribute {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let proposal: ProposedViewSize = .init(inputs.frame.wrappedValue.size)
+            let proposal: ProposedViewSize = .init(inputs.proposalFrame.wrappedValue.size)
             let containerSize: Size = layoutComputer.sizeThatFits(proposal)
             return layoutComputer.childGeometries(in: .init(origin: .zero, size: containerSize))
         }
@@ -114,7 +114,7 @@ extension TupleView {
             let childGeometry: ViewGeometry = childGeometries[index]
             let item: DisplayList.Item = .init(
                 content: .childList(childDisplayList),
-                frame: childGeometry.frame
+                frame: childGeometry.dimensions.frame
             )
             items.append(item)
         }

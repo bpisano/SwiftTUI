@@ -20,7 +20,7 @@ struct LayoutProxy {
         self.place = place
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize) -> Size {
+    func size(in proposal: ProposedViewSize) -> Size {
         layoutComputer.sizeThatFits(proposal)
     }
 

@@ -5,9 +5,9 @@
 //  Created by Benjamin Pisano on 25/11/2025.
 //
 
+import AttributeGraph
 import Foundation
 import Geometry
-import AttributeGraph
 
 //struct TupleView<each V: View>: MultiView {
 //    private let children: (repeat each V)
@@ -95,7 +95,7 @@ extension HStack {
         let contentOutputs = Content.makeView(view.wrappedValue.$content, inputs: inputs)
 
         let childGeometries = contentOutputs.layoutComputer.wrappedValue.childGeometries(
-            in: inputs.frame.wrappedValue
+            in: inputs.proposalFrame.wrappedValue
         )
 
         let layoutComputer = Attribute {
@@ -112,29 +112,27 @@ extension HStack {
             displayList: contentOutputs.displayList
         )
 
-
-
-//        @Attribute var viewGeometry = ViewGeometry(origin: .zero, size: .zero)
-//
-//        let outputs: ViewOutputs = type(of: children).makeView($children, inputs: inputs)
-//
-//        @Attribute var layoutComputer = LayoutComputer { proposedSize in
-//            let lc = outputs.layoutComputer.wrappedValue
-//            _ = lc.sizeThatFits(proposedSize)
-//            return .zero
-//        } place: { rect, proposal in
-//            let lc = outputs.layoutComputer.wrappedValue
-//            lc.place(in: rect, proposal: proposal)
-//        }
-//
-//        @Attribute var displayList = DisplayList(commands: [])
-//
-//        $layoutComputer.label = "HStack Layout Computer"
-//        $displayList.label = "HStack Display List"
-//
-//        return ViewOutputs(
-//            layoutComputer: $layoutComputer,
-//            displayList: $displayList
-//        )
+        //        @Attribute var viewGeometry = ViewGeometry(origin: .zero, size: .zero)
+        //
+        //        let outputs: ViewOutputs = type(of: children).makeView($children, inputs: inputs)
+        //
+        //        @Attribute var layoutComputer = LayoutComputer { proposedSize in
+        //            let lc = outputs.layoutComputer.wrappedValue
+        //            _ = lc.sizeThatFits(proposedSize)
+        //            return .zero
+        //        } place: { rect, proposal in
+        //            let lc = outputs.layoutComputer.wrappedValue
+        //            lc.place(in: rect, proposal: proposal)
+        //        }
+        //
+        //        @Attribute var displayList = DisplayList(commands: [])
+        //
+        //        $layoutComputer.label = "HStack Layout Computer"
+        //        $displayList.label = "HStack Display List"
+        //
+        //        return ViewOutputs(
+        //            layoutComputer: $layoutComputer,
+        //            displayList: $displayList
+        //        )
     }
 }

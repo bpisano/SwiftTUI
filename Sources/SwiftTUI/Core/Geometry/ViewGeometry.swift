@@ -9,13 +9,13 @@ import Foundation
 import Geometry
 
 struct ViewGeometry {
-    static let zero: ViewGeometry = .init(frame: .zero)
+    static let zero: ViewGeometry = .init(dimensions: .zero)
 
-    let frame: Rect
+    let dimensions: ViewDimensions
 }
 
 extension ViewGeometry: CustomStringConvertible {
     var description: String {
-        frame.description
+        dimensions.description
     }
 }

@@ -36,7 +36,7 @@ struct HStackLayout: Layout {
         var xPosition: Double = 0
         for subview in subviews {
             let viewOrigin = Point(x: xPosition, y: 0)
-            let viewSize = subview.sizeThatFits(proposal)
+            let viewSize = subview.size(in: proposal)
             frames.append(.init(origin: viewOrigin, size: viewSize))
 
             xPosition += viewSize.width

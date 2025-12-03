@@ -31,21 +31,23 @@ struct ViewOutputsRule<V: View>: Rule {
     let graph = Graph()
     graph.makeCurrent()
 
-    @Attribute var screenSize = Size(width: 2, height: 200)
+    @Attribute var screenSize = Size(width: 20, height: 20)
     @Attribute var screenRect = Rect(origin: .zero, size: screenSize)
     let inputs = ViewInputs(frame: $screenRect)
 
     @Attribute var count: Int = 0
-    @Attribute var view = TupleView(
-        Text("Hello \(count)"),
-        Text("Test")
-    )
+//    @Attribute var view = TupleView(
+//        Text("Hello \(count)"),
+//        Text("Test")
+//    )
+    @Attribute var view = Text("Hello world")
+        .frame(width: 3, alignment: .leading)
     var outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenSize.label = "Screen Size"
     $screenRect.label = "Screen Rect"
     $count.label = "@State count"
-    $view.label = "TupleView View"
+    $view.label = "ModifiedContent(Text, FrameModifier)"
 
     let _ = outputs.displayList.wrappedValue
 
