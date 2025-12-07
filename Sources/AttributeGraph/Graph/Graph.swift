@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Playgrounds
+//import Playgrounds
 
 public final class Graph {
     static private(set) var current: Graph = .init()
@@ -116,42 +116,42 @@ extension Graph.Transaction: CustomStringConvertible {
     }
 }
 
-#Playground {
-    let graph: Graph = .init()
-    graph.makeCurrent()
-
-    @Attribute var x = 10
-    @Attribute var y = 20
-
-    @Attribute var z = 5
-    @Attribute var t = 15
-
-    @Attribute var a = x + y
-    @Attribute var b = z + t
-    @Attribute var c = a + b
-
-    $a.label = "A"
-    $b.label = "B"
-    $c.label = "C"
-    $x.label = "X"
-    $y.label = "Y"
-    $z.label = "Z"
-    $t.label = "T"
-
-    _ = c
-
-    print(graph.description)  // Initial graph
-
-    graph.beginTransactionTracking()
-    x = 3
-
-    print(graph.description)  // Graph after changing 'x'
-
-    _ = c
-
-    print(graph.description)  // Graph after reevaluating 'c'
-
-    let transaction = graph.endTransactionTracking()
-
-    print(transaction)
-}
+//#Playground {
+//    let graph: Graph = .init()
+//    graph.makeCurrent()
+//
+//    @Attribute var x = 10
+//    @Attribute var y = 20
+//
+//    @Attribute var z = 5
+//    @Attribute var t = 15
+//
+//    @Attribute var a = x + y
+//    @Attribute var b = z + t
+//    @Attribute var c = a + b
+//
+//    $a.label = "A"
+//    $b.label = "B"
+//    $c.label = "C"
+//    $x.label = "X"
+//    $y.label = "Y"
+//    $z.label = "Z"
+//    $t.label = "T"
+//
+//    _ = c
+//
+//    print(graph.description)  // Initial graph
+//
+//    graph.beginTransactionTracking()
+//    x = 3
+//
+//    print(graph.description)  // Graph after changing 'x'
+//
+//    _ = c
+//
+//    print(graph.description)  // Graph after reevaluating 'c'
+//
+//    let transaction = graph.endTransactionTracking()
+//
+//    print(transaction)
+//}

@@ -11,10 +11,10 @@ let package = Package(
         .library(
             name: "AttributeGraph",
             targets: ["AttributeGraph", "Terminal", "_SwiftTUI", "Test", "SwiftTUI"]
-        ),
+        )
     ],
     dependencies: [
-        .package(path: "~/Dev/Packages/Geometry"),
+        .package(path: "~/Dev/Packages/Geometry")
     ],
     targets: [
         .target(
@@ -36,7 +36,7 @@ let package = Package(
             dependencies: [
                 "Geometry",
                 "AttributeGraph",
-                "Terminal"
+                "Terminal",
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)
@@ -56,8 +56,19 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "DebugTests",
+            dependencies: [
+                "Geometry",
+                "AttributeGraph",
+                "SwiftTUI",
+            ],
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
+        ),
+        .testTarget(
             name: "AttributeGraphTests",
-            dependencies: ["AttributeGraph"]
+            //            dependencies: ["AttributeGraph"]
         ),
     ]
 )

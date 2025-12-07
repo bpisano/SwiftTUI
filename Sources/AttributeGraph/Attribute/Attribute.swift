@@ -117,7 +117,6 @@ public struct Attribute<T>: @MainActor AnyAttribute {
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(ref)
-        print("Re-evaluating attribute \(metadata.label)")
         if isInitialEvaluation {
             Graph.current.withDependencyCapture(of: ref) {
                 metadata.value = rule.evaluate()
@@ -174,7 +173,11 @@ extension Attribute {
             labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\">"
 
             if !metadata.label.isEmpty {
-                labelHTML += "<TR><TD><B>\(metadata.label)</B></TD></TR>"
+                let escapedLabel = metadata.label
+                    .replacingOccurrences(of: "&", with: "&amp;")
+                    .replacingOccurrences(of: "<", with: "&lt;")
+                    .replacingOccurrences(of: ">", with: "&gt;")
+                labelHTML += "<TR><TD><B>\(escapedLabel)</B></TD></TR>"
             }
 
             if let value = metadata.value {

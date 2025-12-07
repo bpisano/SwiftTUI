@@ -7,7 +7,7 @@
 
 import Foundation
 import AttributeGraph
-import Playgrounds
+//import Playgrounds
 
 public protocol View {
     associatedtype Body: View
@@ -147,25 +147,25 @@ struct ViewRenderingRule<Content: View>: Rule {
 
 // MARK: - Playground
 
-#Playground {
-    let graph: Graph = .init()
-    graph.makeCurrent()
-
-    let rootView = TestView()
-
-    let rootRendering = Attribute<String>(rule: ViewRenderingRule(rootView))
-    rootRendering.label = "\(type(of: rootView))"
-
-    print(rootRendering.wrappedValue)
-    print(graph.description) // avant modification de l’état
-
-    graph.beginTransactionTracking()
-    rootView.count += 1
-
-    print(graph.description) // après modification de l’état
-    print(rootRendering.wrappedValue)
-    print(graph.description) // après réévaluation
-
-    let transaction = graph.endTransactionTracking()
-    print(transaction)
-}
+//#Playground {
+//    let graph: Graph = .init()
+//    graph.makeCurrent()
+//
+//    let rootView = TestView()
+//
+//    let rootRendering = Attribute<String>(rule: ViewRenderingRule(rootView))
+//    rootRendering.label = "\(type(of: rootView))"
+//
+//    print(rootRendering.wrappedValue)
+//    print(graph.description) // avant modification de l’état
+//
+//    graph.beginTransactionTracking()
+//    rootView.count += 1
+//
+//    print(graph.description) // après modification de l’état
+//    print(rootRendering.wrappedValue)
+//    print(graph.description) // après réévaluation
+//
+//    let transaction = graph.endTransactionTracking()
+//    print(transaction)
+//}

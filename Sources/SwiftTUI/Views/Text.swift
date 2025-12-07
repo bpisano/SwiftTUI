@@ -60,13 +60,9 @@ extension Text {
         }
 
         let textGeometry = Attribute {
-            switch inputs.storage {
-            case .geometry(let geometry):
-                return geometry.wrappedValue
-            case .frame(let frame):
-                return layoutComputer.wrappedValue.childGeometries(in: frame.wrappedValue)[0]
-            }
+            return layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)[0]
         }
+        textGeometry.label = "Text Geometry"
 
         let displayList = Attribute {
             let viewSize: Size = textGeometry.wrappedValue.dimensions.size
@@ -79,11 +75,10 @@ extension Text {
             }
             return DisplayList(items)
         }
+        displayList.label = "Text Display List"
 
         resolvedText.label = "Resolved Text"
         layoutComputer.label = "Text Layout Computer"
-        textGeometry.label = "Text Geometry"
-        displayList.label = "Text Display List"
 
         return ViewOutputs(
             layoutComputer: layoutComputer,

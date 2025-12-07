@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 02/12/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 
 struct ModifiedContent<Content: View, Modifier: ViewModifier>: View {
     private let content: Content

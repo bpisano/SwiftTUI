@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 02/12/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 import Geometry
 
 struct FrameLayout: Layout {
@@ -46,36 +46,45 @@ struct FrameLayout: Layout {
             )
         )
 
-        return Size(
-            width: width ?? subviewSize.width,
-            height: height ?? subviewSize.height
+        print("[STF] Proposal \(proposal.width, default: "nil")")
+        let sizeThatFits = Size(
+            width: proposal.width ?? width ?? subviewSize.width,
+            height: proposal.height ?? height ?? subviewSize.height
         )
+        print("[STF] Size that fits", sizeThatFits)
+
+        return sizeThatFits
     }
 
     func place(in bounds: Rect, subviews: [LayoutProxy]) {
-        guard let subview = subviews.first else {
-            return
+        subviews.forEach { subview in
+            let proposal: ProposedViewSize = ProposedViewSize(
+                width: width ?? bounds.size.width,
+                height: height ?? bounds.size.height
+            )
+            let subviewSize = subview.size(in: proposal)
+            let origin: Point = .zero // No alignment handling for now
+            let frame: Rect = Rect(
+                origin: origin,
+                size: subviewSize
+            )
+            subview.place(in: frame, proposal: .init(.zero))
         }
 
-        let proposedSize = ProposedViewSize(
-            width: width ?? bounds.size.width,
-            height: height ?? bounds.size.height
-        )
-
-        let subviewSize: Size = subview.size(in: proposedSize)
-        let subviewDimensions: ViewDimensions = .init(
-            origin: bounds.origin,
-            size: subviewSize
-        )
-
-        let xPosition: Double = alignment.horizontal.key.id.defaultValue(in: subviewDimensions)
-        let yPosition: Double = alignment.vertical.key.id.defaultValue(in: subviewDimensions)
-
-        let frame: Rect = .init(
-            origin: Point(x: xPosition, y: yPosition),
-            size: subviewSize
-        )
-
-        subview.place(in: frame, proposal: proposedSize)
+//        print("[Place] Bounds", bounds)
+//        print("[Place] Proposal", ProposedViewSize(
+//            width: width ?? bounds.size.width,
+//            height: height ?? bounds.size.height
+//        ))
+//
+//        subviews.forEach { proxy in
+//            proxy.place(
+//                in: bounds,
+//                proposal: ProposedViewSize(
+//                    width: width ?? bounds.size.width,
+//                    height: height ?? bounds.size.height
+//                )
+//            )
+//        }
     }
 }

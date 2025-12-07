@@ -7,7 +7,7 @@
 
 import AttributeGraph
 import CoreGraphics
-import Playgrounds
+//import Playgrounds
 
 struct ViewInputs {
     let frame: Attribute<CGRect>
@@ -183,133 +183,133 @@ struct LayoutRule: Rule {
     }
 }
 
-#Playground("Layout") {
-    /*
-     struct Nested: View {
-        @State var toggleState: Bool
-    
-        var body: {
-            Color.blue
-                .frame(width: toggleState ? 50 : 100)
-        }
-     }
-    
-     struct ContentView: View {
-        var body: {
-            HStack {
-                Color.red
-                Nested(toggleState: $toggleState)
-            }
-        }
-     }
-     */
-
-    let graph = Graph()
-    graph.makeCurrent()
-
-    @Attribute var toggleState = false
-    @Attribute var screenSize = CGSize(width: 200, height: 100)
-
-    let redLayoutComputer = Attribute(
-        rule: ViewLayoutRule {
-            return LayoutComputer { proposedSize in
-                proposedSize.replacingUnspecifiedDimensions()
-            }
-        }
-    )
-
-    let nestedLayoutComputer = Attribute(
-        rule: ViewLayoutRule {
-            let width = toggleState ? 50.0 : 100.0
-            return LayoutComputer { proposedSize in
-                return CGSize(width: width, height: proposedSize.height ?? 0)
-            }
-        }
-    )
-
-    let hstackLayoutComputer = Attribute(
-        rule: ViewLayoutRule {
-            let nestedLayoutComputer = nestedLayoutComputer.wrappedValue
-            let redLayoutComputer = redLayoutComputer.wrappedValue
-
-            return LayoutComputer { proposedSize in
-                // Propose ideal size to first children
-                var remainderWidth = proposedSize.width ?? 0
-                let childProposal1 = CGSize(
-                    width: remainderWidth / 2,
-                    height: proposedSize.height ?? 0
-                )
-
-                // Update remainder after first child
-                let nestedSize = nestedLayoutComputer.sizeThatFits(ProposedViewSize(childProposal1))
-                remainderWidth -= nestedSize.width
-
-                // Propose ideal size to second child
-                let child2Proposal = CGSize(
-                    width: remainderWidth,
-                    height: proposedSize.height ?? 0
-                )
-                let redSize = redLayoutComputer.sizeThatFits(ProposedViewSize(child2Proposal))
-
-                return CGSize(
-                    width: redSize.width + nestedSize.width,
-                    height: max(redSize.height, nestedSize.height)
-                )
-            }
-        }
-    )
-
-    @Attribute var hstackSize = hstackLayoutComputer.wrappedValue
-        .sizeThatFits(ProposedViewSize(screenSize))
-
-    $toggleState.label = "Toggle State"
-    $screenSize.label = "Screen Size"
-    redLayoutComputer.label = "Red Layout Computer"
-    nestedLayoutComputer.label = "Nested Layout Computer"
-    hstackLayoutComputer.label = "HStack Layout Computer"
-    $hstackSize.label = "HStack Size"
-
-    let _ = hstackSize
-
-    print(graph)  // Initial state
-
-    toggleState.toggle()
-
-    print(graph)  // After toggle, before access
-
-    let _ = hstackSize
-
-    print(graph)  // After toggle
-}
-
-func run<Content: View>(_ view: Content, inputSize: Attribute<CGSize>) -> ViewOutputs {
-    @Attribute var rootAttribute = view
-    @Attribute var rootFrame = CGRect(origin: .zero, size: inputSize.wrappedValue)
-
-    let rootInputs = ViewInputs(frame: $rootFrame)
-    return Content.makeView(attribute: $rootAttribute, inputs: rootInputs)
-}
-
-#Playground("View") {
-    let graph = Graph()
-    graph.makeCurrent()
-
-    @Attribute var screenSize = CGSize(width: 200, height: 200)
-    @Attribute var rootFrame = CGRect(origin: .zero, size: screenSize)
-    @Attribute var colorNode = Color(name: "blue")
-
-    $screenSize.label = "screenSize"
-    $rootFrame.label = "root frame"
-    $colorNode.label = "color node"
-
-    let outputs = run(colorNode, inputSize: $screenSize)
-    let displayList = outputs.displayList
-    let layoutComputer = outputs.layoutComputer
-
-    layoutComputer.label = "layout computer"
-    displayList.label = "display list"
-
-    let _ = displayList.wrappedValue
-
-    print(graph)  // After accessing display list
-}
+//#Playground("Layout") {
+//    /*
+//     struct Nested: View {
+//        @State var toggleState: Bool
+//    
+//        var body: {
+//            Color.blue
+//                .frame(width: toggleState ? 50 : 100)
+//        }
+//     }
+//    
+//     struct ContentView: View {
+//        var body: {
+//            HStack {
+//                Color.red
+//                Nested(toggleState: $toggleState)
+//            }
+//        }
+//     }
+//     */
+//
+//    let graph = Graph()
+//    graph.makeCurrent()
+//
+//    @Attribute var toggleState = false
+//    @Attribute var screenSize = CGSize(width: 200, height: 100)
+//
+//    let redLayoutComputer = Attribute(
+//        rule: ViewLayoutRule {
+//            return LayoutComputer { proposedSize in
+//                proposedSize.replacingUnspecifiedDimensions()
+//            }
+//        }
+//    )
+//
+//    let nestedLayoutComputer = Attribute(
+//        rule: ViewLayoutRule {
+//            let width = toggleState ? 50.0 : 100.0
+//            return LayoutComputer { proposedSize in
+//                return CGSize(width: width, height: proposedSize.height ?? 0)
+//            }
+//        }
+//    )
+//
+//    let hstackLayoutComputer = Attribute(
+//        rule: ViewLayoutRule {
+//            let nestedLayoutComputer = nestedLayoutComputer.wrappedValue
+//            let redLayoutComputer = redLayoutComputer.wrappedValue
+//
+//            return LayoutComputer { proposedSize in
+//                // Propose ideal size to first children
+//                var remainderWidth = proposedSize.width ?? 0
+//                let childProposal1 = CGSize(
+//                    width: remainderWidth / 2,
+//                    height: proposedSize.height ?? 0
+//                )
+//
+//                // Update remainder after first child
+//                let nestedSize = nestedLayoutComputer.sizeThatFits(ProposedViewSize(childProposal1))
+//                remainderWidth -= nestedSize.width
+//
+//                // Propose ideal size to second child
+//                let child2Proposal = CGSize(
+//                    width: remainderWidth,
+//                    height: proposedSize.height ?? 0
+//                )
+//                let redSize = redLayoutComputer.sizeThatFits(ProposedViewSize(child2Proposal))
+//
+//                return CGSize(
+//                    width: redSize.width + nestedSize.width,
+//                    height: max(redSize.height, nestedSize.height)
+//                )
+//            }
+//        }
+//    )
+//
+//    @Attribute var hstackSize = hstackLayoutComputer.wrappedValue
+//        .sizeThatFits(ProposedViewSize(screenSize))
+//
+//    $toggleState.label = "Toggle State"
+//    $screenSize.label = "Screen Size"
+//    redLayoutComputer.label = "Red Layout Computer"
+//    nestedLayoutComputer.label = "Nested Layout Computer"
+//    hstackLayoutComputer.label = "HStack Layout Computer"
+//    $hstackSize.label = "HStack Size"
+//
+//    let _ = hstackSize
+//
+//    print(graph)  // Initial state
+//
+//    toggleState.toggle()
+//
+//    print(graph)  // After toggle, before access
+//
+//    let _ = hstackSize
+//
+//    print(graph)  // After toggle
+//}
+//
+//func run<Content: View>(_ view: Content, inputSize: Attribute<CGSize>) -> ViewOutputs {
+//    @Attribute var rootAttribute = view
+//    @Attribute var rootFrame = CGRect(origin: .zero, size: inputSize.wrappedValue)
+//
+//    let rootInputs = ViewInputs(frame: $rootFrame)
+//    return Content.makeView(attribute: $rootAttribute, inputs: rootInputs)
+//}
+//
+//#Playground("View") {
+//    let graph = Graph()
+//    graph.makeCurrent()
+//
+//    @Attribute var screenSize = CGSize(width: 200, height: 200)
+//    @Attribute var rootFrame = CGRect(origin: .zero, size: screenSize)
+//    @Attribute var colorNode = Color(name: "blue")
+//
+//    $screenSize.label = "screenSize"
+//    $rootFrame.label = "root frame"
+//    $colorNode.label = "color node"
+//
+//    let outputs = run(colorNode, inputSize: $screenSize)
+//    let displayList = outputs.displayList
+//    let layoutComputer = outputs.layoutComputer
+//
+//    layoutComputer.label = "layout computer"
+//    displayList.label = "display list"
+//
+//    let _ = displayList.wrappedValue
+//
+//    print(graph)  // After accessing display list
+//}

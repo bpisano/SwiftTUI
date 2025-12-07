@@ -28,29 +28,29 @@ extension TupleView {
         _ view: Attribute<TupleView<repeat each V>>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let viewListOutputs: ViewListOutputs = type(of: view.wrappedValue).makeViewList(
-            view, inputs: .init())
+        let viewListOutputs: ViewListOutputs = makeViewList(view, inputs: .init())
         let viewList: ViewList = viewListOutputs.makeViewList()
         let childViewOutputs: [ViewOutputs] = makeChildViewOutputs(list: viewList, inputs: inputs)
 
         let layoutComputer = Attribute {
-            let layout: HStackLayout = .init()
-            let childLayoutComputers: [LayoutComputer] = childViewOutputs.map(
-                \.layoutComputer.wrappedValue)
-            let hstackLayoutComputer = layout.layoutComputer(for: childLayoutComputers)
+            let vstackLayout: VStackLayout = .init()
+            let childLayoutComputers: [LayoutComputer] = childViewOutputs
+                .map(\.layoutComputer.wrappedValue)
+            let hstackLayoutComputer = vstackLayout.layoutComputer(for: childLayoutComputers)
             return hstackLayoutComputer
         }
 
         let childGeometries = Attribute {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let proposal: ProposedViewSize = .init(inputs.proposalFrame.wrappedValue.size)
+            let proposal: ProposedViewSize = .init(inputs.frame.wrappedValue.size)
             let containerSize: Size = layoutComputer.sizeThatFits(proposal)
             return layoutComputer.childGeometries(in: .init(origin: .zero, size: containerSize))
         }
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] = childViewOutputs.map(\.displayList.wrappedValue)
+            let childDisplayLists: [DisplayList] = childViewOutputs
+                .map(\.displayList.wrappedValue)
             let displayList = combineDisplayLists(
                 childDisplayLists: childDisplayLists,
                 childGeometries: geometries

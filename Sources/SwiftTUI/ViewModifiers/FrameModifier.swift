@@ -31,49 +31,47 @@ extension FrameModifier {
         inputs: ViewInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewOutputs {
-        // Create forward reference for the frame layout computer
-        var frameLayoutComputer: Attribute<LayoutComputer>!
+        let vmd = "FrameModifier \(modifier.wrappedValue.width, default: "nil")"
 
-        // Create child geometry that will be computed from the frame layout
-        let childGeometry: Attribute<ViewGeometry> = Attribute {
-            let frameLayoutComputer: LayoutComputer = frameLayoutComputer.wrappedValue
-            let proposal: ProposedViewSize = .init(inputs.proposalFrame.wrappedValue.size)
-            let containerSize: Size = frameLayoutComputer.sizeThatFits(proposal)
-            let geometries = frameLayoutComputer.childGeometries(
-                in: .init(origin: .zero, size: containerSize))
-            return geometries[0]
-        }
-        childGeometry.label = "FrameModifier Child Geometry"
+        print("--- START \(vmd) ---")
+        print(" -- Inputs \(vmd)", inputs.frame.wrappedValue)
 
-        // Pass modified inputs with only the computed geometry to the child
-        let childInputs = ViewInputs(geometry: childGeometry)
-        let contentOutputs: ViewOutputs = body(childInputs)
+        let childOutputs: ViewOutputs = body(inputs)
+        print("child geometries \(vmd)", childOutputs.layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
 
-        // Create frame layout computer that wraps the child's layout
-        frameLayoutComputer = Attribute {
-            let modifierValue: FrameModifier = modifier.wrappedValue
+        let layoutComputer = Attribute {
+            let modifier = modifier.wrappedValue
             let frameLayout: FrameLayout = .init(
-                width: modifierValue.width,
-                height: modifierValue.height,
-                alignment: modifierValue.alignment
+                width: modifier.width,
+                height: modifier.height,
+                alignment: modifier.alignment
             )
-            let contentLayoutComputer: LayoutComputer = contentOutputs.layoutComputer.wrappedValue
-            return frameLayout.layoutComputer(for: [contentLayoutComputer])
+            return frameLayout.layoutComputer(for: [childOutputs.layoutComputer.wrappedValue])
         }
-        frameLayoutComputer.label = "FrameModifier LayoutComputer"
+
+        let childGeometries = Attribute {
+            layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)
+        }
+
+        print("child geometries frame \(vmd)", layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
 
         let displayList = Attribute {
-            let geometries: [ViewGeometry] = [childGeometry.wrappedValue]
-            let childDisplayList: DisplayList = contentOutputs.displayList.wrappedValue
-            return combineDisplayLists(
-                childDisplayLists: [childDisplayList],
-                childGeometries: geometries
+            let childDisplayLists = [childOutputs.displayList.wrappedValue]
+            let displayList = combineDisplayLists(
+                childDisplayLists: childDisplayLists,
+                childGeometries: childGeometries.wrappedValue
             )
+            return displayList
         }
-        displayList.label = "FrameModifier DisplayList"
+
+        print("--- END FrameModifier \(modifier.wrappedValue.width, default: "0") ---")
+
+        layoutComputer.label = "FrameModifier Layout Computer"
+        childGeometries.label = "FrameModifier Child Geometries"
+        displayList.label = "FrameModifier Display List"
 
         return ViewOutputs(
-            layoutComputer: frameLayoutComputer,
+            layoutComputer: layoutComputer,
             displayList: displayList
         )
     }
