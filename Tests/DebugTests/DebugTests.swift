@@ -27,8 +27,8 @@ func debugPlaygroundCode() {
     //        Text("Test")
     //    )
     @Attribute var view = Color("X")
-        .frame(width: 3, alignment: .leading)
         .frame(width: 1, alignment: .leading)
+        .frame(width: 3, alignment: .leading)
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenSize.label = "Screen Size"

@@ -21,8 +21,10 @@ extension Color {
     static func makeView(_ view: Attribute<Color>, inputs: ViewInputs) -> ViewOutputs {
         let layoutComputer = Attribute {
             LayoutComputer { proposal in
-                proposal.replacingUnspecifiedDimensions()
+                print("Color proposal:", proposal)
+                return proposal.replacingUnspecifiedDimensions()
             } childGeometries: { rect in
+                print("Color childGeometries rect:", rect)
                 let dimensions: ViewDimensions = .init(frame: rect)
                 return [ViewGeometry(dimensions: dimensions)]
             }
@@ -33,10 +35,12 @@ extension Color {
         }
 
         let displayList = Attribute {
+            print("--- Color displayList computation ---")
             let character = colorCharacter.wrappedValue
             let colorGeometry = layoutComputer.wrappedValue.childGeometries(
                 in: inputs.frame.wrappedValue
             )[0]
+            print("Color geometry:", colorGeometry)
 
             var items: [DisplayList.Item] = []
             for y in 0..<Int(colorGeometry.dimensions.size.height) {

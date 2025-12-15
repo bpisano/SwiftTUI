@@ -25,6 +25,12 @@ struct FrameModifier: ViewModifier {
     }
 }
 
+extension Double {
+    func clamped(_ minValue: Double, _ maxValue: Double) -> Double {
+        min(max(self, minValue), maxValue)
+    }
+}
+
 extension FrameModifier {
     static func makeView(
         _ modifier: Attribute<FrameModifier>,
@@ -34,12 +40,32 @@ extension FrameModifier {
         let vmd = "FrameModifier \(modifier.wrappedValue.width, default: "nil")"
 
         print("--- START \(vmd) ---")
-        print(" -- Inputs \(vmd)", inputs.frame.wrappedValue)
+//        print(" -- Inputs \(vmd)", inputs.frame.wrappedValue)
 
-        let childOutputs: ViewOutputs = body(inputs)
-        print("child geometries \(vmd)", childOutputs.layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
+        var layoutComputer: Attribute<LayoutComputer>!
 
-        let layoutComputer = Attribute {
+        let modifiedFrame = Attribute {
+//            print(" Modifying frame \(vmd)", inputs.frame.wrappedValue)
+            let inputFrame: Rect = inputs.frame.wrappedValue
+            let childGeometry: ViewGeometry = layoutComputer.wrappedValue.childGeometries(in: inputFrame)[0]
+
+            var childGeometrySize: Size = childGeometry.dimensions.frame.size
+            childGeometrySize.width = childGeometrySize.width.clamped(0, inputFrame.size.width)
+            childGeometrySize.height = childGeometrySize.height.clamped(0, inputFrame.size.height)
+
+            return Rect(
+                origin: childGeometry.dimensions.origin,
+                size: childGeometrySize
+            )
+        }
+        let modifiedInputs: ViewInputs = .init(frame: modifiedFrame)
+
+        let childOutputs: ViewOutputs = body(modifiedInputs)
+
+
+//        print("child geometries \(vmd)", childOutputs.layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
+
+        layoutComputer = Attribute {
             let modifier = modifier.wrappedValue
             let frameLayout: FrameLayout = .init(
                 width: modifier.width,
@@ -49,30 +75,27 @@ extension FrameModifier {
             return frameLayout.layoutComputer(for: [childOutputs.layoutComputer.wrappedValue])
         }
 
-        let childGeometries = Attribute {
-            layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)
-        }
+//        print("child geometries frame \(vmd)", layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
 
-        print("child geometries frame \(vmd)", layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
-
-        let displayList = Attribute {
-            let childDisplayLists = [childOutputs.displayList.wrappedValue]
-            let displayList = combineDisplayLists(
-                childDisplayLists: childDisplayLists,
-                childGeometries: childGeometries.wrappedValue
-            )
-            return displayList
-        }
+//        let displayList = Attribute {
+//            let childDisplayLists = [childOutputs.displayList.wrappedValue]
+//            let displayList = combineDisplayLists(
+//                childDisplayLists: childDisplayLists,
+//                childGeometries: childGeometries.wrappedValue
+//            )
+//            return displayList
+//        }
 
         print("--- END FrameModifier \(modifier.wrappedValue.width, default: "0") ---")
 
         layoutComputer.label = "FrameModifier Layout Computer"
-        childGeometries.label = "FrameModifier Child Geometries"
-        displayList.label = "FrameModifier Display List"
+//        childGeometries.label = "FrameModifier Child Geometries"
+        modifiedFrame.label = "FrameModifier Modified Frame"
+//        displayList.label = "FrameModifier Display List"
 
         return ViewOutputs(
             layoutComputer: layoutComputer,
-            displayList: displayList
+            displayList: childOutputs.displayList
         )
     }
 
@@ -134,3 +157,4 @@ extension FrameModifier: CustomStringConvertible {
         "(\(width, default: "nil"), \(height, default: "nil"), \(alignment))"
     }
 }
+

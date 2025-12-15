@@ -68,6 +68,7 @@ struct FrameLayout: Layout {
                 origin: origin,
                 size: subviewSize
             )
+            print("Final frame", frame)
             subview.place(in: frame, proposal: .init(.zero))
         }
 
