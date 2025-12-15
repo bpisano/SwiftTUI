@@ -25,27 +25,15 @@ struct FrameModifier: ViewModifier {
     }
 }
 
-extension Double {
-    func clamped(_ minValue: Double, _ maxValue: Double) -> Double {
-        min(max(self, minValue), maxValue)
-    }
-}
-
 extension FrameModifier {
     static func makeView(
         _ modifier: Attribute<FrameModifier>,
         inputs: ViewInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewOutputs {
-        let vmd = "FrameModifier \(modifier.wrappedValue.width, default: "nil")"
-
-        print("--- START \(vmd) ---")
-//        print(" -- Inputs \(vmd)", inputs.frame.wrappedValue)
-
         var layoutComputer: Attribute<LayoutComputer>!
 
         let modifiedFrame = Attribute {
-//            print(" Modifying frame \(vmd)", inputs.frame.wrappedValue)
             let inputFrame: Rect = inputs.frame.wrappedValue
             let childGeometry: ViewGeometry = layoutComputer.wrappedValue.childGeometries(in: inputFrame)[0]
 
@@ -58,12 +46,9 @@ extension FrameModifier {
                 size: childGeometrySize
             )
         }
+
         let modifiedInputs: ViewInputs = .init(frame: modifiedFrame)
-
         let childOutputs: ViewOutputs = body(modifiedInputs)
-
-
-//        print("child geometries \(vmd)", childOutputs.layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
 
         layoutComputer = Attribute {
             let modifier = modifier.wrappedValue
@@ -75,23 +60,8 @@ extension FrameModifier {
             return frameLayout.layoutComputer(for: [childOutputs.layoutComputer.wrappedValue])
         }
 
-//        print("child geometries frame \(vmd)", layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue))
-
-//        let displayList = Attribute {
-//            let childDisplayLists = [childOutputs.displayList.wrappedValue]
-//            let displayList = combineDisplayLists(
-//                childDisplayLists: childDisplayLists,
-//                childGeometries: childGeometries.wrappedValue
-//            )
-//            return displayList
-//        }
-
-        print("--- END FrameModifier \(modifier.wrappedValue.width, default: "0") ---")
-
         layoutComputer.label = "FrameModifier Layout Computer"
-//        childGeometries.label = "FrameModifier Child Geometries"
         modifiedFrame.label = "FrameModifier Modified Frame"
-//        displayList.label = "FrameModifier Display List"
 
         return ViewOutputs(
             layoutComputer: layoutComputer,
