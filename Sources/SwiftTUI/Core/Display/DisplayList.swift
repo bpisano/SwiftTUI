@@ -31,7 +31,7 @@ extension DisplayList {
 
 extension DisplayList: CustomStringConvertible {
     var description: String {
-        let parts: [String] = items.map { item in
+        var parts: [String] = items.map { item in
             switch item.content {
             case .empty:
                 return "empty in \(item.frame)"

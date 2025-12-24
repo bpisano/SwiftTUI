@@ -26,9 +26,9 @@ func debugPlaygroundCode() {
     //        Text("Hello \(count)"),
     //        Text("Test")
     //    )
-    @Attribute var view = Color("X")
-        .frame(width: 3, alignment: .leading)
-        .frame(width: 2, alignment: .leading)
+//    @Attribute var count = 0
+    @Attribute var view = Text("O")
+        .frame(width: 3, height: 3, alignment: .bottomTrailing)
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenSize.label = "Screen Size"
@@ -50,7 +50,7 @@ func debugPlaygroundCode() {
     //    print(graph) // After re-evaluation
 }
 
-func copyToClipboard(_ string: String) {
+private func copyToClipboard(_ string: String) {
     let pasteboard: NSPasteboard = .general
     pasteboard.clearContents()
     pasteboard.setString(string, forType: .string)

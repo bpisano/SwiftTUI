@@ -46,12 +46,12 @@ struct FrameLayout: Layout {
             )
         )
 
-        print("[STF] Proposal \(proposal.width, default: "nil")")
+//        print("[STF] Proposal \(proposal.width, default: "nil")")
         let sizeThatFits = Size(
             width: proposal.width ?? width ?? subviewSize.width,
             height: proposal.height ?? height ?? subviewSize.height
         )
-        print("[STF] Size that fits", sizeThatFits)
+//        print("[STF] Size that fits", sizeThatFits)
 
         return sizeThatFits
     }
@@ -63,12 +63,24 @@ struct FrameLayout: Layout {
                 height: height ?? bounds.size.height
             )
             let subviewSize = subview.size(in: proposal)
-            let origin: Point = .zero // No alignment handling for now
+            let viewDimensions: ViewDimensions = .init(
+                frame: .init(
+                    origin: bounds.origin,
+                    size: .init(
+                        width: (width ?? subviewSize.width) - subviewSize.width,
+                        height: (height ?? subviewSize.height) - subviewSize.height
+                    )
+                )
+            )
+            let origin: Point = Point(
+                x: alignment.horizontal.key.id.defaultValue(in: viewDimensions),
+                y: alignment.vertical.key.id.defaultValue(in: viewDimensions)
+            )
             let frame: Rect = Rect(
                 origin: origin,
                 size: subviewSize
             )
-            print("Final frame", frame)
+//            print("Final frame", frame)
             subview.place(in: frame, proposal: .init(.zero))
         }
 

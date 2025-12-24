@@ -60,17 +60,29 @@ extension Text {
         }
 
         let textGeometry = Attribute {
-            return layoutComputer.wrappedValue.childGeometries(in: inputs.frame.wrappedValue)[0]
+            let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
+            let inputsFrame: Rect = inputs.frame.wrappedValue
+            let textSize: Size = layoutComputer.sizeThatFits(.init(inputsFrame.size))
+            return layoutComputer.childGeometries(
+                in: .init(origin: inputsFrame.origin, size: textSize)
+            )[0]
         }
         textGeometry.label = "Text Geometry"
 
         let displayList = Attribute {
-            let viewSize: Size = textGeometry.wrappedValue.dimensions.size
+            let textGeometry: ViewGeometry = textGeometry.wrappedValue
+            let viewOrigin: Point = textGeometry.dimensions.origin
+            let viewSize: Size = textGeometry.dimensions.size
             let lines: [String] = split(resolvedText.wrappedValue, by: Int(viewSize.width))
             let items = lines.enumerated().map { index, line in
                 DisplayList.Item(
                     content: .command(.putLine(line)),
-                    frame: .init(x: 0, y: Double(index), width: viewSize.width, height: 1)
+                    frame: .init(
+                        x: viewOrigin.x,
+                        y: viewOrigin.y + Double(index),
+                        width: viewSize.width,
+                        height: 1
+                    )
                 )
             }
             return DisplayList(items)
