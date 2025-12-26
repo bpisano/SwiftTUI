@@ -33,30 +33,31 @@ struct VStackLayout: Layout {
         subviews: [LayoutProxy]
     ) -> [Rect] {
         let allViewSize: [Size] = subviews.map { $0.size(in: proposal) }
-        var sortedViewSize: [Size] = allViewSize.sorted { $0.height < $1.height }
+
+        // Track original indices with sizes
+        var indexedSizes: [(index: Int, size: Size)] = allViewSize.enumerated().map { ($0, $1) }
+        indexedSizes.sort { $0.size.height < $1.size.height }
 
         var remainingHeight: Double? = proposal.height
         var frames: [Rect] = Array(repeating: .zero, count: subviews.count)
 
         // Calculate view sizes
-        while let (index, _) = sortedViewSize.enumerated().first {
-            defer { sortedViewSize.removeFirst() }
-
-            let subview: LayoutProxy = subviews[index]
-            let proposedHeight: Double? = remainingHeight.map { $0 / .init(sortedViewSize.count) }
+        for (sortIndex, (originalIndex, _)) in indexedSizes.enumerated() {
+            let subview: LayoutProxy = subviews[originalIndex]
+            let remainingViews = indexedSizes.count - sortIndex
+            let proposedHeight: Double? = remainingHeight.map { $0 / Double(remainingViews) }
             let proposedSize: ProposedViewSize = .init(width: proposal.width, height: proposedHeight)
             let size: Size = subview.size(in: proposedSize)
 
-            frames[index].size = size
+            frames[originalIndex].size = size
             remainingHeight = remainingHeight.map { $0 - size.height }
         }
 
         // Calculate view origins
         var yPosition: Double = 0
-        for (index, frame) in frames.enumerated() {
-            let viewOrigin: Point = Point(x: 0, y: yPosition)
-            frames[index].origin = viewOrigin
-            yPosition += frame.size.height
+        for index in 0..<frames.count {
+            frames[index].origin = Point(x: 0, y: yPosition)
+            yPosition += frames[index].size.height
         }
 
         return frames

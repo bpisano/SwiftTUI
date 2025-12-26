@@ -22,13 +22,11 @@ func debugPlaygroundCode() {
     let inputs = ViewInputs(frame: $screenRect)
 
 //    @Attribute var count: Int = 0
-    //    @Attribute var view = TupleView(
-    //        Text("Hello \(count)"),
-    //        Text("Test")
-    //    )
 //    @Attribute var count = 0
-    @Attribute var view = Text("O")
-        .frame(width: 3, height: 3, alignment: .bottomTrailing)
+    @Attribute var view = VStack {
+        Text("AAAAAA")
+        Text("B")
+    }
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenSize.label = "Screen Size"
@@ -41,13 +39,6 @@ func debugPlaygroundCode() {
     print(graph)  // Initial state
 
     copyToClipboard(graph.description)
-    //    count = 1
-    //
-    //    print(graph) // After state change
-    //
-    //    let _ = outputs.displayList.wrappedValue
-    //
-    //    print(graph) // After re-evaluation
 }
 
 private func copyToClipboard(_ string: String) {
