@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct FrameModifier: ViewModifier {
+struct FrameModifier: UnaryViewModifier {
     private let width: Double?
     private let height: Double?
     private let alignment: Alignment
@@ -68,21 +68,6 @@ extension FrameModifier {
             displayList: childOutputs.displayList
         )
     }
-
-    static func makeViewList(
-        _ modifier: Attribute<FrameModifier>,
-        inputs: ViewListInputs,
-        body: @escaping (ViewListInputs) -> ViewListOutputs
-    ) -> ViewListOutputs {
-        body(inputs)
-    }
-
-    static func viewListCount(
-        inputs: ViewListCountInputs,
-        body: (ViewListCountInputs) -> Int?
-    ) -> Int? {
-        body(inputs)
-    }
 }
 
 extension FrameModifier {
@@ -127,4 +112,3 @@ extension FrameModifier: CustomStringConvertible {
         "(\(width, default: "nil"), \(height, default: "nil"), \(alignment))"
     }
 }
-

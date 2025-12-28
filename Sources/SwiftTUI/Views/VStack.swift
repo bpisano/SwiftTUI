@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 24/12/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 import Geometry
 
 struct VStack<Content: View>: UnaryView, PrimitiveView {
@@ -22,15 +22,12 @@ extension VStack {
         _ view: Attribute<VStack<Content>>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let childViewOutputs = Attribute<[ViewOutputs]> {
-            let content = view.map(\.content)
-            content.label = "VStack Content"
+        let content = view.map(\.content)
+        content.label = "\(Content.self)"
 
-            let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init())
-            let viewList: ViewList = viewListOutputs.makeViewList()
-            return makeChildViewOutputs(list: viewList, inputs: inputs)
-        }
-        childViewOutputs.label = "VStack Child Outputs"
+        let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init())
+        let viewList: ViewList = viewListOutputs.makeViewList()
+        let childViewOutputs = makeChildViewOutputs(list: viewList, inputs: inputs)
 
         return makeLayoutOutputs(
             childViewOutputs: childViewOutputs,
@@ -39,12 +36,12 @@ extension VStack {
     }
 
     private static func makeLayoutOutputs(
-        childViewOutputs: Attribute<[ViewOutputs]>,
+        childViewOutputs: [ViewOutputs],
         inputs: ViewInputs
     ) -> ViewOutputs {
         let layoutComputer = Attribute {
-            let childOutputs = childViewOutputs.wrappedValue
-            let childLayoutComputers: [LayoutComputer] = childOutputs
+            let childLayoutComputers: [LayoutComputer] =
+                childViewOutputs
                 .map(\.layoutComputer.wrappedValue)
             let layout = VStackLayout()
             return layout.layoutComputer(for: childLayoutComputers)
@@ -59,17 +56,18 @@ extension VStack {
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childOutputs = childViewOutputs.wrappedValue
-            let childDisplayLists: [DisplayList] = childOutputs
+            let childDisplayLists: [DisplayList] =
+                childViewOutputs
                 .map(\.displayList.wrappedValue)
 
             var items: [DisplayList.Item] = []
             for (index, childDisplayList) in childDisplayLists.enumerated() {
                 let childGeometry: ViewGeometry = geometries[index]
-                items.append(.init(
-                    content: .childList(childDisplayList),
-                    frame: childGeometry.dimensions.frame
-                ))
+                items.append(
+                    .init(
+                        content: .childList(childDisplayList),
+                        frame: childGeometry.dimensions.frame
+                    ))
             }
             return DisplayList(items)
         }

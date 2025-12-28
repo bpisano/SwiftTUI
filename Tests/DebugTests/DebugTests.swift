@@ -5,7 +5,7 @@
 //  This file replicates the playground code from Test.swift for debugging with breakpoints
 //
 
-import AttributeGraph
+@testable import AttributeGraph
 import Foundation
 import Geometry
 @testable import SwiftTUI
@@ -24,8 +24,9 @@ func debugPlaygroundCode() {
 //    @Attribute var count: Int = 0
 //    @Attribute var count = 0
     @Attribute var view = VStack {
-        Text("AAAAAA")
+        Text("A")
         Text("B")
+//        .frame(width: 3, alignment: .trailing)
     }
     let outputs = type(of: view).makeView($view, inputs: inputs)
 

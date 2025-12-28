@@ -43,6 +43,14 @@ extension ViewListOutputs {
         .staticList(SingleElement(view))
     }
 
+    static func unaryViewList<T>(
+        viewType: T.Type,
+        inputs: ViewListInputs,
+        body: @escaping (ViewInputs) -> ViewOutputs
+    ) -> ViewListOutputs {
+        .staticList(UnaryElement(body))
+    }
+
     static func concat(_ outputsList: [ViewListOutputs]) -> ViewListOutputs {
         guard !outputsList.isEmpty else {
             return .staticList(EmptyElement())
@@ -84,29 +92,6 @@ extension ViewListOutputs {
         case dynamicList(Attribute<ViewList>)
     }
 }
-
-//extension ViewListOutputs {
-//    static func single<V: View>(_ view: Attribute<V>) -> ViewListOutputs {
-//        ViewListOutputs(
-//            elements: [ViewElement(view)],
-//            count: 1
-//        )
-//    }
-//
-//    static func concat(_ lists: [ViewListOutputs]) -> ViewListOutputs {
-//        let allElements: [AnyViewElement] = lists.flatMap { $0.elements }
-//        let totalCount: Int = lists.compactMap { $0.count }.reduce(0, +)
-//
-//        return ViewListOutputs(
-//            elements: allElements,
-//            count: lists.allSatisfy { $0.count != nil } ? totalCount : nil
-//        )
-//    }
-//
-//    static var empty: ViewListOutputs {
-//        ViewListOutputs(elements: [], count: 0)
-//    }
-//}
 
 extension ViewListOutputs: CustomStringConvertible {
     var description: String {

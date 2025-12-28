@@ -68,18 +68,40 @@ extension TupleView {
         )
     }
 
+    private static func makeElementViewList<Element: View>(
+        view: Attribute<TupleView<repeat each V>>,
+        elementType: Element.Type,
+        offset: Int,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        // Create derived attribute using unsafeOffset
+        let childAttr: Attribute<Element> = view.unsafeOffset(at: offset, as: Element.self)
+        childAttr.label = "\(Element.self)"
+
+        return Element.makeViewList(childAttr, inputs: inputs)
+    }
+
     static func makeViewList(
         _ view: Attribute<TupleView<repeat each V>>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
+        let viewTypes = (repeat each V).self
+        let tupleType = TupleType(viewTypes)
         var outputs: [ViewListOutputs] = []
 
-        for child in repeat each view.wrappedValue.content {
-            let attr = Attribute(wrappedValue: child)
-            attr.label = "\(type(of: child))"
+        for index in (0..<tupleType.count) {
+            guard let elementType = tupleType.type(at: index) as? any View.Type else {
+                continue
+            }
 
-            let childOutputs = type(of: child).makeViewList(attr, inputs: inputs)
-            outputs.append(childOutputs)
+            let viewOutputs = makeChildViewListOutputs(
+                view,
+                tupleType: tupleType,
+                index: index,
+                viewType: elementType,
+                inputs: inputs
+            )
+            outputs.append(viewOutputs)
         }
 
         return .concat(outputs)
@@ -102,6 +124,19 @@ extension TupleView {
             viewOutputs.append(childViewOutputs)
         }
         return viewOutputs
+    }
+
+    private static func makeChildViewListOutputs<T: View>(
+        _ view: Attribute<TupleView<repeat each V>>,
+        tupleType: TupleType,
+        index: Int,
+        viewType: T.Type,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        let viewOffset: Int = tupleType.elementOffset(at: index)
+        let view: Attribute<T> = view.unsafeOffset(at: viewOffset, as: viewType)
+        view.label = "\(T.self)"
+        return T.makeViewList(view, inputs: inputs)
     }
 
     private static func combineDisplayLists(

@@ -7,10 +7,7 @@
 
 import Foundation
 
-struct TupleElement {
-    let type: Any.Type
-
-    init(from ptr: UnsafePointer<TupleElement>) {
-        self.type = ptr.pointee.type
-    }
-}
+//struct TupleElement {
+//    let type: Any.Type
+//    let offset: Int
+//}

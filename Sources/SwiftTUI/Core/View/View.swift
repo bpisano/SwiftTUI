@@ -20,8 +20,13 @@ protocol PrimitiveView: View {}
 protocol UnaryView: View {}
 
 extension UnaryView {
-    static func makeViewList(_ view: Attribute<Self>, inputs: ViewListInputs) -> ViewListOutputs {
-        .single(view)
+    static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        .unaryViewList(viewType: Self.self, inputs: inputs) { viewInputs in
+            Self.makeView(view, inputs: viewInputs)
+        }
     }
 
     static func viewListCount(inputs: ViewListCountInputs) -> Int? {
