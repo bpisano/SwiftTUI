@@ -34,7 +34,8 @@ extension TupleView {
 
         let layoutComputer = Attribute {
             let vstackLayout: VStackLayout = .init()
-            let childLayoutComputers: [LayoutComputer] = childViewOutputs
+            let childLayoutComputers: [LayoutComputer] =
+                childViewOutputs
                 .map(\.layoutComputer.wrappedValue)
             let hstackLayoutComputer = vstackLayout.layoutComputer(for: childLayoutComputers)
             return hstackLayoutComputer
@@ -42,14 +43,15 @@ extension TupleView {
 
         let childGeometries = Attribute {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let proposal: ProposedViewSize = .init(inputs.frame.wrappedValue.size)
+            let proposal: ProposedViewSize = .init(inputs.size.wrappedValue)
             let containerSize: Size = layoutComputer.sizeThatFits(proposal)
             return layoutComputer.childGeometries(in: .init(origin: .zero, size: containerSize))
         }
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] = childViewOutputs
+            let childDisplayLists: [DisplayList] =
+                childViewOutputs
                 .map(\.displayList.wrappedValue)
             let displayList = combineDisplayLists(
                 childDisplayLists: childDisplayLists,
@@ -120,8 +122,11 @@ extension TupleView {
         inputs: ViewInputs
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
-        list.makeViews(from: 0, inputs: inputs) { childViewOutputs in
+        var index = 0
+        list.makeViews(from: &index, inputs: inputs) { index, inputs, makeView in
+            let childViewOutputs = makeView(inputs)
             viewOutputs.append(childViewOutputs)
+            return (childViewOutputs, true)
         }
         return viewOutputs
     }

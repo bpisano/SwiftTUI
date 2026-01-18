@@ -8,20 +8,24 @@
 import Foundation
 
 struct UnaryElement: ViewListElements {
-    private let body: (ViewInputs) -> ViewOutputs
+    private let makeBody: (ViewInputs) -> ViewOutputs
 
     var count: Int { 1 }
 
-    init(_ body: @escaping (ViewInputs) -> ViewOutputs) {
-        self.body = body
+    init(_ makeBody: @escaping (ViewInputs) -> ViewOutputs) {
+        self.makeBody = makeBody
     }
 
     func makeElements(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Bool
-    ) {
-        let outputs: ViewOutputs = body(inputs)
-        _ = callback(outputs)
+        body: Body
+    ) -> (ViewOutputs?, Bool) {
+        let makeElement: MakeElement = { inputs in
+            makeBody(inputs)
+        }
+        let result = body(&start, inputs, makeElement)
+        start += 1
+        return result
     }
 }

@@ -17,22 +17,21 @@ func debugPlaygroundCode() {
     let graph = Graph()
     graph.makeCurrent()
 
+    @Attribute var screenPosition = Point.zero
     @Attribute var screenSize = Size(width: 5, height: 5)
-    @Attribute var screenRect = Rect(origin: .zero, size: screenSize)
-    let inputs = ViewInputs(frame: $screenRect)
+    let inputs = ViewInputs(
+        position: $screenPosition,
+        size: $screenSize
+    )
 
-//    @Attribute var count: Int = 0
-//    @Attribute var count = 0
     @Attribute var view = VStack {
         Text("A")
-        Text("B")
-//        .frame(width: 3, alignment: .trailing)
+        Color("B")
     }
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
+    $screenPosition.label = "Screen Origin"
     $screenSize.label = "Screen Size"
-    $screenRect.label = "Screen Rect"
-//    $count.label = "@State count"
     $view.label = "\(type(of: view))"
 
     let _ = outputs.displayList.wrappedValue

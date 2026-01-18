@@ -33,21 +33,32 @@ extension FrameModifier {
     ) -> ViewOutputs {
         var layoutComputer: Attribute<LayoutComputer>!
 
-        let modifiedFrame = Attribute {
-            let inputFrame: Rect = inputs.frame.wrappedValue
-            let childGeometry: ViewGeometry = layoutComputer.wrappedValue.childGeometries(in: inputFrame)[0]
+        let modifiedPosition = Attribute {
+            let inputFrame: Rect = inputs.frame
+            let childGeometry: ViewGeometry = layoutComputer.wrappedValue.childGeometries(
+                in: inputFrame
+            )[0]
+
+            return childGeometry.dimensions.origin
+        }
+
+        let modifiedSize = Attribute {
+            let inputFrame: Rect = inputs.frame
+            let childGeometry: ViewGeometry = layoutComputer.wrappedValue.childGeometries(
+                in: inputFrame
+            )[0]
 
             var childGeometrySize: Size = childGeometry.dimensions.frame.size
             childGeometrySize.width = childGeometrySize.width.clamped(0, inputFrame.size.width)
             childGeometrySize.height = childGeometrySize.height.clamped(0, inputFrame.size.height)
 
-            return Rect(
-                origin: childGeometry.dimensions.origin,
-                size: childGeometrySize
-            )
+            return childGeometrySize
         }
 
-        let modifiedInputs: ViewInputs = .init(frame: modifiedFrame)
+        let modifiedInputs: ViewInputs = .init(
+            position: modifiedPosition,
+            size: modifiedSize
+        )
         let childOutputs: ViewOutputs = body(modifiedInputs)
 
         layoutComputer = Attribute {
@@ -61,7 +72,8 @@ extension FrameModifier {
         }
 
         layoutComputer.label = "FrameModifier Layout Computer"
-        modifiedFrame.label = "FrameModifier Modified Frame"
+        modifiedSize.label = "FrameModifier Modified Size"
+        modifiedPosition.label = "FrameModifier Modified Position"
 
         return ViewOutputs(
             layoutComputer: layoutComputer,

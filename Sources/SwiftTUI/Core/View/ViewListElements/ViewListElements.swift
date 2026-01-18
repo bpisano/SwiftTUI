@@ -8,11 +8,14 @@
 import Foundation
 
 protocol ViewListElements {
+    typealias Body = (inout Int, ViewInputs, @escaping MakeElement) -> (ViewOutputs?, Bool)
+    typealias MakeElement = (ViewInputs) -> ViewOutputs
+
     var count: Int { get }
 
     func makeElements(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Bool
-    )
+        body: Body
+    ) -> (ViewOutputs?, Bool)
 }

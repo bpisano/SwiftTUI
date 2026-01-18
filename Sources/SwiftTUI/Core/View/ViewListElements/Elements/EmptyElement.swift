@@ -11,8 +11,10 @@ struct EmptyElement: ViewListElements {
     let count: Int = 0
 
     func makeElements(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Bool
-    ) {}
+        body: Body
+    ) -> (ViewOutputs?, Bool) {
+        return (nil, false)
+    }
 }

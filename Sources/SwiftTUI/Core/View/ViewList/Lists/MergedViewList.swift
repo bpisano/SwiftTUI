@@ -19,19 +19,14 @@ struct MergedViewList: ViewList {
     }
 
     func makeViews(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Void
+        body: Body
     ) {
-        var currentIndex = startIndex
-
-        for list in lists {
-            list.makeViews(
-                from: currentIndex,
-                inputs: inputs,
-                callback: callback
-            )
-            currentIndex += list.count
+        withoutActuallyEscaping(body) { escapingBody in
+            for list in lists {
+                list.makeViews(from: &start, inputs: inputs, body: escapingBody)
+            }
         }
     }
 }

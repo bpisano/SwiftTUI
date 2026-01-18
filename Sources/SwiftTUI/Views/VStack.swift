@@ -27,38 +27,40 @@ extension VStack {
 
         let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init())
         let viewList: ViewList = viewListOutputs.makeViewList()
-        let childViewOutputs = makeChildViewOutputs(list: viewList, inputs: inputs)
 
-        return makeLayoutOutputs(
-            childViewOutputs: childViewOutputs,
-            inputs: inputs
-        )
-    }
-
-    private static func makeLayoutOutputs(
-        childViewOutputs: [ViewOutputs],
-        inputs: ViewInputs
-    ) -> ViewOutputs {
+        var childLayoutComputersRef: [LayoutComputer] = []
         let layoutComputer = Attribute {
-            let childLayoutComputers: [LayoutComputer] =
-                childViewOutputs
-                .map(\.layoutComputer.wrappedValue)
             let layout = VStackLayout()
-            return layout.layoutComputer(for: childLayoutComputers)
+            return layout.layoutComputer(for: childLayoutComputersRef)
         }
+        layoutComputer.label = "VStackLayout Layout Computer"
 
         let childGeometries = Attribute {
             let computer: LayoutComputer = layoutComputer.wrappedValue
-            let proposal: ProposedViewSize = .init(inputs.frame.wrappedValue.size)
+            let proposal: ProposedViewSize = .init(inputs.size.wrappedValue)
             let containerSize: Size = computer.sizeThatFits(proposal)
-            return computer.childGeometries(in: .init(origin: .zero, size: containerSize))
+            return computer.childGeometries(
+                in: .init(
+                    origin: inputs.position.wrappedValue,
+                    size: containerSize
+                )
+            )
         }
+        childGeometries.label = "VStackLayout Child Geometries"
+
+        let childViewOutputs = makeChildViewOutputs(
+            list: viewList,
+            inputs: inputs,
+            childGeometries: childGeometries
+        )
+
+        // Update the reference with actual children's layout computers
+        childLayoutComputersRef = childViewOutputs.map(\.layoutComputer.wrappedValue)
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
             let childDisplayLists: [DisplayList] =
-                childViewOutputs
-                .map(\.displayList.wrappedValue)
+            childViewOutputs.map(\.displayList.wrappedValue)
 
             var items: [DisplayList.Item] = []
             for (index, childDisplayList) in childDisplayLists.enumerated() {
@@ -71,9 +73,6 @@ extension VStack {
             }
             return DisplayList(items)
         }
-
-        layoutComputer.label = "VStackLayout Layout Computer"
-        childGeometries.label = "VStackLayout Child Geometries"
         displayList.label = "VStackLayout Display List"
 
         return ViewOutputs(
@@ -84,12 +83,25 @@ extension VStack {
 
     private static func makeChildViewOutputs(
         list: ViewList,
-        inputs: ViewInputs
+        inputs: ViewInputs,
+        childGeometries: Attribute<[ViewGeometry]>
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
-        list.makeViews(from: 0, inputs: inputs) { childViewOutputs in
-            viewOutputs.append(childViewOutputs)
+        var index = 0
+
+        list.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
+            let index = currentIndex
+            let childInputs = ViewInputs(
+                position: childGeometries.map { $0[index].dimensions.origin },
+                size: childGeometries.map { $0[index].dimensions.size }
+            )
+
+            let childOutputs = makeView(childInputs)
+            viewOutputs.append(childOutputs)
+
+            return (childOutputs, true)
         }
+
         return viewOutputs
     }
 }

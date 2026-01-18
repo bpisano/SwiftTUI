@@ -19,33 +19,14 @@ struct MergedElements: ViewListElements {
     }
 
     func makeElements(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Bool
-    ) {
-        var currentIndex: Int = 0
-
+        body: Body
+    ) -> (ViewOutputs?, Bool) {
+        var lastResult: (ViewOutputs?, Bool) = (nil, false)
         for element in elements {
-            let childCount: Int = element.count
-
-            if startIndex <= currentIndex {
-                // We're past the startIndex, so create all remaining elements
-                element.makeElements(
-                    from: 0,
-                    inputs: inputs,
-                    callback: callback
-                )
-            } else if startIndex < currentIndex + childCount {
-                // startIndex falls within this element's range
-                let childStartIndex: Int = startIndex - currentIndex
-                element.makeElements(
-                    from: childStartIndex,
-                    inputs: inputs,
-                    callback: callback
-                )
-            }
-
-            currentIndex += childCount
+            lastResult = element.makeElements(from: &start, inputs: inputs, body: body)
         }
+        return lastResult
     }
 }

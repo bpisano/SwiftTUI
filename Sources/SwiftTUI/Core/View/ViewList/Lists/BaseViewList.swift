@@ -17,13 +17,12 @@ struct BaseViewList: ViewList {
     }
 
     func makeViews(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Void
+        body: Body
     ) {
-        elements.makeElements(from: startIndex, inputs: inputs) { viewOutputs in
-            callback(viewOutputs)
-            return true
+        withoutActuallyEscaping(body) { escapingBody in
+            _ = elements.makeElements(from: &start, inputs: inputs, body: escapingBody)
         }
     }
 }

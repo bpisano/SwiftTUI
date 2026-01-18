@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 01/12/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 
 struct SingleElement<V: View>: ViewListElements {
     let count: Int = 1
@@ -18,11 +18,15 @@ struct SingleElement<V: View>: ViewListElements {
     }
 
     func makeElements(
-        from startIndex: Int,
+        from start: inout Int,
         inputs: ViewInputs,
-        callback: (ViewOutputs) -> Bool
-    ) {
-        let outputs: ViewOutputs = V.makeView(view, inputs: inputs)
-        _ = callback(outputs)
+        body: Body
+    ) -> (ViewOutputs?, Bool) {
+        let makeElement: MakeElement = { inputs in
+            V.makeView(view, inputs: inputs)
+        }
+        let result = body(&start, inputs, makeElement)
+        start += 1
+        return result
     }
 }

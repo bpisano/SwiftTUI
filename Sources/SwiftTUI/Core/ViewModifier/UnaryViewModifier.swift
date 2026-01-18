@@ -5,10 +5,10 @@
 //  Created by Benjamin Pisano on 27/12/2025.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 
-protocol UnaryViewModifier: ViewModifier { }
+protocol UnaryViewModifier: ViewModifier {}
 
 extension UnaryViewModifier {
     static func makeViewList(
@@ -17,16 +17,17 @@ extension UnaryViewModifier {
         body: @escaping (ViewListInputs) -> ViewListOutputs
     ) -> ViewListOutputs {
         .unaryViewList(viewType: Self.self, inputs: inputs) { viewInputs in
-            // Call the modifier's makeView, which will handle the body
             Self.makeView(modifier, inputs: viewInputs) { modifiedInputs in
-                // Get the content's view list and make a single view from it
                 let contentListOutputs = body(.init())
                 let contentList = contentListOutputs.makeViewList()
 
-                // Make the first (and only) view from the content
                 var contentOutput: ViewOutputs!
-                contentList.makeViews(from: 0, inputs: modifiedInputs) { output in
-                    contentOutput = output
+                var index = 0
+                contentList.makeViews(from: &index, inputs: modifiedInputs) {
+                    index, inputs, makeView in
+                    let viewOutputs: ViewOutputs = makeView(inputs)
+                    contentOutput = viewOutputs
+                    return (viewOutputs, true)
                 }
                 return contentOutput
             }

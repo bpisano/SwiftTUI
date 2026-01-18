@@ -10,9 +10,21 @@ import Foundation
 import Geometry
 
 struct ViewInputs {
-    let frame: Attribute<Rect>
+    let size: Attribute<Size>
+    let position: Attribute<Point>
 
-    init(frame: Attribute<Rect>) {
-        self.frame = frame
+    var frame: Rect {
+        .init(
+            origin: position.wrappedValue,
+            size: size.wrappedValue
+        )
+    }
+
+    init(
+        position: Attribute<Point>,
+        size: Attribute<Size>,
+    ) {
+        self.size = size
+        self.position = position
     }
 }
