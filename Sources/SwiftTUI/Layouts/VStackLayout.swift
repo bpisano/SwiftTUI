@@ -10,9 +10,13 @@ import Foundation
 import Geometry
 
 struct VStackLayout: Layout {
+    private let alignment: HorizontalAlignment
+
+    init(alignment: HorizontalAlignment) {
+        self.alignment = alignment
+    }
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: [LayoutProxy]) -> Size {
-        print("--- VStack Layout sizeThatFits ---")
-        print("VStack Layout Proposal:", proposal)
         let frames: [Rect] = viewFrames(proposal: proposal, subviews: subviews)
         let totalWidth: Double = frames.reduce(0) { maxWidth, frame in
             max(maxWidth, frame.size.width)
@@ -24,8 +28,6 @@ struct VStackLayout: Layout {
     }
 
     func place(in bounds: Rect, subviews: [LayoutProxy]) {
-        print("--- VStack Layout place ---")
-        print("VStack Layout Bounds:", bounds)
         let frames: [Rect] = viewFrames(proposal: .init(bounds.size), subviews: subviews)
         for (index, frame) in frames.enumerated() {
             subviews[index].place(in: frame, proposal: .init(.zero))
@@ -78,10 +80,29 @@ struct VStackLayout: Layout {
             frames[index].size = subview.size(in: proposedSize)
         }
 
-        // Calculate view origins
+        // Calculate the maximum width for alignment calculation
+        let maxWidth: Double = frames.reduce(0) { max($0, $1.size.width) }
+
+        // Calculate view origins with alignment
         var yPosition: Double = 0
         for index in 0..<frames.count {
-            frames[index].origin = Point(x: 0, y: yPosition)
+            let containerDimensions = ViewDimensions(
+                origin: .zero,
+                size: .init(width: maxWidth, height: frames[index].size.height)
+            )
+            let viewDimensions = ViewDimensions(
+                origin: .zero,
+                size: frames[index].size
+            )
+
+            // Get alignment values from both container and view
+            let containerAlignmentValue = containerDimensions[alignment]
+            let viewAlignmentValue = viewDimensions[alignment]
+
+            // Calculate x position based on alignment
+            let xPosition = containerAlignmentValue - viewAlignmentValue
+
+            frames[index].origin = Point(x: xPosition, y: yPosition)
             yPosition += frames[index].size.height
         }
 

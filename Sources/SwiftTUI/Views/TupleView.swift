@@ -33,7 +33,7 @@ extension TupleView {
         let childViewOutputs: [ViewOutputs] = makeChildViewOutputs(list: viewList, inputs: inputs)
 
         let layoutComputer = Attribute {
-            let vstackLayout: VStackLayout = .init()
+            let vstackLayout: VStackLayout = .init(alignment: .center)
             let childLayoutComputers: [LayoutComputer] =
                 childViewOutputs
                 .map(\.layoutComputer.wrappedValue)
@@ -76,10 +76,8 @@ extension TupleView {
         offset: Int,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        // Create derived attribute using unsafeOffset
         let childAttr: Attribute<Element> = view.unsafeOffset(at: offset, as: Element.self)
         childAttr.label = "\(Element.self)"
-
         return Element.makeViewList(childAttr, inputs: inputs)
     }
 
