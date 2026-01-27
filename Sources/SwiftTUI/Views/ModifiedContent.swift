@@ -8,7 +8,7 @@
 import AttributeGraph
 import Foundation
 
-struct ModifiedContent<Content: View, Modifier: ViewModifier>: View {
+struct ModifiedContent<Content: View, Modifier: ViewModifier>: View, PrimitiveView {
     private let content: Content
     private let modifier: Modifier
 

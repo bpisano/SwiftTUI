@@ -12,6 +12,15 @@ import Geometry
 import Testing
 import AppKit
 
+struct MyView: View {
+    var body: some View {
+        VStack {
+            Text("Hello")
+            Color("B")
+        }
+    }
+}
+
 @Test
 func debugPlaygroundCode() {
     let graph = Graph()
@@ -24,10 +33,11 @@ func debugPlaygroundCode() {
         size: $screenSize
     )
 
-    @Attribute var view = VStack {
-        Text("A")
-        Color("B")
-    }
+//    @Attribute var view = VStack {
+//        Text("A")
+//        Color("B")
+//    }
+    @Attribute var view = MyView()
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"

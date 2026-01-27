@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct Text: UnaryView {
+struct Text: UnaryView, PrimitiveView {
     private let text: () -> String
 
     init(_ text: @autoclosure @escaping () -> String) {

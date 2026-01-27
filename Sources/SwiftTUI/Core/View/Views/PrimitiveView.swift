@@ -7,4 +7,16 @@
 
 import Foundation
 
-protocol PrimitiveView: View {}
+protocol PrimitiveView: View where Body == Never {}
+
+extension PrimitiveView {
+    var body: Never {
+        fatalError("PrimitiveView doesn't have a body")
+    }
+}
+
+extension Never: View {
+    var body: some View {
+        fatalError("Never doesn't have a body")
+    }
+}

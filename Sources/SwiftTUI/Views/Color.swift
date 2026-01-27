@@ -9,7 +9,7 @@ import Foundation
 import AttributeGraph
 import Geometry
 
-struct Color: UnaryView {
+struct Color: UnaryView, PrimitiveView {
     private let name: Character
 
     init(_ name: Character) {

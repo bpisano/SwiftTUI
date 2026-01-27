@@ -10,7 +10,30 @@ import Foundation
 import Geometry
 
 protocol View {
+    associatedtype Body: View
+
     static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs
     static func makeViewList(_ view: Attribute<Self>, inputs: ViewListInputs) -> ViewListOutputs
     static func viewListCount(inputs: ViewListCountInputs) -> Int?
+
+    @ViewBuilder
+    var body: Body { get }
+}
+
+extension View {
+    static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs {
+        let body = view.map(\.body)
+        body.label = "\(Self.self) body"
+        return Body.makeView(body, inputs: inputs)
+    }
+
+    static func makeViewList(_ view: Attribute<Self>, inputs: ViewListInputs) -> ViewListOutputs {
+        let body = view.map(\.body)
+        body.label = "\(Self.self) body"
+        return Body.makeViewList(body, inputs: inputs)
+    }
+
+    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+        Body.viewListCount(inputs: inputs)
+    }
 }
