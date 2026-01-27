@@ -11,13 +11,21 @@ let package = Package(
     products: [
         .library(
             name: "AttributeGraph",
-            targets: ["AttributeGraph", "Terminal", "SwiftTUI"]
+            targets: [
+                "AttributeGraph",
+                "Terminal",
+                "SwiftTUICore"
+            ]
         )
     ],
-    dependencies: [
-        .package(path: "~/Dev/Packages/Geometry")
-    ],
     targets: [
+        .target(
+            name: "AttributeGraph",
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
+        ),
+        .target(name: "Geometry"),
         .target(
             name: "Terminal",
             dependencies: ["Geometry"],
@@ -26,28 +34,25 @@ let package = Package(
             ]
         ),
         .target(
-            name: "SwiftTUI",
+            name: "SwiftTUICore",
             dependencies: [
                 "Geometry",
-                "AttributeGraph",
-                "Terminal",
+                "AttributeGraph"
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)
             ]
         ),
-        .target(
-            name: "AttributeGraph",
-            swiftSettings: [
-                .defaultIsolation(MainActor.self)
-            ]
+        .testTarget(
+            name: "GeometryTests",
+            dependencies: ["Geometry"]
         ),
         .testTarget(
-            name: "DebugTests",
+            name: "SwiftTUICoreTests",
             dependencies: [
                 "Geometry",
                 "AttributeGraph",
-                "SwiftTUI",
+                "SwiftTUICore",
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)

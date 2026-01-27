@@ -5,10 +5,10 @@
 //  This file replicates the playground code from Test.swift for debugging with breakpoints
 //
 
-@testable import AttributeGraph
 import Foundation
 import Geometry
-@testable import SwiftTUI
+@testable import AttributeGraph
+@testable import SwiftTUICore
 import Testing
 import AppKit
 
