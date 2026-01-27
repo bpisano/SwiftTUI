@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-protocol View {
+public protocol View {
     associatedtype Body: View
 
     static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs
@@ -20,7 +20,7 @@ protocol View {
     var body: Body { get }
 }
 
-extension View {
+public extension View {
     static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs {
         let body = view.map(\.body)
         body.label = "\(Self.self) body"

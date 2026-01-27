@@ -7,6 +7,4 @@
 
 import Foundation
 
-struct ViewListCountInputs {
-
-}
+public struct ViewListCountInputs { }

@@ -9,11 +9,10 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct ViewListInputs {
-}
+public struct ViewListInputs { }
 
 extension ViewListInputs: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "ViewListInputs"
     }
 }

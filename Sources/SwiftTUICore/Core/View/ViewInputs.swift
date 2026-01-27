@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct ViewInputs {
+public struct ViewInputs {
     let size: Attribute<Size>
     let position: Attribute<Point>
 
@@ -20,7 +20,7 @@ struct ViewInputs {
         )
     }
 
-    init(
+    public init(
         position: Attribute<Point>,
         size: Attribute<Size>,
     ) {

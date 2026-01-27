@@ -8,7 +8,7 @@
 import AttributeGraph
 import Foundation
 
-struct ViewListOutputs {
+public struct ViewListOutputs {
     let views: Views
     let count: Int? = nil
 
@@ -94,7 +94,7 @@ extension ViewListOutputs {
 }
 
 extension ViewListOutputs: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "ViewListOutputs"
     }
 }

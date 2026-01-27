@@ -8,13 +8,13 @@
 import AttributeGraph
 import Foundation
 
-struct ViewOutputs {
-    let layoutComputer: Attribute<LayoutComputer>
-    let displayList: Attribute<DisplayList>
+public struct ViewOutputs {
+    public let layoutComputer: Attribute<LayoutComputer>
+    public let displayList: Attribute<DisplayList>
 }
 
 extension ViewOutputs: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "ViewOutputs"
     }
 }

@@ -8,12 +8,12 @@
 import Foundation
 
 @resultBuilder
-struct ViewBuilder {
-    static func buildBlock<V: View>(_ component: V) -> some View {
+public struct ViewBuilder {
+    public static func buildBlock<V: View>(_ component: V) -> some View {
         component
     }
 
-    static func buildBlock<each V: View>(_ components: repeat each V) -> some View {
+    public static func buildBlock<each V: View>(_ components: repeat each V) -> some View {
         TupleView(repeat each components)
     }
 }

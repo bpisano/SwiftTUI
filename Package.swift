@@ -11,11 +11,7 @@ let package = Package(
     products: [
         .library(
             name: "AttributeGraph",
-            targets: [
-                "AttributeGraph",
-                "Terminal",
-                "SwiftTUICore"
-            ]
+            targets: ["SwiftTUI"]
         )
     ],
     targets: [
@@ -38,6 +34,16 @@ let package = Package(
             dependencies: [
                 "Geometry",
                 "AttributeGraph"
+            ],
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
+        ),
+        .target(
+            name: "SwiftTUI",
+            dependencies: [
+                "Terminal",
+                "SwiftTUICore",
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)

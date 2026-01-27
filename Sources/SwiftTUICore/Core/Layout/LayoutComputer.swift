@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-struct LayoutComputer {
+public struct LayoutComputer {
     private let sizeThatFits: (_ proposal: ProposedViewSize) -> Size
     private let childGeometries: (Rect) -> [ViewGeometry]
 
@@ -30,7 +30,7 @@ struct LayoutComputer {
 }
 
 extension LayoutComputer: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "LayoutComputer"
     }
 }

@@ -8,6 +8,15 @@
 import Foundation
 import Geometry
 
-protocol DrawCommand {
-    func draw(in rect: Rect)
+public enum DrawCommand: Sendable {
+    case putLine(_ line: String)
+}
+
+extension DrawCommand: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .putLine(let line):
+            "PutLine(\(line))"
+        }
+    }
 }

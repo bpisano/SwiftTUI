@@ -8,8 +8,8 @@
 import Foundation
 import Geometry
 
-struct DisplayList {
-    let items: [Item]
+public struct DisplayList {
+    public let items: [Item]
 
     init(_ items: [Item]) {
         self.items = items
@@ -17,20 +17,20 @@ struct DisplayList {
 }
 
 extension DisplayList {
-    struct Item {
-        enum Content {
+    public struct Item {
+        public enum Content {
             case empty
             case command(DrawCommand)
             case childList(DisplayList)
         }
 
-        let content: Content
-        let frame: Rect
+        public let content: Content
+        public let frame: Rect
     }
 }
 
 extension DisplayList: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         let parts: [String] = items.map { item in
             switch item.content {
             case .empty:

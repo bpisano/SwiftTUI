@@ -16,7 +16,7 @@ extension PrimitiveView {
 }
 
 extension Never: View {
-    var body: some View {
+    public var body: some View {
         fatalError("Never doesn't have a body")
     }
 }
