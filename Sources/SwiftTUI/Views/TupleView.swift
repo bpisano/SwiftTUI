@@ -37,8 +37,8 @@ extension TupleView {
             let childLayoutComputers: [LayoutComputer] =
                 childViewOutputs
                 .map(\.layoutComputer.wrappedValue)
-            let hstackLayoutComputer = vstackLayout.layoutComputer(for: childLayoutComputers)
-            return hstackLayoutComputer
+            let vstackLayoutComputer = vstackLayout.layoutComputer(for: childLayoutComputers)
+            return vstackLayoutComputer
         }
 
         let childGeometries = Attribute {
