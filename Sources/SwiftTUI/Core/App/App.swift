@@ -29,7 +29,6 @@ public struct App<V: View>: Sendable {
         terminal.cursor.move(to: .zero)
         for (index, line) in renderer.buffer.render().enumerated() {
             terminal.cursor.writeBuffered(line)
-//            print(line)
             if index < Int(renderer.buffer.size.height) - 1 {
                 terminal.cursor.writeBuffered("\n")
             }
@@ -38,6 +37,6 @@ public struct App<V: View>: Sendable {
         terminal.cursor.move(to: .zero)
         terminal.cursor.flush()
 
-        while true {}
+        RunLoop.main.run()
     }
 }
