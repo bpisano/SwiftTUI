@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum Axis: Int8, CaseIterable, Hashable, Equatable, Codable, Sendable {
+public enum Axis: Int8, CaseIterable, Hashable, Equatable, Codable, Sendable {
     case horizontal
     case vertical
 }

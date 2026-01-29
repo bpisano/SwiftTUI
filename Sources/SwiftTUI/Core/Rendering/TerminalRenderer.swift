@@ -29,18 +29,18 @@ final class TerminalRenderer {
         )
         let outputs: ViewOutputs = V.makeView($view, inputs: inputs)
 
-        render(displayList: outputs.displayList.wrappedValue)
+        render(displayList: outputs.displayList.wrappedValue, at: .zero)
     }
 
-    private func render(displayList: DisplayList) {
+    private func render(displayList: DisplayList, at origin: Point) {
         for item in displayList.items {
             switch item.content {
             case .empty:
                 continue
             case .command(let drawCommand):
-                renderCommand(drawCommand, at: item.frame.origin)
+                renderCommand(drawCommand, at: origin)
             case .childList(let displayList):
-                render(displayList: displayList)
+                render(displayList: displayList, at: origin + item.frame.origin)
             }
         }
     }

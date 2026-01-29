@@ -14,9 +14,8 @@ import AppKit
 
 struct MyView: View {
     var body: some View {
-        VStack {
-            Text("Hello")
-            Color("B")
+        RootView {
+            Text("a")
         }
     }
 }
@@ -27,17 +26,18 @@ func debugPlaygroundCode() {
     graph.makeCurrent()
 
     @Attribute var screenPosition = Point.zero
-    @Attribute var screenSize = Size(width: 5, height: 5)
+    @Attribute var screenSize = Size(width: 10, height: 10)
     let inputs = ViewInputs(
         position: $screenPosition,
         size: $screenSize
     )
 
-//    @Attribute var view = VStack {
-//        Text("A")
-//        Color("B")
-//    }
-    @Attribute var view = MyView()
+    @Attribute var view = RootView {
+        VStack {
+            Text("A")
+        }
+    }
+//    @Attribute var view = MyView()
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"

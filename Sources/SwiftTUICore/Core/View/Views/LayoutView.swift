@@ -18,7 +18,7 @@ protocol LayoutView: View {
 }
 
 extension LayoutView {
-    static func makeView(
+    public static func makeView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {

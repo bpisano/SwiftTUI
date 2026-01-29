@@ -11,7 +11,7 @@ import AttributeGraph
 protocol UnaryView: View {}
 
 extension UnaryView {
-    static func makeViewList(
+    public static func makeViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
@@ -20,7 +20,7 @@ extension UnaryView {
         }
     }
 
-    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+    public static func viewListCount(inputs: ViewListCountInputs) -> Int? {
         1
     }
 }

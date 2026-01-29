@@ -9,16 +9,16 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct Text: UnaryView, PrimitiveView {
+public struct Text: UnaryView, PrimitiveView {
     private let text: () -> String
 
-    init(_ text: @autoclosure @escaping () -> String) {
+    public init(_ text: @autoclosure @escaping () -> String) {
         self.text = text
     }
 }
 
 extension Text {
-    static func makeView(_ view: Attribute<Text>, inputs: ViewInputs) -> ViewOutputs {
+    public static func makeView(_ view: Attribute<Text>, inputs: ViewInputs) -> ViewOutputs {
         let resolvedText = Attribute {
             view.wrappedValue.text()
         }
@@ -124,7 +124,7 @@ extension Text {
 }
 
 extension Text: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "Text"
     }
 }

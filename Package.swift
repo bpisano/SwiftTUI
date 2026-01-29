@@ -49,6 +49,7 @@ let package = Package(
                 .defaultIsolation(MainActor.self)
             ]
         ),
+        .executableTarget(name: "AppDemo", dependencies: ["SwiftTUI"]),
         .testTarget(
             name: "GeometryTests",
             dependencies: ["Geometry"]

@@ -9,16 +9,16 @@ import Foundation
 import AttributeGraph
 import Geometry
 
-struct Color: UnaryView, PrimitiveView {
+public struct Color: UnaryView, PrimitiveView {
     private let name: Character
 
-    init(_ name: Character) {
+    public init(_ name: Character) {
         self.name = name
     }
 }
 
 extension Color {
-    static func makeView(_ view: Attribute<Color>, inputs: ViewInputs) -> ViewOutputs {
+    public static func makeView(_ view: Attribute<Color>, inputs: ViewInputs) -> ViewOutputs {
         let layoutComputer = Attribute {
             LayoutComputer { proposal in
                 return proposal.replacingUnspecifiedDimensions()

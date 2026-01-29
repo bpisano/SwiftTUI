@@ -9,11 +9,11 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct VStack<Content: View>: UnaryView, PrimitiveView, LayoutView {
+public struct VStack<Content: View>: UnaryView, PrimitiveView, LayoutView {
     let layout: VStackLayout
     let content: Content
 
-    init(
+    public init(
         alignment: HorizontalAlignment = .center,
         @ViewBuilder content: () -> Content
     ) {
@@ -23,7 +23,7 @@ struct VStack<Content: View>: UnaryView, PrimitiveView, LayoutView {
 }
 
 extension VStack: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "VStack"
     }
 }

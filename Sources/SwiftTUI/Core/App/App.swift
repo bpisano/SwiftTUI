@@ -20,16 +20,24 @@ public struct App<V: View>: Sendable {
     }
 
     public func run() {
-        terminal.cursor.clearScreen()
-        renderer.render(view)
+        renderer.render(
+            RootView {
+                view
+            }
+        )
 
-        var y: Double = 0
-        for line in renderer.buffer.render() {
-            terminal.cursor.move(to: .init(x: 0, y: y))
+        terminal.cursor.move(to: .zero)
+        for (index, line) in renderer.buffer.render().enumerated() {
             terminal.cursor.writeBuffered(line)
-            y += 1
+//            print(line)
+            if index < Int(renderer.buffer.size.height) - 1 {
+                terminal.cursor.writeBuffered("\n")
+            }
         }
 
+        terminal.cursor.move(to: .zero)
         terminal.cursor.flush()
+
+        while true {}
     }
 }

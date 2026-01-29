@@ -8,13 +8,13 @@
 import Foundation
 import Geometry
 
-struct ViewDimensions {
+public struct ViewDimensions {
     static let zero: ViewDimensions = .init(origin: .zero, size: .zero)
 
-    let origin: Point
-    let size: Size
+    public let origin: Point
+    public let size: Size
 
-    var frame: Rect {
+    public var frame: Rect {
         Rect(origin: origin, size: size)
     }
 
@@ -40,7 +40,7 @@ struct ViewDimensions {
 }
 
 extension ViewDimensions: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "(\(origin.x), \(origin.y), \(size.width), \(size.height))"
     }
 }

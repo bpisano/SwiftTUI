@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol AlignmentID {
+public protocol AlignmentID {
     static func defaultValue(in context: ViewDimensions) -> Double
 }

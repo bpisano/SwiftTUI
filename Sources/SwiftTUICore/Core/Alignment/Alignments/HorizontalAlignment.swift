@@ -7,24 +7,24 @@
 
 import Foundation
 
-struct HorizontalAlignment: @MainActor AlignmentGuide {
-    let key: AlignmentKey
+public struct HorizontalAlignment: @MainActor AlignmentGuide {
+    public let key: AlignmentKey
 
-    init(_ id: AlignmentID.Type) {
+    public init(_ id: AlignmentID.Type) {
         self.key = AlignmentKey(id: id, axis: .horizontal)
     }
 }
 
 extension HorizontalAlignment {
-    static func == (lhs: HorizontalAlignment, rhs: HorizontalAlignment) -> Bool {
+    public static func == (lhs: HorizontalAlignment, rhs: HorizontalAlignment) -> Bool {
         lhs.key == rhs.key
     }
 }
 
 extension HorizontalAlignment {
-    static let leading: HorizontalAlignment = .init(LeadingAlignment.self)
-    static let center: HorizontalAlignment = .init(CenterAlignment.self)
-    static let trailing: HorizontalAlignment = .init(TrailingAlignment.self)
+    public static let leading: HorizontalAlignment = .init(LeadingAlignment.self)
+    public static let center: HorizontalAlignment = .init(CenterAlignment.self)
+    public static let trailing: HorizontalAlignment = .init(TrailingAlignment.self)
 
     private struct LeadingAlignment: AlignmentID {
         static func defaultValue(in context: ViewDimensions) -> Double {
@@ -46,7 +46,7 @@ extension HorizontalAlignment {
 }
 
 extension HorizontalAlignment: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         switch self {
         case .leading:
             return ".leading"

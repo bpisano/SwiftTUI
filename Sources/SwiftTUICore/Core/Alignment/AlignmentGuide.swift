@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol AlignmentGuide: Equatable {
+public protocol AlignmentGuide: Equatable {
     var key: AlignmentKey { get }
 }
