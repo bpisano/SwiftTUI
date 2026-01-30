@@ -6,13 +6,14 @@
 //
 
 import Foundation
-import Terminal
 import SwiftTUICore
+import Terminal
 
 public struct App<V: View>: Sendable {
     private let terminal: Terminal = .current
     private let renderer: TerminalRenderer
     private let view: V
+    private var keyboardTask: Task<Void, Never>?
 
     public init(@ViewBuilder _ content: () -> V) {
         self.view = content()
@@ -26,6 +27,7 @@ public struct App<V: View>: Sendable {
             }
         )
 
+        terminal.cursor.clearScreen()
         terminal.cursor.move(to: .zero)
         for (index, line) in renderer.buffer.render().enumerated() {
             terminal.cursor.writeBuffered(line)
@@ -36,6 +38,21 @@ public struct App<V: View>: Sendable {
 
         terminal.cursor.move(to: .zero)
         terminal.cursor.flush()
+
+        terminal.enableRawMode()
+
+        let task = Task.detached {
+            let stream = await Keyboard.current.events()
+            for await event in stream {
+                print("OK", event)
+            }
+        }
+
+        terminal.onExit = {
+            task.cancel()
+            terminal.disableRawMode()
+            exit(0)
+        }
 
         RunLoop.main.run()
     }

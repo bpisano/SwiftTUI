@@ -21,11 +21,14 @@ final class TerminalRenderer {
     func render<V: View>(_ view: V) {
         @Attribute var screenOrigin: Point = .zero
         @Attribute var screenSize: Size = self.buffer.size
+        @Attribute var viewPhase: ViewPhase = .inactive
         @Attribute var view: V = view
 
         let inputs: ViewInputs = .init(
             position: $screenOrigin,
-            size: $screenSize
+            size: $screenSize,
+            phase: $viewPhase
+
         )
         let outputs: ViewOutputs = V.makeView($view, inputs: inputs)
 

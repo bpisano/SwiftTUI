@@ -12,6 +12,7 @@ import Geometry
 public struct ViewInputs {
     let size: Attribute<Size>
     let position: Attribute<Point>
+    let phase: Attribute<ViewPhase>
 
     var frame: Rect {
         .init(
@@ -23,8 +24,10 @@ public struct ViewInputs {
     public init(
         position: Attribute<Point>,
         size: Attribute<Size>,
+        phase: Attribute<ViewPhase>
     ) {
         self.size = size
         self.position = position
+        self.phase = phase
     }
 }

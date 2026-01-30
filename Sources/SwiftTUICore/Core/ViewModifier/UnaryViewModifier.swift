@@ -17,14 +17,13 @@ extension UnaryViewModifier {
         body: @escaping (ViewListInputs) -> ViewListOutputs
     ) -> ViewListOutputs {
         .unaryViewList(viewType: Self.self, inputs: inputs) { viewInputs in
-            Self.makeView(modifier, inputs: viewInputs) { modifiedInputs in
+            makeView(modifier, inputs: viewInputs) { modifiedInputs in
                 let contentListOutputs = body(.init())
                 let contentList = contentListOutputs.makeViewList()
 
                 var contentOutput: ViewOutputs!
                 var index = 0
-                contentList.makeViews(from: &index, inputs: modifiedInputs) {
-                    index, inputs, makeView in
+                contentList.makeViews(from: &index, inputs: modifiedInputs) { index, inputs, makeView in
                     let viewOutputs: ViewOutputs = makeView(inputs)
                     contentOutput = viewOutputs
                     return (viewOutputs, true)

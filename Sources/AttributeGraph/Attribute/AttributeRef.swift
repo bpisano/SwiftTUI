@@ -8,9 +8,9 @@
 import Foundation
 
 final class AttributeRef {
-    let ref: AnyAttribute
+    let attribute: AnyAttribute
 
     init(_ ref: AnyAttribute) {
-        self.ref = ref
+        self.attribute = ref
     }
 }

@@ -11,24 +11,29 @@ import Foundation
 public struct Attribute<T>: @MainActor AnyAttribute {
     public var wrappedValue: T {
         get {
-            Graph.current.registerDependency(AttributeRef(self))
+            Graph.current.registerDependency(storage.ref)
 
-            if let cachedValue = metadata.value, metadata.state != .potentiallyDirty {
+            if let cachedValue = storage.value, storage.state != .potentiallyDirty {
                 return cachedValue
             }
 
             evaluateIfNeeded()
 
-            precondition(metadata.value != nil, "Attribute value should have been evaluated")
+            precondition(storage.value != nil, "Attribute value should have been evaluated")
 
-            return metadata.value!
+            return storage.value!
         }
         nonmutating set {
-            Graph.current.invalidate(ref)
-            metadata.value = newValue
+            Graph.current.invalidate(storage.ref)
+            storage.value = newValue
             for edge in outgoingEdges {
                 edge.state = .dirty
-                edge.to.ref.makePotentiallyDirty()
+
+                if edge.toRef.attribute.flags.contains(.transactional) {
+                    edge.toRef.attribute.evaluateIfNeeded()
+                } else {
+                    edge.toRef.attribute.makePotentiallyDirty()
+                }
             }
         }
     }
@@ -44,54 +49,62 @@ public struct Attribute<T>: @MainActor AnyAttribute {
 
     public var id: UUID {
         get {
-            metadata.id
+            storage.id
         }
         nonmutating set {
-            metadata.id = newValue
+            storage.id = newValue
+        }
+    }
+
+    public var flags: Set<AttributeFlag> {
+        get {
+            storage.flags
+        }
+        nonmutating set {
+            storage.flags = newValue
         }
     }
 
     public var label: String {
         get {
-            metadata.label
+            storage.label
         }
         nonmutating set {
-            metadata.label = newValue
+            storage.label = newValue
         }
     }
 
     var incomingEdges: [Edge] {
         get {
-            metadata.incomingEdges
+            storage.incomingEdges
         }
         nonmutating set {
-            metadata.incomingEdges = newValue
+            storage.incomingEdges = newValue
         }
     }
 
     var outgoingEdges: [Edge] {
         get {
-            metadata.outgoingEdges
+            storage.outgoingEdges
         }
         nonmutating set {
-            metadata.outgoingEdges = newValue
+            storage.outgoingEdges = newValue
         }
     }
 
     private let rule: AnyRule<T>
-    private let metadata: Metadata = .init()
-    private var ref: AttributeRef!
+    private let storage: Storage = .init()
 
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
-        self.ref = AttributeRef(self)
-        Graph.current.register(attribute: ref)
+        self.storage.ref = AttributeRef(self)
+        Graph.current.register(attribute: storage.ref)
     }
 
     public init<R: Rule>(rule: R) where R.Value == T {
         self.rule = AnyRule(rule)
-        self.ref = AttributeRef(self)
-        Graph.current.register(attribute: ref)
+        self.storage.ref = AttributeRef(self)
+        Graph.current.register(attribute: storage.ref)
     }
 
     func addIncoming(edge: Edge) {
@@ -105,24 +118,25 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     func evaluateIfNeeded() {
         // Ensure all dependencies are up to date
         for edge in incomingEdges {
-            edge.from.ref.evaluateIfNeeded()
+            edge.fromRef.attribute.evaluateIfNeeded()
         }
 
         // Check if any incoming edge is still pending
         // Or if is initial evaluation
-        let isInitialEvaluation: Bool = metadata.value == nil
-        guard metadata.state == .potentiallyDirty || isInitialEvaluation else { return }
+        let isInitialEvaluation: Bool = storage.value == nil
+        let isTransactional: Bool = flags.contains(.transactional)
+        guard storage.state == .potentiallyDirty || isInitialEvaluation || isTransactional else { return }
 
-        metadata.state = .clean
+        storage.state = .clean
 
         // Evaluate the rule within dependency capture context
-        Graph.current.reevaluate(ref)
+        Graph.current.reevaluate(storage.ref)
         if isInitialEvaluation {
-            Graph.current.withDependencyCapture(of: ref) {
-                metadata.value = rule.evaluate()
+            Graph.current.withDependencyCapture(of: storage.ref) {
+                storage.value = rule.evaluate()
             }
         } else {
-            metadata.value = rule.evaluate()
+            storage.value = rule.evaluate()
         }
 
         if !isInitialEvaluation {
@@ -139,16 +153,23 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     }
 
     func makePotentiallyDirty() {
-        metadata.state = .potentiallyDirty
+        if flags.contains(.transactional) {
+            evaluateIfNeeded()
+        } else {
+            storage.state = .potentiallyDirty
+        }
+
         for edge in outgoingEdges {
-            edge.to.ref.makePotentiallyDirty()
+            edge.toRef.attribute.makePotentiallyDirty()
         }
     }
 }
 
 extension Attribute {
-    final class Metadata {
+    final class Storage {
         var id: UUID = .init()
+        var ref: AttributeRef!
+        var flags: Set<AttributeFlag> = []
         var label: String = ""
         var value: T?
         var incomingEdges: [Edge] = []
@@ -164,23 +185,26 @@ extension Attribute {
 
 extension Attribute {
     public var description: String {
-        let formattedId: String = metadata.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let formattedId: String = storage.id.uuidString.replacingOccurrences(
+            of: "-",
+            with: ""
+        )
         var properties: [String] = []
 
         // Build HTML-like label for better formatting
-        if !metadata.label.isEmpty || metadata.value != nil {
+        if !storage.label.isEmpty || storage.value != nil {
             var labelHTML = "<"
             labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\">"
 
-            if !metadata.label.isEmpty {
-                let escapedLabel = metadata.label
+            if !storage.label.isEmpty {
+                let escapedLabel = storage.label
                     .replacingOccurrences(of: "&", with: "&amp;")
                     .replacingOccurrences(of: "<", with: "&lt;")
                     .replacingOccurrences(of: ">", with: "&gt;")
                 labelHTML += "<TR><TD><B>\(escapedLabel)</B></TD></TR>"
             }
 
-            if let value = metadata.value {
+            if let value = storage.value {
                 labelHTML += "<TR><TD><FONT POINT-SIZE=\"10\">\(value)</FONT></TD></TR>"
             }
 
@@ -189,7 +213,7 @@ extension Attribute {
             properties.append("label=\(labelHTML)")
         }
 
-        if metadata.state == .potentiallyDirty {
+        if storage.state == .potentiallyDirty {
             properties.append("style=dashed")
         }
         let formattedProperties: String = properties.joined(separator: ", ")

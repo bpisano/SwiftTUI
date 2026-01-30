@@ -13,31 +13,23 @@ final class Edge {
         case dirty
     }
 
-    let from: AttributeRef
-    let to: AttributeRef
+    let fromRef: AttributeRef
+    let toRef: AttributeRef
     var state: State = .clean
 
     init(
         from: AttributeRef,
         to: AttributeRef
     ) {
-        self.from = from
-        self.to = to
-    }
-
-    init(
-        from: AnyAttribute,
-        to: AnyAttribute
-    ) {
-        self.from = AttributeRef(from)
-        self.to = AttributeRef(to)
+        self.fromRef = from
+        self.toRef = to
     }
 }
 
 extension Edge: CustomStringConvertible {
     var description: String {
-        let fromId: String = from.ref.id.uuidString.replacingOccurrences(of: "-", with: "")
-        let toId: String = to.ref.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let fromId: String = fromRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let toId: String = toRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
         return "\"\(fromId)\" -> \"\(toId)\"\(state == .dirty ? " [style=dashed]" : "")"
     }
 }

@@ -1,12 +1,42 @@
+import Foundation
+
+#if os(macOS)
+    import Darwin
+#elseif os(Linux)
+    import Glibc
+#endif
+
 public final class Terminal {
     public static let current: Terminal = .init()
 
     public let screen: Screen = .init()
     public let cursor: Cursor = .init()
+    public var onExit: (() -> Void)?
 
-    private init() {}
+    private var termios: termios = .init()
+    private var exitSignalHandler: SignalHandler?
+
+    private init() {
+        exitSignalHandler = .init(SIGINT) { @MainActor [weak self] in
+            guard let self else { return }
+            self.onExit?()
+        }
+    }
 
     public static func make(command: some Command) -> String {
-        return command.makeCommand()
+        command.makeCommand()
+    }
+
+    public func enableRawMode() {
+        tcgetattr(STDIN_FILENO, &termios)
+        var raw: termios = termios
+        raw.c_lflag &= ~(UInt(ECHO | ICANON | IEXTEN))
+        raw.c_iflag &= ~(UInt(IXON | ICRNL))
+        raw.c_oflag &= ~(UInt(OPOST))
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
+    }
+
+    public func disableRawMode() {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &termios)
     }
 }

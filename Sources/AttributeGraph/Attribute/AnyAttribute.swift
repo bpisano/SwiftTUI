@@ -9,6 +9,7 @@ import Foundation
 
 protocol AnyAttribute: CustomStringConvertible {
     var id: UUID { get }
+    var flags: Set<AttributeFlag> { get }
     var label: String { get }
     var incomingEdges: [Edge] { get }
     var outgoingEdges: [Edge] { get }

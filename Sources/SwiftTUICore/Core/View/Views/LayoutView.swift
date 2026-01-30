@@ -94,7 +94,8 @@ extension LayoutView {
 
             let childInputs = ViewInputs(
                 position: childGeometry.map(\.dimensions.origin),
-                size: childGeometry.map(\.dimensions.size)
+                size: childGeometry.map(\.dimensions.size),
+                phase: parentInputs.phase
             )
 
             let childOutputs = makeView(childInputs)

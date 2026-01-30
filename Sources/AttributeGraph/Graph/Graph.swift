@@ -11,6 +11,7 @@ public final class Graph {
     static private(set) var current: Graph = .init()
 
     private var attributes: [AttributeRef] = []
+    private var transactionalAttributes: [AttributeRef] = []
     private var currentComputation: AttributeRef?
 
     private var tracksTransaction: Bool = false
@@ -40,8 +41,8 @@ public final class Graph {
         guard let currentComputation else { return }
 
         let edge: Edge = .init(from: attribute, to: currentComputation)
-        attribute.ref.addOutgoing(edge: edge)
-        currentComputation.ref.addIncoming(edge: edge)
+        attribute.attribute.addOutgoing(edge: edge)
+        currentComputation.attribute.addIncoming(edge: edge)
     }
 
     func withDependencyCapture(
@@ -69,12 +70,12 @@ extension Graph: CustomStringConvertible {
     public var description: String {
         let attributesDescription =
             attributes
-            .map(\.ref.description)
+            .map(\.attribute.description)
             .joined(separator: "\n    ")
         let edgesDescription =
             attributes
             .flatMap { attribute in
-                attribute.ref.outgoingEdges.map(\.description)
+                attribute.attribute.outgoingEdges.map(\.description)
             }
             .joined(separator: "\n    ")
 
@@ -98,11 +99,11 @@ extension Graph.Transaction: CustomStringConvertible {
     public var description: String {
         let invalidationsDescription =
             invalidations
-            .map(\.ref.label)
+            .map(\.attribute.label)
             .joined(separator: "\n    ")
         let reevaluationsDescription =
             reevaluations
-            .map(\.ref.label)
+            .map(\.attribute.label)
             .joined(separator: "\n    ")
 
         return """

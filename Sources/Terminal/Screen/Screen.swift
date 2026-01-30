@@ -34,7 +34,7 @@ public final class Screen {
                 return
             }
 
-            let signalHandler = SignalHandler { @MainActor [weak self] in
+            let signalHandler: SignalHandler = .init(SIGWINCH) { @MainActor [weak self] in
                 guard let self else { return }
                 if let size = self.getScreenSize() {
                     self.cachedSize = size

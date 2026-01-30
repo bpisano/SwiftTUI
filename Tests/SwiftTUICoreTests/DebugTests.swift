@@ -27,26 +27,31 @@ func debugPlaygroundCode() {
 
     @Attribute var screenPosition = Point.zero
     @Attribute var screenSize = Size(width: 10, height: 10)
+    @Attribute var viewPhase = ViewPhase.inactive
     let inputs = ViewInputs(
         position: $screenPosition,
-        size: $screenSize
+        size: $screenSize,
+        phase: $viewPhase
     )
 
-    @Attribute var view = RootView {
-        VStack {
-            Text("A")
+    @Attribute var view = Text("A")
+        .onAppear {
+            print("Appeared")
         }
-    }
 //    @Attribute var view = MyView()
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"
     $screenSize.label = "Screen Size"
+    $viewPhase.label = "View Phase"
     $view.label = "\(type(of: view))"
 
     let _ = outputs.displayList.wrappedValue
 
-    print(graph)  // Initial state
+    viewPhase = .active
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
 
     copyToClipboard(graph.description)
 }

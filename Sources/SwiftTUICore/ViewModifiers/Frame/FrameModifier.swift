@@ -57,7 +57,8 @@ extension FrameModifier {
 
         let modifiedInputs: ViewInputs = .init(
             position: modifiedPosition,
-            size: modifiedSize
+            size: modifiedSize,
+            phase: inputs.phase
         )
         let childOutputs: ViewOutputs = body(modifiedInputs)
 
