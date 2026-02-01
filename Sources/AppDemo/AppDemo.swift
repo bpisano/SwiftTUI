@@ -9,15 +9,6 @@ import Foundation
 import SwiftTUI
 import SwiftTUICore
 
-struct MyView: View {
-    var body: some View {
-        VStack {
-            Text("Hello world")
-            Text("This is a SwiftTUI demo")
-        }
-    }
-}
-
 @main
 struct AppDemo {
     static func main() {
@@ -25,5 +16,14 @@ struct AppDemo {
             MyView()
         }
         app.run()
+    }
+}
+
+struct MyView: View {
+    var body: some View {
+        VStack {
+            Text("Hello world")
+            Text("This is a SwiftTUI demo")
+        }
     }
 }

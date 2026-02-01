@@ -42,9 +42,8 @@ public struct App<V: View>: Sendable {
         terminal.enableRawMode()
 
         let task = Task.detached {
-            let stream = await Keyboard.current.events()
-            for await event in stream {
-                print("OK", event)
+            for await event in await Keyboard.current.events() {
+                print(event)
             }
         }
 
