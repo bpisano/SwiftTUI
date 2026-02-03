@@ -31,6 +31,10 @@ extension DisplayList {
 
 extension DisplayList: CustomStringConvertible {
     public var description: String {
+        if items.isEmpty {
+            return "Empty"
+        }
+
         let parts: [String] = items.map { item in
             switch item.content {
             case .empty:
@@ -42,6 +46,6 @@ extension DisplayList: CustomStringConvertible {
             }
         }
 
-        return parts.joined(separator: "<br />")
+        return parts.joined(separator: "\n")
     }
 }

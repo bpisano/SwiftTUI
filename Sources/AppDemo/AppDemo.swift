@@ -8,6 +8,7 @@
 import Foundation
 import SwiftTUI
 import SwiftTUICore
+import Terminal
 
 @main
 struct AppDemo {
@@ -20,13 +21,18 @@ struct AppDemo {
 }
 
 struct MyView: View {
+    @State private var count: Int = 0
+
     var body: some View {
-        VStack {
-            Text("Hello world")
-            Text("This is a SwiftTUI demo")
-        }
-        .onAppear {
-            print("OK")
-        }
+        Text("\(count)")
+            .onAppear {
+                Task.detached {
+                    for await _ in await Keyboard.current.events() {
+                        Task { @MainActor in
+                            count += 1
+                        }
+                    }
+                }
+            }
     }
 }

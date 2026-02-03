@@ -13,17 +13,19 @@ import Testing
 import AppKit
 
 struct MyView: View {
+    @State private var count: Int = 0
+
     var body: some View {
-        RootView {
-            Text("a")
-        }
+        Text("\(count)")
     }
 }
 
 struct MyViewModifier: ViewModifier {
+    @State private var count: Int = 2
+
     func body(content: Content) -> some View {
         content
-//            .frame(width: 2)
+            .frame(width: Double(count))
     }
 }
 
@@ -41,9 +43,11 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-    @Attribute var view = Text("Hello")
-        .modifier(MyViewModifier())
-//    @Attribute var view = MyView()
+//    @Attribute var view = Text("Hello")
+//        .modifier(MyViewModifier())
+    @Attribute var view = RootView {
+        MyView()
+    }
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"

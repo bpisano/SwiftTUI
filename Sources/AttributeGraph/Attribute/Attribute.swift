@@ -47,6 +47,13 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
+    public var unsafeValue: T {
+        if let value = storage.value {
+            return value
+        }
+        return rule.evaluate()
+    }
+
     public var id: UUID {
         get {
             storage.id
@@ -185,10 +192,7 @@ extension Attribute {
 
 extension Attribute {
     public var description: String {
-        let formattedId: String = storage.id.uuidString.replacingOccurrences(
-            of: "-",
-            with: ""
-        )
+        let formattedId: String = storage.id.uuidString.replacing("-", with: "")
         var properties: [String] = []
 
         // Build HTML-like label for better formatting
@@ -197,15 +201,13 @@ extension Attribute {
             labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\">"
 
             if !storage.label.isEmpty {
-                let escapedLabel = storage.label
-                    .replacingOccurrences(of: "&", with: "&amp;")
-                    .replacingOccurrences(of: "<", with: "&lt;")
-                    .replacingOccurrences(of: ">", with: "&gt;")
+                let escapedLabel = storage.label.htmlEscaped
                 labelHTML += "<TR><TD><B>\(escapedLabel)</B></TD></TR>"
             }
 
             if let value = storage.value {
-                labelHTML += "<TR><TD><FONT POINT-SIZE=\"10\">\(value)</FONT></TD></TR>"
+                let stringValue: String = "\(value)".htmlEscaped
+                labelHTML += "<TR><TD><FONT POINT-SIZE=\"10\">\(stringValue)</FONT></TD></TR>"
             }
 
             labelHTML += "</TABLE>"
@@ -218,5 +220,15 @@ extension Attribute {
         }
         let formattedProperties: String = properties.joined(separator: ", ")
         return "\"\(formattedId)\" [\(formattedProperties)]"
+    }
+}
+
+private extension String {
+    var htmlEscaped: String {
+        self
+            .replacing("&", with: "&amp;")
+            .replacing("<", with: "&lt;")
+            .replacing(">", with: "&gt;")
+            .replacing("\n", with: "<br />")
     }
 }

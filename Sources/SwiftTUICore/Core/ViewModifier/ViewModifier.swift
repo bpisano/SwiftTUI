@@ -44,7 +44,8 @@ extension ViewModifier {
         inputs.append(.view(body), to: BodyInput<Content>.self)
 
         let modifierBody = Attribute {
-            modifier.wrappedValue.body(content: .init())
+            modifier.updateDynamicProperties()
+            return modifier.wrappedValue.body(content: .init())
         }
         modifierBody.label = "\(Self.self) body"
 

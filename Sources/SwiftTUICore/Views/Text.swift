@@ -10,9 +10,9 @@ import Foundation
 import Geometry
 
 public struct Text: UnaryView, PrimitiveView {
-    private let text: () -> String
+    private let text: String
 
-    public init(_ text: @autoclosure @escaping () -> String) {
+    public init(_ text: String) {
         self.text = text
     }
 }
@@ -20,8 +20,9 @@ public struct Text: UnaryView, PrimitiveView {
 extension Text {
     public static func makeView(_ view: Attribute<Text>, inputs: ViewInputs) -> ViewOutputs {
         let resolvedText = Attribute {
-            view.wrappedValue.text()
+            view.wrappedValue.text
         }
+        resolvedText.label = "Resolved Text"
 
         let layoutComputer = Attribute {
             let resolvedText = resolvedText.wrappedValue
@@ -58,6 +59,7 @@ extension Text {
                 return [ViewGeometry(dimensions: dimensions)]
             }
         }
+        layoutComputer.label = "Text Layout Computer"
 
         let textGeometry = Attribute {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
@@ -89,9 +91,6 @@ extension Text {
             return DisplayList(items)
         }
         displayList.label = "Text Display List"
-
-        resolvedText.label = "Resolved Text"
-        layoutComputer.label = "Text Layout Computer"
 
         return ViewOutputs(
             layoutComputer: layoutComputer,

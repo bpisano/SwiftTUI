@@ -16,7 +16,7 @@ extension UnaryView {
         inputs: ViewListInputs
     ) -> ViewListOutputs {
         .unaryViewList(inputs: inputs) { viewInputs in
-            Self.makeView(view, inputs: viewInputs)
+            return Self.makeView(view, inputs: viewInputs)
         }
     }
 
