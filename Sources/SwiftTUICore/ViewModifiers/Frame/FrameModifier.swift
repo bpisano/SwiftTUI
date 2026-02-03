@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct FrameModifier: UnaryViewModifier {
+struct FrameModifier: UnaryViewModifier, PrimitiveViewModifier {
     private let width: Double?
     private let height: Double?
     private let alignment: Alignment
@@ -58,7 +58,8 @@ extension FrameModifier {
         let modifiedInputs: ViewInputs = .init(
             position: modifiedPosition,
             size: modifiedSize,
-            phase: inputs.phase
+            phase: inputs.phase,
+            storage: inputs.storage
         )
         let childOutputs: ViewOutputs = body(modifiedInputs)
 

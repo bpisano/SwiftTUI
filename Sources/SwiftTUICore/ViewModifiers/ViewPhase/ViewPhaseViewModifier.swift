@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-struct ViewPhaseViewModifier: ViewModifier, UnaryViewModifier {
+struct ViewPhaseViewModifier: ViewModifier, UnaryViewModifier, PrimitiveViewModifier {
     let onAppear: (() -> Void)?
     let onDisappear: (() -> Void)?
 }

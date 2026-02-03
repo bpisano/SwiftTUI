@@ -12,11 +12,7 @@ public struct UnsafeOffsetRule<T, U>: Rule {
     let offset: Int
     
     public func evaluate() -> U {
-        // Get the parent's value
-        let parentValue = parent.wrappedValue
-        
-        // Use withUnsafePointer to access the memory at the specified offset
-        return withUnsafePointer(to: parentValue) { ptr in
+        withUnsafePointer(to: parent.wrappedValue) { ptr in
             let rawPtr = UnsafeRawPointer(ptr)
             let offsetPtr = rawPtr.advanced(by: offset)
             let typedPtr = offsetPtr.assumingMemoryBound(to: U.self)

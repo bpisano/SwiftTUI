@@ -20,6 +20,13 @@ struct MyView: View {
     }
 }
 
+struct MyViewModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+//            .frame(width: 2)
+    }
+}
+
 @Test
 func debugPlaygroundCode() {
     let graph = Graph()
@@ -34,10 +41,8 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-    @Attribute var view = Text("A")
-        .onAppear {
-            print("Appeared")
-        }
+    @Attribute var view = Text("Hello")
+        .modifier(MyViewModifier())
 //    @Attribute var view = MyView()
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
@@ -47,13 +52,14 @@ func debugPlaygroundCode() {
     $view.label = "\(type(of: view))"
 
     let _ = outputs.displayList.wrappedValue
-
-    viewPhase = .active
-
-    let _ = outputs.displayList.wrappedValue
-    CallbackQueue.shared.executeAll()
-
     copyToClipboard(graph.description)
+
+//    viewPhase = .active
+//
+//    let _ = outputs.displayList.wrappedValue
+//    CallbackQueue.shared.executeAll()
+//
+//    copyToClipboard(graph.description)
 }
 
 private func copyToClipboard(_ string: String) {

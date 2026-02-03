@@ -16,7 +16,7 @@ extension UnaryViewModifier {
         inputs: ViewListInputs,
         body: @escaping (ViewListInputs) -> ViewListOutputs
     ) -> ViewListOutputs {
-        .unaryViewList(viewType: Self.self, inputs: inputs) { viewInputs in
+        .unaryViewList(inputs: inputs) { viewInputs in
             makeView(modifier, inputs: viewInputs) { modifiedInputs in
                 let contentListOutputs = body(.init())
                 let contentList = contentListOutputs.makeViewList()

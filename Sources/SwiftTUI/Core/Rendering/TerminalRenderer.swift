@@ -33,6 +33,10 @@ final class TerminalRenderer {
         let outputs: ViewOutputs = V.makeView($view, inputs: inputs)
 
         render(displayList: outputs.displayList.wrappedValue, at: .zero)
+        viewPhase = .active
+        render(displayList: outputs.displayList.wrappedValue, at: .zero)
+
+        CallbackQueue.shared.executeAll()
     }
 
     private func render(displayList: DisplayList, at origin: Point) {

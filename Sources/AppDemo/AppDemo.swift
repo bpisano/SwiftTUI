@@ -25,5 +25,8 @@ struct MyView: View {
             Text("Hello world")
             Text("This is a SwiftTUI demo")
         }
+        .onAppear {
+            print("OK")
+        }
     }
 }

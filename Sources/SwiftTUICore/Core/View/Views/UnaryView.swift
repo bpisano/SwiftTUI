@@ -15,7 +15,7 @@ extension UnaryView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        .unaryViewList(viewType: Self.self, inputs: inputs) { viewInputs in
+        .unaryViewList(inputs: inputs) { viewInputs in
             Self.makeView(view, inputs: viewInputs)
         }
     }

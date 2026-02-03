@@ -6,6 +6,7 @@
 //
 
 import AttributeGraph
+import Geometry
 import Foundation
 
 public struct ViewListOutputs {
@@ -27,6 +28,10 @@ public struct ViewListOutputs {
 }
 
 extension ViewListOutputs {
+    static func empty() -> ViewListOutputs {
+        .staticList(EmptyElement())
+    }
+
     static func staticList(_ elements: any ViewListElements) -> ViewListOutputs {
         ViewListOutputs(
             views: .staticList(elements)
@@ -43,8 +48,7 @@ extension ViewListOutputs {
         .staticList(SingleElement(view))
     }
 
-    static func unaryViewList<T>(
-        viewType: T.Type,
+    static func unaryViewList(
         inputs: ViewListInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewListOutputs {
@@ -85,6 +89,7 @@ extension ViewListOutputs {
         }
     }
 }
+
 
 extension ViewListOutputs {
     enum Views {
