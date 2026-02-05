@@ -5,54 +5,53 @@
 //  Created by Benjamin Pisano on 27/01/2026.
 //
 
+import AttributeGraph
 import Foundation
 import SwiftTUICore
 import Terminal
 
 public struct App<V: View>: Sendable {
     private let terminal: Terminal = .current
-    private let renderer: TerminalRenderer
+    private let renderer: TerminalRenderer<RootView<V>>
     private let view: V
-    private var keyboardTask: Task<Void, Never>?
+    private let frameRate: Double
 
-    public init(@ViewBuilder _ content: () -> V) {
+    public init(
+        frameRate: Double = 1 / 60,
+        @ViewBuilder _ content: () -> V
+    ) {
         self.view = content()
-        self.renderer = .init(terminal: terminal)
+        self.frameRate = frameRate
+        self.renderer = .init(
+            terminal: terminal,
+            view: RootView(view)
+        )
     }
 
     public func run() {
-        renderer.render(
-            RootView {
-                view
-            }
-        )
+        var needsRender: Bool = false
 
-        terminal.cursor.clearScreen()
-        terminal.cursor.move(to: .zero)
-        for (index, line) in renderer.buffer.render().enumerated() {
-            terminal.cursor.writeBuffered(line)
-            if index < Int(renderer.buffer.size.height) - 1 {
-                terminal.cursor.writeBuffered("\n")
-            }
+        let graph: Graph = .init()
+        graph.makeCurrent()
+        graph.onInvalidate = {
+            needsRender = true
         }
 
-        terminal.cursor.move(to: .zero)
-        terminal.cursor.flush()
+        renderer.setup()
 
-        terminal.enableRawMode()
-
-        let task = Task.detached {
-            for await event in await Keyboard.current.events() {
-                print(event)
+        let timer = Timer.scheduledTimer(
+            withTimeInterval: frameRate,
+            repeats: true
+        ) { _ in
+            Task { @MainActor in
+                guard needsRender else { return }
+                self.renderer.prepareForRender()
+                self.renderer.render()
+                needsRender = false
             }
         }
 
-        terminal.onExit = {
-            task.cancel()
-            terminal.disableRawMode()
-            exit(0)
-        }
-
+        RunLoop.main.add(timer, forMode: .common)
         RunLoop.main.run()
     }
 }

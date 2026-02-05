@@ -11,13 +11,13 @@ import Geometry
 struct TerminalBuffer: Sendable {
     let size: Size
     
-    private var cells: [[TerminalCell]]
+    private var cells: [[TerminalBufferCell]]
 
     init(size: Size) {
         self.size = size
         self.cells = Array(
             repeating: Array(
-                repeating: TerminalCell(),
+                repeating: TerminalBufferCell(),
                 count: Int(size.width)
             ),
             count: Int(size.height)
@@ -34,11 +34,11 @@ struct TerminalBuffer: Sendable {
         }
     }
 
-    func render() -> [String] {
+    func stringValue() -> String {
         cells.map { row in
             row.map { cell in
-                cell.render()
+                cell.stringValue()
             }.joined()
-        }
+        }.joined()
     }
 }

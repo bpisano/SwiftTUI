@@ -9,7 +9,7 @@ import Foundation
 import Geometry
 import Terminal
 
-struct TerminalCell: Sendable {
+struct TerminalBufferCell: Sendable {
     private var character: Character = " "
     private var foregroundColor: ANSIColor = .default
     private var backgroundColor: ANSIColor = .default
@@ -18,7 +18,7 @@ struct TerminalCell: Sendable {
         self.character = character
     }
 
-    func render() -> String {
+    func stringValue() -> String {
         "\(character)"
 //        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
     }

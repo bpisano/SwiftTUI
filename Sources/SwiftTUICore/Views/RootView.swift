@@ -13,8 +13,8 @@ public struct RootView<Content: View>: UnaryView, PrimitiveView, LayoutView {
     let layout: RootLayout = .init()
     let content: Content
 
-    public init(@ViewBuilder content: () -> Content) {
-        self.content = content()
+    public init(_ view: Content) {
+        self.content = view
     }
 }
 

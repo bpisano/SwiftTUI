@@ -10,6 +10,8 @@ import Foundation
 public final class Graph {
     static private(set) var current: Graph = .init()
 
+    public var onInvalidate: (() -> Void)?
+
     private var attributes: [AttributeRef] = []
     private var transactionalAttributes: [AttributeRef] = []
     private var currentComputation: AttributeRef?
@@ -56,8 +58,10 @@ public final class Graph {
     }
 
     func invalidate(_ attribute: AttributeRef) {
-        guard tracksTransaction else { return }
-        transaction.invalidations.append(attribute)
+        onInvalidate?()
+        if tracksTransaction {
+            transaction.invalidations.append(attribute)
+        }
     }
 
     func reevaluate(_ attribute: AttributeRef) {

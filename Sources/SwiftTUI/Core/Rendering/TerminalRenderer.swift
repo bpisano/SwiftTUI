@@ -11,19 +11,45 @@ import Geometry
 import Terminal
 import SwiftTUICore
 
-final class TerminalRenderer {
+final class TerminalRenderer<V: View> {
     private(set) var buffer: TerminalBuffer
 
-    init(terminal: Terminal) {
+    private let terminal: Terminal
+
+    @Attribute private var screenOrigin: Point = .zero
+    @Attribute private var screenSize: Size
+    @Attribute private var viewPhase: ViewPhase = .inactive
+    @Attribute private var view: V
+
+    init(
+        terminal: Terminal,
+        view: V
+    ) {
+        self.terminal = terminal
         self.buffer = .init(size: terminal.screen.size)
+        self._screenSize = .init(wrappedValue: terminal.screen.size)
+        self._view = .init(wrappedValue: view)
     }
 
-    func render<V: View>(_ view: V) {
-        @Attribute var screenOrigin: Point = .zero
-        @Attribute var screenSize: Size = self.buffer.size
-        @Attribute var viewPhase: ViewPhase = .inactive
-        @Attribute var view: V = view
+    func setup() {
+        terminal.cursor.clearScreen()
+        terminal.enableRawMode()
+        terminal.onExit = { [weak self] in
+            guard let self else { return }
+            self.terminal.disableRawMode()
+            exit(0)
+        }
 
+        prepareForRender()
+        render()
+
+        viewPhase = .active
+
+        prepareForRender()
+        render()
+    }
+
+    func prepareForRender() {
         let inputs: ViewInputs = .init(
             position: $screenOrigin,
             size: $screenSize,
@@ -32,27 +58,32 @@ final class TerminalRenderer {
         )
         let outputs: ViewOutputs = V.makeView($view, inputs: inputs)
 
-        render(displayList: outputs.displayList.wrappedValue, at: .zero)
-        viewPhase = .active
-        render(displayList: outputs.displayList.wrappedValue, at: .zero)
+        fillBuffer(with: outputs.displayList.wrappedValue, at: .zero)
+        CallbackQueue.shared.executeAll()
+    }
+
+    func render() {
+        let stringBuffer: String = buffer.stringValue()
+        terminal.cursor.move(to: .zero)
+        terminal.cursor.write(stringBuffer)
 
         CallbackQueue.shared.executeAll()
     }
 
-    private func render(displayList: DisplayList, at origin: Point) {
+    private func fillBuffer(with displayList: DisplayList, at origin: Point) {
         for item in displayList.items {
             switch item.content {
             case .empty:
                 continue
             case .command(let drawCommand):
-                renderCommand(drawCommand, at: origin)
-            case .childList(let displayList):
-                render(displayList: displayList, at: origin + item.frame.origin)
+                fillBufferCell(with: drawCommand, at: origin)
+            case .childList(let wrappedDisplayList):
+                fillBuffer(with: wrappedDisplayList, at: origin + item.frame.origin)
             }
         }
     }
 
-    private func renderCommand(_ command: DrawCommand, at origin: Point) {
+    private func fillBufferCell(with command: DrawCommand, at origin: Point) {
         switch command {
         case .putLine(let line):
             buffer.putLine(line, at: origin)

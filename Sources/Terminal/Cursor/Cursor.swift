@@ -5,15 +5,7 @@ public final class Cursor {
     public private(set) var position: Point = .zero
 
     public func write(_ text: String) {
-        writeBuffered(text)
-        flush()
-    }
-
-    public func writeBuffered(_ text: String) {
         print(text, terminator: "")
-    }
-
-    public func flush() {
         fflush(stdout)
     }
 
