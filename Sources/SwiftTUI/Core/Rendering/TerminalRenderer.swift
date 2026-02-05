@@ -15,6 +15,7 @@ final class TerminalRenderer<V: View> {
     private(set) var buffer: TerminalBuffer
 
     private let terminal: Terminal
+    private var outputs: ViewOutputs?
 
     @Attribute private var screenOrigin: Point = .zero
     @Attribute private var screenSize: Size
@@ -40,6 +41,13 @@ final class TerminalRenderer<V: View> {
             exit(0)
         }
 
+        let inputs: ViewInputs = .init(
+            position: $screenOrigin,
+            size: $screenSize,
+            phase: $viewPhase
+        )
+        outputs = V.makeView($view, inputs: inputs)
+
         prepareForRender()
         render()
 
@@ -50,16 +58,11 @@ final class TerminalRenderer<V: View> {
     }
 
     func prepareForRender() {
-        let inputs: ViewInputs = .init(
-            position: $screenOrigin,
-            size: $screenSize,
-            phase: $viewPhase
-
-        )
-        let outputs: ViewOutputs = V.makeView($view, inputs: inputs)
-
+        guard let outputs else {
+            assertionFailure("Outputs not set up. Call setup() before rendering.")
+            return
+        }
         fillBuffer(with: outputs.displayList.wrappedValue, at: .zero)
-        CallbackQueue.shared.executeAll()
     }
 
     func render() {

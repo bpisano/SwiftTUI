@@ -8,7 +8,7 @@
 import AttributeGraph
 import Foundation
 
-protocol ViewModifier {
+public protocol ViewModifier {
     associatedtype Body: View
 
     typealias Content = ViewModifierContent<Self>
@@ -35,7 +35,7 @@ protocol ViewModifier {
 }
 
 extension ViewModifier {
-    static func makeView(
+    public static func makeView(
         _ modifier: Attribute<Self>,
         inputs: ViewInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
@@ -52,7 +52,7 @@ extension ViewModifier {
         return Body.makeView(modifierBody, inputs: inputs)
     }
 
-    static func makeViewList(
+    public static func makeViewList(
         _ modifier: Attribute<Self>,
         inputs: ViewListInputs,
         body: @escaping (ViewListInputs) -> ViewListOutputs
@@ -61,14 +61,15 @@ extension ViewModifier {
         inputs.append(.list(body), to: BodyInput<Content>.self)
 
         let modifierBody = Attribute {
-            modifier.wrappedValue.body(content: .init())
+            modifier.updateDynamicProperties()
+            return modifier.wrappedValue.body(content: .init())
         }
         modifierBody.label = "\(Self.self) body"
 
         return Body.makeViewList(modifierBody, inputs: inputs)
     }
 
-    static func viewListCount(
+    public static func viewListCount(
         inputs: ViewListCountInputs,
         body: (ViewListCountInputs) -> Int?
     ) -> Int? {
@@ -83,7 +84,7 @@ extension ViewModifier {
 }
 
 extension View {
-    func modifier<M: ViewModifier>(_ modifier: M) -> ModifiedContent<Self, M> {
+    public func modifier<M: ViewModifier>(_ modifier: M) -> some View {
         ModifiedContent(self, modifier: modifier)
     }
 }

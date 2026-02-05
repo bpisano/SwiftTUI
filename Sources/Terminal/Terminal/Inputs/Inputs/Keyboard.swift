@@ -35,6 +35,7 @@ public struct Keyboard: Input, Sendable {
         }
     }
 
+    @InputActor
     private func decode(buffer: [UInt8], count: Int) -> Keyboard.Event? {
         switch buffer[0] {
         case 13:

@@ -25,14 +25,8 @@ struct MyView: View {
 
     var body: some View {
         Text("\(count)")
-            .onAppear {
-                Task.detached {
-                    for await _ in await Keyboard.current.events() {
-                        Task { @MainActor in
-                            count += 1
-                        }
-                    }
-                }
+            .onEvent(of: .keyboard) { event in
+                count += 1
             }
     }
 }

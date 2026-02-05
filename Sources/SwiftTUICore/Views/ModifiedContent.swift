@@ -48,7 +48,7 @@ extension ModifiedContent {
         $modifier.label = "\(Modifier.self)"
 
         return Modifier.makeViewList($modifier, inputs: inputs) { modifiedInputs in
-            Content.makeViewList($content, inputs: modifiedInputs)
+            return Content.makeViewList($content, inputs: modifiedInputs)
         }
     }
 

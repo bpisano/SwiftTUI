@@ -8,8 +8,8 @@
 import Foundation
 import AttributeGraph
 
-struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
-    static func makeView(
+public struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
+    public static func makeView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
@@ -31,7 +31,7 @@ struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
         }
     }
 
-    static func makeViewList(
+    public static func makeViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
@@ -51,7 +51,7 @@ struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
         }
     }
 
-    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+    public static func viewListCount(inputs: ViewListCountInputs) -> Int? {
         var inputs: ViewListCountInputs = inputs
 
         guard let body = inputs.popLast(BodyCountInput<Self>.self) else {
@@ -63,7 +63,7 @@ struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
 }
 
 extension ViewModifierContent: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "\(T.self)"
     }
 }

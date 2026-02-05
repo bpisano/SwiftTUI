@@ -110,7 +110,7 @@ extension View {
         width: Double? = nil,
         height: Double? = nil,
         alignment: Alignment = .center
-    ) -> ModifiedContent<Self, FrameModifier> {
+    ) -> some View {
         modifier(
             FrameModifier(
                 width: width,

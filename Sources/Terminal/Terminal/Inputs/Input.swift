@@ -7,9 +7,9 @@
 
 import Foundation
 
-@InputActor
-public protocol Input {
-    associatedtype Event
+public protocol Input: Sendable {
+    associatedtype Event: Sendable
 
+    @InputActor
     func events() -> AsyncStream<Event>
 }

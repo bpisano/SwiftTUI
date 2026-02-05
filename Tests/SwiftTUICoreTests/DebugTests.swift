@@ -21,11 +21,11 @@ struct MyView: View {
 }
 
 struct MyViewModifier: ViewModifier {
-    @State private var count: Int = 2
-
     func body(content: Content) -> some View {
         content
-            .frame(width: Double(count))
+            .onAppear {
+                print("OK")
+            }
     }
 }
 
@@ -43,11 +43,13 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-//    @Attribute var view = Text("Hello")
-//        .modifier(MyViewModifier())
-    @Attribute var view = RootView {
-        MyView()
-    }
+    @Attribute var view = RootView(
+        Text("Hello")
+            .modifier(MyViewModifier())
+    )
+//    @Attribute var view = RootView {
+//        MyView()
+//    }
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"
@@ -58,12 +60,12 @@ func debugPlaygroundCode() {
     let _ = outputs.displayList.wrappedValue
     copyToClipboard(graph.description)
 
-//    viewPhase = .active
-//
-//    let _ = outputs.displayList.wrappedValue
-//    CallbackQueue.shared.executeAll()
-//
-//    copyToClipboard(graph.description)
+    viewPhase = .active
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
+
+    copyToClipboard(graph.description)
 }
 
 private func copyToClipboard(_ string: String) {
