@@ -35,6 +35,11 @@ final class TerminalRenderer<V: View> {
     func setup() {
         terminal.cursor.clearScreen()
         terminal.enableRawMode()
+        terminal.screen.onSizeChange = { [weak self] screenSize in
+            guard let self else { return }
+            self.buffer = TerminalBuffer(size: screenSize)
+            self.screenSize = screenSize
+        }
         terminal.onExit = { [weak self] in
             guard let self else { return }
             self.terminal.disableRawMode()
