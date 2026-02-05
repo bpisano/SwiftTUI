@@ -11,12 +11,9 @@ import SwiftTUICore
 import Terminal
 
 @main
-struct AppDemo {
-    static func main() {
-        let app = App {
-            MyView()
-        }
-        app.run()
+struct MyApp: App {
+    var body: some View {
+        MyView()
     }
 }
 

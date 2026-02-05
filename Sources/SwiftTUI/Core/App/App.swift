@@ -10,25 +10,26 @@ import Foundation
 import SwiftTUICore
 import Terminal
 
-public struct App<V: View>: Sendable {
-    private let terminal: Terminal = .current
-    private let renderer: TerminalRenderer<RootView<V>>
-    private let view: V
-    private let frameRate: Double
+public protocol App {
+    associatedtype Body: View
 
-    public init(
-        frameRate: Double = 1 / 60,
-        @ViewBuilder _ content: () -> V
-    ) {
-        self.view = content()
-        self.frameRate = frameRate
-        self.renderer = .init(
+    var body: Body { get }
+
+    init()
+}
+
+extension App {
+    public static func main() {
+        let app: Self = .init()
+        let view: Body = app.body
+
+        let terminal: Terminal = .current
+        let renderer: TerminalRenderer<RootView<Body>> = .init(
             terminal: terminal,
             view: RootView(view)
         )
-    }
+        let frameRate: Double = 1 / 60
 
-    public func run() {
         var needsRender: Bool = false
 
         let graph: Graph = .init()
@@ -45,8 +46,8 @@ public struct App<V: View>: Sendable {
         ) { _ in
             Task { @MainActor in
                 guard needsRender else { return }
-                self.renderer.prepareForRender()
-                self.renderer.render()
+                renderer.prepareForRender()
+                renderer.render()
                 needsRender = false
             }
         }
