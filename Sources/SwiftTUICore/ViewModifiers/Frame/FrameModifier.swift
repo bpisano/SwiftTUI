@@ -31,7 +31,17 @@ extension FrameModifier {
         inputs: ViewInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewOutputs {
-        var layoutComputer: Attribute<LayoutComputer>!
+        var childOutputs: [ViewOutputs] = []
+
+        let layoutComputer = Attribute {
+            let modifier: FrameModifier = modifier.wrappedValue
+            let frameLayout: FrameLayout = .init(
+                width: modifier.width,
+                height: modifier.height,
+                alignment: modifier.alignment
+            )
+            return frameLayout.layoutComputer(for: childOutputs.map(\.layoutComputer.wrappedValue))
+        }
 
         let modifiedPosition = Attribute {
             let inputFrame: Rect = inputs.frame
@@ -61,17 +71,7 @@ extension FrameModifier {
             phase: inputs.phase,
             storage: inputs.storage
         )
-        let childOutputs: ViewOutputs = body(modifiedInputs)
-
-        layoutComputer = Attribute {
-            let modifier = modifier.wrappedValue
-            let frameLayout: FrameLayout = .init(
-                width: modifier.width,
-                height: modifier.height,
-                alignment: modifier.alignment
-            )
-            return frameLayout.layoutComputer(for: [childOutputs.layoutComputer.wrappedValue])
-        }
+        childOutputs = [body(modifiedInputs)]
 
         layoutComputer.label = "FrameModifier Layout Computer"
         modifiedSize.label = "FrameModifier Modified Size"
@@ -79,29 +79,8 @@ extension FrameModifier {
 
         return ViewOutputs(
             layoutComputer: layoutComputer,
-            displayList: childOutputs.displayList
+            displayList: childOutputs[0].displayList
         )
-    }
-}
-
-extension FrameModifier {
-    private static func combineDisplayLists(
-        childDisplayLists: [DisplayList],
-        childGeometries: [ViewGeometry]
-    ) -> DisplayList {
-        // Create displayList for each child
-        var items: [DisplayList.Item] = []
-        for (index, childDisplayList) in childDisplayLists.enumerated() {
-            let childGeometry: ViewGeometry = childGeometries[index]
-            let item: DisplayList.Item = .init(
-                content: .childList(childDisplayList),
-                frame: childGeometry.dimensions.frame
-            )
-            items.append(item)
-        }
-
-        // Create container displayList
-        return DisplayList(items)
     }
 }
 
