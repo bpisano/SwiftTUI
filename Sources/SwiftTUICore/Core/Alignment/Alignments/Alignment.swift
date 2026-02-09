@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct Alignment: Equatable {
+public struct Alignment: Equatable {
     let horizontal: HorizontalAlignment
     let vertical: VerticalAlignment
 }
 
-extension Alignment {
+public extension Alignment {
     static let topLeading: Alignment = .init(horizontal: .leading, vertical: .top)
     static let top: Alignment = .init(horizontal: .center, vertical: .top)
     static let topTrailing: Alignment = .init(horizontal: .trailing, vertical: .top)
@@ -27,7 +27,7 @@ extension Alignment {
 }
 
 extension Alignment: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "Alignment(h: \(horizontal), v: \(vertical))"
     }
 }

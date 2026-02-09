@@ -23,17 +23,16 @@ extension LayoutView {
         inputs: ViewInputs
     ) -> ViewOutputs {
         let content = view.map(\.content)
-        content.label = "\(Content.self)"
 
         let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init())
         let viewList: ViewList = viewListOutputs.makeViewList()
 
         var childOutputs: [ViewOutputs] = []
-        let layout: L = view.wrappedValue.layout
+
         let layoutComputer = Attribute {
-            layout.layoutComputer(for: childOutputs.map(\.layoutComputer.wrappedValue))
+            let layout: L = view.wrappedValue.layout
+            return layout.layoutComputer(for: childOutputs.map(\.layoutComputer.wrappedValue))
         }
-        layoutComputer.label = "\(type(of: Self.self)) Layout Computer"
 
         let childGeometries = Attribute {
             let computer: LayoutComputer = layoutComputer.wrappedValue
@@ -46,7 +45,6 @@ extension LayoutView {
                 )
             )
         }
-        childGeometries.label = "\(L.self) Child Geometries"
 
         childOutputs = makeChildViewOutputs(
             list: viewList,
@@ -70,6 +68,10 @@ extension LayoutView {
             }
             return DisplayList(items)
         }
+        
+        content.label = "\(Content.self)"
+        layoutComputer.label = "\(type(of: Self.self)) Layout Computer"
+        childGeometries.label = "\(L.self) Child Geometries"
         displayList.label = "\(Self.self) Display List"
 
         return ViewOutputs(

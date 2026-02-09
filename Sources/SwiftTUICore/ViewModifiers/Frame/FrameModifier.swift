@@ -85,7 +85,7 @@ extension FrameModifier {
 }
 
 extension View {
-    func frame(
+    public func frame(
         width: Double? = nil,
         height: Double? = nil,
         alignment: Alignment = .center

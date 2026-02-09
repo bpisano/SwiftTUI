@@ -25,12 +25,10 @@ struct FrameLayout: Layout {
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: [LayoutProxy]) -> Size {
-        // If both dimensions are fixed, return them directly
         if let width, let height {
             return Size(width: width, height: height)
         }
 
-        // Get the size that fits from the first subview
         guard let subview = subviews.first else {
             return Size(
                 width: width ?? proposal.width ?? 0,
@@ -38,7 +36,6 @@ struct FrameLayout: Layout {
             )
         }
 
-        // Ask the subview for its size that fits the proposed size
         let subviewSize = subview.size(
             in: ProposedViewSize(
                 width: width ?? proposal.width,
@@ -46,12 +43,10 @@ struct FrameLayout: Layout {
             )
         )
 
-//        print("[STF] Proposal \(proposal.width, default: "nil")")
         let sizeThatFits = Size(
             width: proposal.width ?? width ?? subviewSize.width,
             height: proposal.height ?? height ?? subviewSize.height
         )
-//        print("[STF] Size that fits", sizeThatFits)
 
         return sizeThatFits
     }
@@ -80,24 +75,7 @@ struct FrameLayout: Layout {
                 origin: origin,
                 size: subviewSize
             )
-//            print("Final frame", frame)
             subview.place(in: frame, proposal: .init(.zero))
         }
-
-//        print("[Place] Bounds", bounds)
-//        print("[Place] Proposal", ProposedViewSize(
-//            width: width ?? bounds.size.width,
-//            height: height ?? bounds.size.height
-//        ))
-//
-//        subviews.forEach { proxy in
-//            proxy.place(
-//                in: bounds,
-//                proposal: ProposedViewSize(
-//                    width: width ?? bounds.size.width,
-//                    height: height ?? bounds.size.height
-//                )
-//            )
-//        }
     }
 }
