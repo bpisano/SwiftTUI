@@ -18,9 +18,13 @@ struct RootLayout: Layout {
     }
 
     func place(in bounds: Rect, subviews: [LayoutProxy]) {
-        let frames: [Rect] = viewFrames(proposal: .init(bounds.size), subviews: subviews, bounds: bounds)
+        let frames: [Rect] = viewFrames(
+            proposal: .init(bounds.size),
+            subviews: subviews,
+            bounds: bounds
+        )
         for (index, frame) in frames.enumerated() {
-            subviews[index].place(in: frame, proposal: .init(.zero))
+            subviews[index].place(in: frame, proposal: .init(frame.size))
         }
     }
 
@@ -30,11 +34,11 @@ struct RootLayout: Layout {
         bounds: Rect
     ) -> [Rect] {
         // Get the ideal size of each view
-        let idealSizes: [Size] = subviews.map { $0.size(in: .zero) }
+        let idealSizes: [Size] = subviews.map { $0.size(in: proposal) }
 
         // Calculate total height of content
         let totalContentHeight: Double = idealSizes.reduce(0) { $0 + $1.height }
-        
+
         // Calculate starting Y position to center content vertically
         let startY: Double = (bounds.size.height - totalContentHeight) / 2
 
@@ -45,7 +49,7 @@ struct RootLayout: Layout {
         for (index, idealSize) in idealSizes.enumerated() {
             // Center horizontally
             let xPosition: Double = (bounds.size.width - idealSize.width) / 2
-            
+
             let frame = Rect(
                 origin: Point(x: xPosition, y: yPosition),
                 size: idealSize

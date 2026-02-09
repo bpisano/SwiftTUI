@@ -84,7 +84,7 @@ final class TerminalRenderer<V: View> {
             case .empty:
                 continue
             case .command(let drawCommand):
-                fillBufferCell(with: drawCommand, at: origin)
+                fillBufferCell(with: drawCommand, at: origin + item.frame.origin)
             case .childList(let wrappedDisplayList):
                 fillBuffer(with: wrappedDisplayList, at: origin + item.frame.origin)
             }

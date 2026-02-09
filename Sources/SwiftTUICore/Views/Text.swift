@@ -63,11 +63,10 @@ extension Text {
 
         let textGeometry = Attribute {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let inputsPosition: Point = inputs.position.wrappedValue
             let inputsSize: Size = inputs.size.wrappedValue
             let textSize: Size = layoutComputer.sizeThatFits(.init(inputsSize))
             return layoutComputer.childGeometries(
-                in: .init(origin: inputsPosition, size: textSize)
+                in: .init(origin: .zero, size: textSize)
             )[0]
         }
         textGeometry.label = "Text Geometry"

@@ -40,7 +40,7 @@ extension LayoutView {
             let containerSize: Size = computer.sizeThatFits(proposal)
             return computer.childGeometries(
                 in: .init(
-                    origin: inputs.position.wrappedValue,
+                    origin: .zero,
                     size: containerSize
                 )
             )
@@ -54,8 +54,7 @@ extension LayoutView {
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] =
-            childOutputs.map(\.displayList.wrappedValue)
+            let childDisplayLists: [DisplayList] = childOutputs.map(\.displayList.wrappedValue)
 
             var items: [DisplayList.Item] = []
             for (index, childDisplayList) in childDisplayLists.enumerated() {

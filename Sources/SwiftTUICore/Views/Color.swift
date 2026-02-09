@@ -36,8 +36,9 @@ extension Color {
             let computer = layoutComputer.wrappedValue
             let proposal = ProposedViewSize(inputs.size.wrappedValue)
             let size = computer.sizeThatFits(proposal)
-            let origin = inputs.position.wrappedValue
-            return computer.childGeometries(in: .init(origin: origin, size: size))[0]
+            return computer.childGeometries(
+                in: .init(origin: .zero, size: size)
+            )[0]
         }
 
         let displayList = Attribute {
