@@ -43,12 +43,10 @@ struct FrameLayout: Layout {
             )
         )
 
-        let sizeThatFits = Size(
-            width: proposal.width ?? width ?? subviewSize.width,
-            height: proposal.height ?? height ?? subviewSize.height
+        return Size(
+            width: width ?? subviewSize.width,
+            height: height ?? subviewSize.height
         )
-
-        return sizeThatFits
     }
 
     func place(in bounds: Rect, subviews: [LayoutProxy]) {
@@ -60,7 +58,7 @@ struct FrameLayout: Layout {
             let subviewSize = subview.size(in: proposal)
             let viewDimensions: ViewDimensions = .init(
                 frame: .init(
-                    origin: bounds.origin,
+                    origin: .zero,
                     size: .init(
                         width: (width ?? subviewSize.width) - subviewSize.width,
                         height: (height ?? subviewSize.height) - subviewSize.height

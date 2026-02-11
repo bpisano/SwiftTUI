@@ -23,6 +23,7 @@ struct MyView: View {
     var body: some View {
         VStack {
             Text("Press any key to increment the count:")
+                .frame(width: 10)
             Text("\(count)")
         }
         .onEvent(of: .keyboard) { event in

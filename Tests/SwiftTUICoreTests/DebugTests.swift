@@ -43,16 +43,11 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-//    @Attribute var view = RootView(
-//        Text("Hello")
-//            .modifier(MyViewModifier())
-//    )
     @Attribute var view = RootView(
-        VStack {
-            Text("A")
-            Text("Hello World")
-        }
+        Text("Hello")
+            .frame(width: 2)
     )
+//    @Attribute var view = Text("Hello World")
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"
