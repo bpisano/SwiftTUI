@@ -15,7 +15,11 @@ protocol AnyAttribute: CustomStringConvertible {
     var outgoingEdges: [Edge] { get }
 
     func evaluateIfNeeded()
+
     func addIncoming(edge: Edge)
     func addOutgoing(edge: Edge)
+    func removeIncoming(edge: Edge)
+    func removeOutgoing(edge: Edge)
+
     func makePotentiallyDirty()
 }

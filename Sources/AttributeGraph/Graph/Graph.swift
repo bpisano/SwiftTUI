@@ -8,13 +8,15 @@
 import Foundation
 
 public final class Graph {
-    static private(set) var current: Graph = .init()
+    public static private(set) var current: Graph = .init()
 
     public var onInvalidate: (() -> Void)?
 
-    private var attributes: [AttributeRef] = []
-    private var transactionalAttributes: [AttributeRef] = []
-    private var currentComputation: AttributeRef?
+    public var subgraph: Subgraph?
+
+    private var attributesRefs: [AttributeRef] = []
+    private var transactionalAttributeRefs: [AttributeRef] = []
+    private var currentComputationRef: AttributeRef?
 
     private var tracksTransaction: Bool = false
     private(set) var transaction: Transaction = .init()
@@ -35,26 +37,40 @@ public final class Graph {
         return transaction
     }
 
-    func register(attribute: AttributeRef) {
-        attributes.append(attribute)
+    func register(attributeRef: AttributeRef) {
+        attributesRefs.append(attributeRef)
+
+        if let subgraph {
+            subgraph.register(attributeRef: attributeRef)
+        }
     }
 
-    func registerDependency(_ attribute: AttributeRef) {
-        guard let currentComputation else { return }
+    func unregister(attributeRef: AttributeRef) {
+        attributesRefs.removeAll { $0 === attributeRef }
+    }
 
-        let edge: Edge = .init(from: attribute, to: currentComputation)
-        attribute.attribute.addOutgoing(edge: edge)
-        currentComputation.attribute.addIncoming(edge: edge)
+    func registerDependency(_ attributeRef: AttributeRef) {
+        guard let currentComputationRef else { return }
+
+        let existingEdge: Edge? = attributeRef.attribute.outgoingEdges
+            .first { edge in
+                edge.toRef === currentComputationRef
+            }
+        guard existingEdge == nil else { return }
+
+        let edge: Edge = .init(from: attributeRef, to: currentComputationRef)
+        attributeRef.attribute.addOutgoing(edge: edge)
+        currentComputationRef.attribute.addIncoming(edge: edge)
     }
 
     func withDependencyCapture(
         of attribute: AttributeRef,
         perform: () throws -> Void
     ) rethrows {
-        let previousComputation: AttributeRef? = currentComputation
-        currentComputation = attribute
+        let previousComputationRef: AttributeRef? = currentComputationRef
+        currentComputationRef = attribute
         try perform()
-        currentComputation = previousComputation
+        currentComputationRef = previousComputationRef
     }
 
     func invalidate(_ attribute: AttributeRef) {
@@ -72,14 +88,12 @@ public final class Graph {
 
 extension Graph: CustomStringConvertible {
     public var description: String {
-        let attributesDescription =
-            attributes
+        let attributesDescription = attributesRefs
             .map(\.attribute.description)
             .joined(separator: "\n    ")
-        let edgesDescription =
-            attributes
-            .flatMap { attribute in
-                attribute.attribute.outgoingEdges.map(\.description)
+        let edgesDescription = attributesRefs
+            .flatMap { ref in
+                ref.attribute.outgoingEdges.map(\.description)
             }
             .joined(separator: "\n    ")
 

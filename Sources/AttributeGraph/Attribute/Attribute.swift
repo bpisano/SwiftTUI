@@ -105,13 +105,13 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
         self.storage.ref = AttributeRef(self)
-        Graph.current.register(attribute: storage.ref)
+        Graph.current.register(attributeRef: storage.ref)
     }
 
     public init<R: Rule>(rule: R) where R.Value == T {
         self.rule = AnyRule(rule)
         self.storage.ref = AttributeRef(self)
-        Graph.current.register(attribute: storage.ref)
+        Graph.current.register(attributeRef: storage.ref)
     }
 
     func addIncoming(edge: Edge) {
@@ -120,6 +120,14 @@ public struct Attribute<T>: @MainActor AnyAttribute {
 
     func addOutgoing(edge: Edge) {
         outgoingEdges.append(edge)
+    }
+
+    func removeIncoming(edge: Edge) {
+        incomingEdges.removeAll { $0 === edge }
+    }
+
+    func removeOutgoing(edge: Edge) {
+        outgoingEdges.removeAll { $0 === edge }
     }
 
     func evaluateIfNeeded() {
@@ -138,11 +146,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(storage.ref)
-        if isInitialEvaluation {
-            Graph.current.withDependencyCapture(of: storage.ref) {
-                storage.value = rule.evaluate()
-            }
-        } else {
+        Graph.current.withDependencyCapture(of: storage.ref) {
             storage.value = rule.evaluate()
         }
 
