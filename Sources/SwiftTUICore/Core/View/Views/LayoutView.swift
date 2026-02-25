@@ -24,7 +24,7 @@ extension LayoutView {
     ) -> ViewOutputs {
         let content = view.map(\.content)
 
-        let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init())
+        let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init(from: inputs))
         let viewList: ViewList = viewListOutputs.makeViewList()
 
         var childOutputs: [ViewOutputs] = []
@@ -63,7 +63,8 @@ extension LayoutView {
                     .init(
                         content: .childList(childDisplayList),
                         frame: childGeometry.dimensions.frame
-                    ))
+                    )
+                )
             }
             return DisplayList(items)
         }
@@ -77,6 +78,14 @@ extension LayoutView {
             layoutComputer: layoutComputer,
             displayList: displayList
         )
+    }
+
+    public static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        let content = view.map(\.content)
+        return Content.makeViewList(content, inputs: inputs)
     }
 
     private static func makeChildViewOutputs(

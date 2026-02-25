@@ -11,16 +11,30 @@ import Foundation
 
 public struct ViewListOutputs {
     let views: Views
-    let count: Int? = nil
+    let nextImplicitId: Int
+    let explicitId: ViewId.Explicit?
+    let count: Int?
 
-    init(views: Views) {
+    init(
+        views: Views,
+        nextImplicitId: Int,
+        explicitId: ViewId.Explicit?,
+        count: Int? = nil
+    ) {
         self.views = views
+        self.nextImplicitId = nextImplicitId
+        self.explicitId = explicitId
+        self.count = count
     }
 
     func makeViewList() -> ViewList {
         switch views {
         case .staticList(let elements):
-            BaseViewList(elements: elements)
+            BaseViewList(
+                elements: elements,
+                implicitId: nextImplicitId - (count ?? 0),
+                explicitId: explicitId
+            )
         case .dynamicList(let list):
             list.wrappedValue
         }
@@ -28,36 +42,56 @@ public struct ViewListOutputs {
 }
 
 extension ViewListOutputs {
-    static func empty() -> ViewListOutputs {
-        .staticList(EmptyElement())
-    }
-
-    static func staticList(_ elements: any ViewListElements) -> ViewListOutputs {
-        ViewListOutputs(
-            views: .staticList(elements)
+    static func empty(inputs: ViewListInputs) -> ViewListOutputs {
+        .staticList(
+            EmptyElement(),
+            inputs: inputs,
+            count: 0
         )
     }
 
-    static func dynamicList(_ list: Attribute<ViewList>) -> ViewListOutputs {
+    static func staticList(
+        _ elements: any ViewListElements,
+        inputs: ViewListInputs,
+        count: Int,
+    ) -> ViewListOutputs {
         ViewListOutputs(
-            views: .dynamicList(list)
+            views: .staticList(elements),
+            nextImplicitId: inputs.implicitId + count,
+            explicitId: inputs.currentExplicitId(),
+            count: count
         )
     }
 
-    static func single<V: View>(_ view: Attribute<V>) -> ViewListOutputs {
-        .staticList(SingleElement(view))
+    static func dynamicList(
+        _ list: Attribute<ViewList>,
+        inputs: ViewListInputs,
+        count: Int? = nil
+    ) -> ViewListOutputs {
+        ViewListOutputs(
+            views: .dynamicList(list),
+            nextImplicitId: inputs.implicitId + (count ?? 0),
+            explicitId: inputs.currentExplicitId()
+        )
     }
 
     static func unaryViewList(
         inputs: ViewListInputs,
         body: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewListOutputs {
-        .staticList(UnaryElement(body))
+        .staticList(
+            UnaryElement(body),
+            inputs: inputs,
+            count: 1
+        )
     }
 
-    static func concat(_ outputsList: [ViewListOutputs]) -> ViewListOutputs {
+    static func concat(
+        _ outputsList: [ViewListOutputs],
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
         guard !outputsList.isEmpty else {
-            return .staticList(EmptyElement())
+            return .empty(inputs: inputs)
         }
 
         // Check if any of the outputs is dynamic
@@ -75,7 +109,10 @@ extension ViewListOutputs {
             let mergedListAttribute: Attribute<ViewList> = Attribute {
                 MergedViewList(viewLists)
             }
-            return .dynamicList(mergedListAttribute)
+            return .dynamicList(
+                mergedListAttribute,
+                inputs: inputs,
+            )
         } else {
             // All outputs are static
             // Merge them into a single static list
@@ -85,7 +122,11 @@ extension ViewListOutputs {
             }
             // Merge all elements
             let mergedElements: MergedElements = MergedElements(allElements)
-            return .staticList(mergedElements)
+            return .staticList(
+                mergedElements,
+                inputs: inputs,
+                count: outputsList.reduce(0) { $0 + ($1.count ?? 0) }
+            )
         }
     }
 }

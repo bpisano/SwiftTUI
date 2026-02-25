@@ -38,7 +38,7 @@ public struct ViewModifierContent<T: ViewModifier>: PrimitiveView {
         var inputs: ViewListInputs = inputs
 
         guard let body = inputs.popLast(BodyInput<Self>.self) else {
-            return .empty()
+            return .empty(inputs: inputs)
         }
 
         switch body {

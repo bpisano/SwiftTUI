@@ -13,6 +13,7 @@ protocol ViewList {
     typealias MakeElement = (ViewInputs) -> ViewOutputs
 
     var count: Int { get }
+    var viewIds: ViewId.Views? { get }
 
     func makeViews(
         from start: inout Int,

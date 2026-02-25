@@ -8,14 +8,15 @@
 import Foundation
 
 struct MergedViewList: ViewList {
-    var count: Int {
-        lists.reduce(0) { $0 + $1.count }
-    }
+    let count: Int
+    let viewIds: ViewId.Views?
 
     private let lists: [ViewList]
 
     init(_ lists: [ViewList]) {
         self.lists = lists
+        self.count = lists.reduce(0) { $0 + $1.count }
+        self.viewIds = MergedViewIds(lists.compactMap(\.viewIds))
     }
 
     func makeViews(

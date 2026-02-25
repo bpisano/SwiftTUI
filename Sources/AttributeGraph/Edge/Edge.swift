@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class Edge {
+public final class Edge {
     enum State {
         case clean
         case dirty
@@ -27,7 +27,7 @@ final class Edge {
 }
 
 extension Edge: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         let fromId: String = fromRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
         let toId: String = toRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
         return "\"\(fromId)\" -> \"\(toId)\"\(state == .dirty ? " [style=dashed]" : "")"

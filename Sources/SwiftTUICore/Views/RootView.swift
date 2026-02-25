@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-public struct RootView<Content: View>: UnaryView, PrimitiveView, LayoutView {
+public struct RootView<Content: View>: PrimitiveView, LayoutView {
     let layout: RootLayout = .init()
     let content: Content
 

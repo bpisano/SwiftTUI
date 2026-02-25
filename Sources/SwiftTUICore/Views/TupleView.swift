@@ -28,7 +28,7 @@ extension TupleView {
         _ view: Attribute<TupleView<repeat each V>>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let viewListOutputs: ViewListOutputs = makeViewList(view, inputs: .init())
+        let viewListOutputs: ViewListOutputs = makeViewList(view, inputs: .init(from: inputs))
         let viewList: ViewList = viewListOutputs.makeViewList()
         let childViewOutputs: [ViewOutputs] = makeChildViewOutputs(list: viewList, inputs: inputs)
 
@@ -104,7 +104,7 @@ extension TupleView {
             outputs.append(viewOutputs)
         }
 
-        return .concat(outputs)
+        return .concat(outputs, inputs: inputs)
     }
 
     static func viewListCount(inputs: ViewListCountInputs) -> Int? {

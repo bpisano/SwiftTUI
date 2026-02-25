@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol AnyAttribute: CustomStringConvertible {
+public protocol AnyAttribute: CustomStringConvertible {
     var id: UUID { get }
     var flags: Set<AttributeFlag> { get }
     var label: String { get }

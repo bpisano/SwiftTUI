@@ -10,6 +10,10 @@ import Foundation
 struct ViewInputsStorage {
     private var storage: [ObjectIdentifier: Any] = [:]
 
+    subscript<Key: ViewInputKey>(keyType: Key.Type) -> Key.Value? {
+        storage[ObjectIdentifier(keyType)] as? Key.Value
+    }
+
     mutating func append<Key: ViewInputKey>(_ value: Key.Value, to keyType: Key.Type) {
         storage[ObjectIdentifier(keyType)] = value
     }

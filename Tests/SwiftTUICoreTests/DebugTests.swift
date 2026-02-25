@@ -12,6 +12,11 @@ import Geometry
 import Testing
 import AppKit
 
+private struct User: Identifiable {
+    let id: UUID = .init()
+    let name: String
+}
+
 struct MyView: View {
     @State private var count: Int = 0
 
@@ -43,10 +48,13 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-    @Attribute var view = RootView(
-        Text("Hello")
-            .frame(width: 2)
-    )
+    let users: [User] = [User(name: "Alice"), User(name: "Bob"), User(name: "Charlie")]
+    @Attribute var view = VStack {
+        ForEach(users) { user in
+            Text(user.name)
+        }
+    }
+
 //    @Attribute var view = Text("Hello World")
     let outputs = type(of: view).makeView($view, inputs: inputs)
 

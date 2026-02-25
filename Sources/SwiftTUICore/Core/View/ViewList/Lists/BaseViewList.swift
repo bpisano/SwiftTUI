@@ -9,11 +9,26 @@ import Foundation
 
 struct BaseViewList: ViewList {
     var count: Int { elements.count }
+    var viewIds: ViewId.Views? {
+        ImplicitViewIds(
+            implicitId: implicitId,
+            explicit: explicitId,
+            count: elements.count
+        )
+    }
 
     private let elements: any ViewListElements
+    private let implicitId: Int
+    private let explicitId: ViewId.Explicit?
 
-    init(elements: any ViewListElements) {
+    init(
+        elements: any ViewListElements,
+        implicitId: Int,
+        explicitId: ViewId.Explicit?
+    ) {
         self.elements = elements
+        self.implicitId = implicitId
+        self.explicitId = explicitId
     }
 
     func makeViews(

@@ -81,7 +81,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
-    var incomingEdges: [Edge] {
+    public var incomingEdges: [Edge] {
         get {
             storage.incomingEdges
         }
@@ -90,7 +90,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
-    var outgoingEdges: [Edge] {
+    public var outgoingEdges: [Edge] {
         get {
             storage.outgoingEdges
         }
@@ -114,23 +114,23 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         Graph.current.register(attributeRef: storage.ref)
     }
 
-    func addIncoming(edge: Edge) {
+    public func addIncoming(edge: Edge) {
         incomingEdges.append(edge)
     }
 
-    func addOutgoing(edge: Edge) {
+    public func addOutgoing(edge: Edge) {
         outgoingEdges.append(edge)
     }
 
-    func removeIncoming(edge: Edge) {
+    public func removeIncoming(edge: Edge) {
         incomingEdges.removeAll { $0 === edge }
     }
 
-    func removeOutgoing(edge: Edge) {
+    public func removeOutgoing(edge: Edge) {
         outgoingEdges.removeAll { $0 === edge }
     }
 
-    func evaluateIfNeeded() {
+    public func evaluateIfNeeded() {
         // Ensure all dependencies are up to date
         for edge in incomingEdges {
             edge.fromRef.attribute.evaluateIfNeeded()
@@ -163,7 +163,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
-    func makePotentiallyDirty() {
+    public func makePotentiallyDirty() {
         if flags.contains(.transactional) {
             evaluateIfNeeded()
         } else {

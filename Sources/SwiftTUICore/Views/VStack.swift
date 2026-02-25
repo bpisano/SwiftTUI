@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-public struct VStack<Content: View>: UnaryView, PrimitiveView, LayoutView {
+public struct VStack<Content: View>: PrimitiveView, LayoutView {
     let layout: VStackLayout
     let content: Content
 

@@ -10,9 +10,15 @@ import Foundation
 import Geometry
 
 public struct ViewListInputs {
+    var implicitId: Int
+
     private(set) var storage: ViewInputsStorage
 
-    init(storage: ViewInputsStorage = .init()) {
+    init(
+        implicitId: Int = 0,
+        storage: ViewInputsStorage = .init()
+    ) {
+        self.implicitId = implicitId
         self.storage = storage
     }
 
