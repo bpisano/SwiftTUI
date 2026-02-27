@@ -109,6 +109,8 @@ extension ViewListOutputs {
             let mergedListAttribute: Attribute<ViewList> = Attribute {
                 MergedViewList(viewLists)
             }
+            mergedListAttribute.label = "Merged Dynamic View List"
+
             return .dynamicList(
                 mergedListAttribute,
                 inputs: inputs,

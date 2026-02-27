@@ -37,7 +37,10 @@ extension Color {
             let proposal = ProposedViewSize(inputs.size.wrappedValue)
             let size = computer.sizeThatFits(proposal)
             return computer.childGeometries(
-                in: .init(origin: .zero, size: size)
+                in: .init(
+                    origin: inputs.position.wrappedValue,
+                    size: size
+                )
             )[0]
         }
 

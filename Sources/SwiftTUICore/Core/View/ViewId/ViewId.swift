@@ -29,3 +29,9 @@ extension ViewId {
         let id: AnyHashable
     }
 }
+
+extension ViewId: CustomStringConvertible {
+    var description: String {
+        "ViewId(implicitId: \(implicitId), index: \(index), explicit: \(explicit?.id, default: "nil"))"
+    }
+}

@@ -66,7 +66,10 @@ extension Text {
             let inputsSize: Size = inputs.size.wrappedValue
             let textSize: Size = layoutComputer.sizeThatFits(.init(inputsSize))
             return layoutComputer.childGeometries(
-                in: .init(origin: .zero, size: textSize)
+                in: .init(
+                    origin: inputs.position.wrappedValue,
+                    size: textSize
+                )
             )[0]
         }
         textGeometry.label = "Text Geometry"

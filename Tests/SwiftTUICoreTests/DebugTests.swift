@@ -50,9 +50,10 @@ func debugPlaygroundCode() {
 
     let users: [User] = [User(name: "Alice"), User(name: "Bob"), User(name: "Charlie")]
     @Attribute var view = VStack {
-        ForEach(users) { user in
-            Text(user.name)
-        }
+        Text("Hello")
+            .id("1")
+        Text("World")
+            .id("2")
     }
 
 //    @Attribute var view = Text("Hello World")

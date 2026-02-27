@@ -24,7 +24,7 @@ public struct ViewOutputs {
     init() {
         self.layoutComputer = Attribute {
             LayoutComputer { proposal in
-                    .zero
+                return .zero
             } childGeometries: { rect in
                 []
             }

@@ -29,3 +29,9 @@ struct UnaryElement: ViewListElements {
         return result
     }
 }
+
+extension UnaryElement: CustomStringConvertible {
+    var description: String {
+        "UnaryElement"
+    }
+}

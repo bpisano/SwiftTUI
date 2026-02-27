@@ -31,3 +31,9 @@ struct MergedViewList: ViewList {
         }
     }
 }
+
+extension MergedViewList: CustomStringConvertible {
+    var description: String {
+        "MergedViewList"
+    }
+}

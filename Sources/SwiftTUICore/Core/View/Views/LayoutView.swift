@@ -40,7 +40,7 @@ extension LayoutView {
             let containerSize: Size = computer.sizeThatFits(proposal)
             return computer.childGeometries(
                 in: .init(
-                    origin: .zero,
+                    origin: inputs.position.wrappedValue,
                     size: containerSize
                 )
             )

@@ -41,3 +41,9 @@ struct BaseViewList: ViewList {
         }
     }
 }
+
+extension BaseViewList: CustomStringConvertible {
+    var description: String {
+        "BaseViewList(elements: \(elements), implicitId: \(implicitId), explicitId: \(explicitId?.id, default: "nil"))"
+    }
+}
