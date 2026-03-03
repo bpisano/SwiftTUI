@@ -88,6 +88,10 @@ extension LayoutView {
         return Content.makeViewList(content, inputs: inputs)
     }
 
+    public static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+        Content.viewListCount(inputs: inputs)
+    }
+
     private static func makeChildViewOutputs(
         list: ViewList,
         inputs: ViewInputs,
@@ -117,4 +121,5 @@ extension LayoutView {
 
         return viewOutputs
     }
+
 }

@@ -23,6 +23,8 @@ extension TupleView: CustomStringConvertible {
     }
 }
 
+// MARK: - Make view
+
 extension TupleView {
     static func makeView(
         _ view: Attribute<TupleView<repeat each V>>,
@@ -70,17 +72,43 @@ extension TupleView {
         )
     }
 
-    private static func makeElementViewList<Element: View>(
-        view: Attribute<TupleView<repeat each V>>,
-        elementType: Element.Type,
-        offset: Int,
-        inputs: ViewListInputs
-    ) -> ViewListOutputs {
-        let childAttr: Attribute<Element> = view.unsafeOffset(at: offset, as: Element.self)
-        childAttr.label = "\(Element.self)"
-        return Element.makeViewList(childAttr, inputs: inputs)
+    private static func makeChildViewOutputs(
+        list: ViewList,
+        inputs: ViewInputs
+    ) -> [ViewOutputs] {
+        var viewOutputs: [ViewOutputs] = []
+        var index = 0
+        list.makeViews(from: &index, inputs: inputs) { index, inputs, makeView in
+            let childViewOutputs = makeView(inputs)
+            viewOutputs.append(childViewOutputs)
+            return (childViewOutputs, true)
+        }
+        return viewOutputs
     }
 
+    private static func combineDisplayLists(
+        childDisplayLists: [DisplayList],
+        childGeometries: [ViewGeometry]
+    ) -> DisplayList {
+        // Create displayList for each child
+        var items: [DisplayList.Item] = []
+        for (index, childDisplayList) in childDisplayLists.enumerated() {
+            let childGeometry: ViewGeometry = childGeometries[index]
+            let item: DisplayList.Item = .init(
+                content: .childList(childDisplayList),
+                frame: childGeometry.dimensions.frame
+            )
+            items.append(item)
+        }
+
+        // Create container displayList
+        return DisplayList(items)
+    }
+}
+
+// MARK: - Make view list
+
+extension TupleView {
     static func makeViewList(
         _ view: Attribute<TupleView<repeat each V>>,
         inputs: ViewListInputs
@@ -109,28 +137,6 @@ extension TupleView {
         return .concat(outputs, inputs: inputs)
     }
 
-    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
-        let types = (repeat each V).self
-        let tupleType = TupleType(types)
-        return tupleType.count
-    }
-}
-
-extension TupleView {
-    private static func makeChildViewOutputs(
-        list: ViewList,
-        inputs: ViewInputs
-    ) -> [ViewOutputs] {
-        var viewOutputs: [ViewOutputs] = []
-        var index = 0
-        list.makeViews(from: &index, inputs: inputs) { index, inputs, makeView in
-            let childViewOutputs = makeView(inputs)
-            viewOutputs.append(childViewOutputs)
-            return (childViewOutputs, true)
-        }
-        return viewOutputs
-    }
-
     private static func makeChildViewListOutputs<T: View>(
         _ view: Attribute<TupleView<repeat each V>>,
         tupleType: TupleType,
@@ -143,23 +149,14 @@ extension TupleView {
         view.label = "\(T.self)"
         return T.makeViewList(view, inputs: inputs)
     }
+}
 
-    private static func combineDisplayLists(
-        childDisplayLists: [DisplayList],
-        childGeometries: [ViewGeometry]
-    ) -> DisplayList {
-        // Create displayList for each child
-        var items: [DisplayList.Item] = []
-        for (index, childDisplayList) in childDisplayLists.enumerated() {
-            let childGeometry: ViewGeometry = childGeometries[index]
-            let item: DisplayList.Item = .init(
-                content: .childList(childDisplayList),
-                frame: childGeometry.dimensions.frame
-            )
-            items.append(item)
-        }
+// MARK: - View list count
 
-        // Create container displayList
-        return DisplayList(items)
+extension TupleView {
+    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+        let types = (repeat each V).self
+        let tupleType = TupleType(types)
+        return tupleType.count
     }
 }

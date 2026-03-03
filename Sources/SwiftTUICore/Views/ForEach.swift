@@ -41,6 +41,7 @@ extension ForEach {
         inputs: ViewListInputs
     ) -> ViewListOutputs {
         let view: Self = view.wrappedValue
+        var currentInputs: ViewListInputs = inputs
         var childOutputs: [ViewListOutputs?] = Array(
             repeating: nil,
             count: view.data.count
@@ -55,8 +56,9 @@ extension ForEach {
 
             let childViewOutputs: ViewListOutputs = type(of: idView).makeViewList(
                 $idView,
-                inputs: inputs
+                inputs: currentInputs
             )
+            currentInputs.implicitId = childViewOutputs.nextImplicitId
             childOutputs[index] = childViewOutputs
         }
 
@@ -64,5 +66,10 @@ extension ForEach {
             childOutputs.compactMap { $0 },
             inputs: inputs
         )
+    }
+
+
+    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
+        nil
     }
 }
