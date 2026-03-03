@@ -30,30 +30,25 @@ extension IDView {
 
         var modifiedInputs: ViewListInputs = inputs
         modifiedInputs.append(explicitId, to: ExplicitIdInput.self)
-        defer {
-            _ = modifiedInputs.popLast(ExplicitIdInput.self)
-        }
+        defer { _ = modifiedInputs.popLast(ExplicitIdInput.self) }
 
+        let content = view.map(\.content)
+        content.label = "\(Content.self)"
 
-        let viewList: Attribute<ViewList> = Attribute {
-            let content = view.map(\.content)
-            content.label = "\(Content.self)"
-
-            let childOutputs: ViewListOutputs = Content.makeViewList(
-                content,
-                inputs: modifiedInputs
-            )
-            let view = view.wrappedValue
-            let base = childOutputs.makeViewList()
-            let explicit = ViewId.Explicit(id: view.id)
-            return IDBoundViewList(
-                base: base,
-                explicit: explicit
-            )
-        }
+        let childOutputs: ViewListOutputs = Content.makeViewList(
+            content,
+            inputs: modifiedInputs
+        )
+        let view = view.wrappedValue
+        let base = childOutputs.makeViewList()
+        let explicit = ViewId.Explicit(id: view.id)
+        let idBoundViewList = IDBoundViewList(
+            base: base,
+            explicit: explicit
+        )
 
         return .dynamicList(
-            viewList,
+            idBoundViewList,
             inputs: inputs,
             count: Content.viewListCount(inputs: .init())
         )

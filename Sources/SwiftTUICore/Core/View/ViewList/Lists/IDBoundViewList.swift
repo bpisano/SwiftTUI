@@ -39,6 +39,8 @@ struct IDBoundViewList: ViewList {
 
 extension IDBoundViewList: CustomStringConvertible {
     var description: String {
-        "IDBoundViewList(explicit: \(explicit.id), base: \(base))"
+        """
+        IDBoundViewList(explicit: \(explicit.id))
+        """
     }
 }

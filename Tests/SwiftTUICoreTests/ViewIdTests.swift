@@ -53,7 +53,7 @@ func `ForEach`() {
 }
 
 @Test
-func `Mixed`() {
+func `Mixed`() throws {
     let graph = Graph()
     graph.makeCurrent()
 
@@ -69,11 +69,12 @@ func `Mixed`() {
             .id("2")
     }
 
-    var viewList = getViewList(of: $view)
-    print(viewList.viewIds?.count)
-    print(viewList.viewIds?[0].explicit?.id)
-    print(viewList.viewIds?[1].explicit?.id)
+    let viewList = getViewList(of: $view)
+    let viewIds = try #require(viewList.viewIds)
 
+    #expect(viewIds.count == 2)
+    #expect(viewIds[0].explicit?.id == AnyHashable("1"))
+    #expect(viewIds[1].explicit?.id == AnyHashable("2"))
 }
 
 private func getViewList<V: View>(of view: Attribute<V>) -> ViewList {

@@ -92,7 +92,7 @@ private extension ViewListOutputs {
         case .staticList(let elements):
             return materializeStaticElements(elements, inputs: inputs)
         case .dynamicList(let listAttribute):
-            let list = listAttribute.wrappedValue
+            let list = listAttribute
             return materializeDynamicList(list, inputs: inputs)
         }
     }

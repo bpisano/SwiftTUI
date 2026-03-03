@@ -85,8 +85,9 @@ extension TupleView {
         _ view: Attribute<TupleView<repeat each V>>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let viewTypes = (repeat each V).self
-        let tupleType = TupleType(viewTypes)
+        let viewTypes: (repeat each V).Type = (repeat each V).self
+        let tupleType: TupleType = TupleType(viewTypes)
+        var currentInputs: ViewListInputs = inputs
         var outputs: [ViewListOutputs] = []
 
         for index in (0..<tupleType.count) {
@@ -99,8 +100,9 @@ extension TupleView {
                 tupleType: tupleType,
                 index: index,
                 viewType: elementType,
-                inputs: inputs
+                inputs: currentInputs
             )
+            currentInputs.implicitId = viewOutputs.nextImplicitId
             outputs.append(viewOutputs)
         }
 
