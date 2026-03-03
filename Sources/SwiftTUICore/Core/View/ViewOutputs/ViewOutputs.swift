@@ -114,13 +114,13 @@ private extension ViewListOutputs {
     }
 
     private func materializeDynamicList(
-        _ list: ViewList,
+        _ list: Attribute<ViewList>,
         inputs: ViewInputs
     ) -> [ViewOutputs] {
         var results: [ViewOutputs] = []
         var start = 0
 
-        list.makeViews(from: &start, inputs: inputs) { index, elementInputs, makeElement in
+        list.wrappedValue.makeViews(from: &start, inputs: inputs) { index, elementInputs, makeElement in
             let output = makeElement(elementInputs)
             results.append(output)
             return (output, true)

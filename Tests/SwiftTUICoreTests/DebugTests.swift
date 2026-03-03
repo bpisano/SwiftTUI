@@ -13,7 +13,7 @@ import Testing
 import AppKit
 
 private struct User: Identifiable {
-    let id: UUID = .init()
+    let id: Int
     let name: String
 }
 
@@ -48,12 +48,14 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-    let users: [User] = [User(name: "Alice"), User(name: "Bob"), User(name: "Charlie")]
+    let users: [User] = [
+        User(id: 1, name: "Alice"),
+        User(id: 2, name: "Bob")
+    ]
     @Attribute var view = VStack {
-        Text("Hello")
-            .id("1")
-        Text("World")
-            .id("2")
+        ForEach(users) { user in
+            Text(user.name)
+        }
     }
 
 //    @Attribute var view = Text("Hello World")

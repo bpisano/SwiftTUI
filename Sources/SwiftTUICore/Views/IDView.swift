@@ -52,10 +52,12 @@ extension IDView {
         let view = view.wrappedValue
         let base = childOutputs.makeViewList()
         let explicit = ViewId.Explicit(id: view.id)
-        let idBoundViewList = IDBoundViewList(
-            base: base,
-            explicit: explicit
-        )
+        let idBoundViewList: Attribute<any ViewList> = Attribute {
+            IDBoundViewList(
+                base: base,
+                explicit: explicit
+            )
+        }
 
         return .dynamicList(
             idBoundViewList,

@@ -40,36 +40,32 @@ extension ForEach {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let view: Self = view.wrappedValue
-        var currentInputs: ViewListInputs = inputs
-        var childOutputs: [ViewListOutputs?] = Array(
-            repeating: nil,
-            count: view.data.count
+        let state: ForEachState<Data, ID, Content> = .init()
+
+        let info = Attribute(
+            rule: ForEachInfo(
+                state: state,
+                view: view
+            )
         )
 
-        for (index, element) in view.data.enumerated() {
-            let childView: Content = view.makeChildView(element)
-            @Attribute var idView: IDView<Content, ID> = IDView(
-                childView,
-                id: element[keyPath: view.id]
-            )
+        let viewList = Attribute(
+            rule: ForEachViewListRule(info: info)
+        )
 
-            let childViewOutputs: ViewListOutputs = type(of: idView).makeViewList(
-                $idView,
-                inputs: currentInputs
-            )
-            currentInputs.implicitId = childViewOutputs.nextImplicitId
-            childOutputs[index] = childViewOutputs
-        }
-
-        return .concat(
-            childOutputs.compactMap { $0 },
+        return .dynamicList(
+            viewList,
             inputs: inputs
         )
     }
 
-
     static func viewListCount(inputs: ViewListCountInputs) -> Int? {
         nil
+    }
+}
+
+extension ForEach: CustomStringConvertible {
+    var description: String {
+        "ForEach with \(data.count) items"
     }
 }

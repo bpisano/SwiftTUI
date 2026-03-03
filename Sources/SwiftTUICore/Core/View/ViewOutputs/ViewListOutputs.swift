@@ -36,7 +36,7 @@ public struct ViewListOutputs {
                 explicitIds: explicitIds
             )
         case .dynamicList(let list):
-            list
+            list.wrappedValue
         }
     }
 }
@@ -64,7 +64,7 @@ extension ViewListOutputs {
     }
 
     static func dynamicList(
-        _ list: ViewList,
+        _ list: Attribute<ViewList>,
         inputs: ViewListInputs,
         count: Int? = nil
     ) -> ViewListOutputs {
@@ -106,8 +106,12 @@ extension ViewListOutputs {
                 output.makeViewList()
             }
 
+            let mergedViewList: Attribute<any ViewList> = Attribute {
+                MergedViewList(viewLists)
+            }
+
             return .dynamicList(
-                MergedViewList(viewLists),
+                mergedViewList,
                 inputs: inputs,
             )
         } else {
@@ -132,7 +136,7 @@ extension ViewListOutputs {
 extension ViewListOutputs {
     enum Views {
         case staticList(any ViewListElements)
-        case dynamicList(ViewList)
+        case dynamicList(Attribute<ViewList>)
     }
 }
 
