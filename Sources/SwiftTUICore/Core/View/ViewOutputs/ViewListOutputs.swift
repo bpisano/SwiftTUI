@@ -12,18 +12,18 @@ import Foundation
 public struct ViewListOutputs {
     let views: Views
     let nextImplicitId: Int
-    let explicitId: ViewId.Explicit?
+    let explicitIds: [ViewId.Explicit]
     let count: Int?
 
     init(
         views: Views,
         nextImplicitId: Int,
-        explicitId: ViewId.Explicit?,
+        explicitIds: [ViewId.Explicit],
         count: Int? = nil
     ) {
         self.views = views
         self.nextImplicitId = nextImplicitId
-        self.explicitId = explicitId
+        self.explicitIds = explicitIds
         self.count = count
     }
 
@@ -33,7 +33,7 @@ public struct ViewListOutputs {
             BaseViewList(
                 elements: elements,
                 implicitId: nextImplicitId - (count ?? 0),
-                explicitId: explicitId
+                explicitIds: explicitIds
             )
         case .dynamicList(let list):
             list
@@ -58,7 +58,7 @@ extension ViewListOutputs {
         ViewListOutputs(
             views: .staticList(elements),
             nextImplicitId: inputs.implicitId + count,
-            explicitId: inputs.currentExplicitId(),
+            explicitIds: inputs.currentExplicitIds(),
             count: count
         )
     }
@@ -71,7 +71,7 @@ extension ViewListOutputs {
         ViewListOutputs(
             views: .dynamicList(list),
             nextImplicitId: inputs.implicitId + (count ?? 0),
-            explicitId: inputs.currentExplicitId()
+            explicitIds: inputs.currentExplicitIds()
         )
     }
 

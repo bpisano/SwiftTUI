@@ -12,7 +12,7 @@ struct IDBoundViewList: ViewList {
     var viewIds: ViewId.Views? {
         base.viewIds?.map { viewId in
             var id = viewId
-            id.explicit = explicit
+            id.explicit.append(explicit)
             return id
         }
     }

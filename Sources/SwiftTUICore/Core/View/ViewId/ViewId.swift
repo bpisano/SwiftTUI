@@ -13,7 +13,7 @@ struct ViewId {
 
     let implicitId: Int
     let index: Int
-    var explicit: Explicit?
+    var explicit: [Explicit] = []
 
     init(
         implicitId: Int,
@@ -32,6 +32,6 @@ extension ViewId {
 
 extension ViewId: CustomStringConvertible {
     var description: String {
-        "ViewId(implicitId: \(implicitId), index: \(index), explicit: \(explicit?.id, default: "nil"))"
+        "ViewId(implicitId: \(implicitId), index: \(index), explicit: \(explicit.map(\.id))"
     }
 }

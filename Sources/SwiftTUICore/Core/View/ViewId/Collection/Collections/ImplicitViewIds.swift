@@ -12,21 +12,21 @@ struct ImplicitViewIds: @MainActor ViewIdCollection {
     let endIndex: Int
 
     private let implicitId: Int
-    private let explicit: ViewId.Explicit?
+    private let explicitIds: [ViewId.Explicit]
 
     init(
         implicitId: Int,
-        explicit: ViewId.Explicit?,
+        explicitIds: [ViewId.Explicit],
         count: Int
     ) {
         self.implicitId = implicitId
-        self.explicit = explicit
+        self.explicitIds = explicitIds
         self.endIndex = count
     }
 
     subscript(index: Int) -> ViewId {
         var id: ViewId = .init(implicitId: implicitId, index: index)
-        id.explicit = explicit
+        id.explicit = explicitIds
         return id
     }
 }

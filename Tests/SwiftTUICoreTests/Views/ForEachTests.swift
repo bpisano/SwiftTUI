@@ -15,7 +15,10 @@ import Geometry
 struct ForEachTests {
     @Test
     func `Ids should match elements`() throws {
-        @Attribute var users: [User] = [
+        let graph = Graph()
+        graph.makeCurrent()
+
+        let users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob"),
             User(id: 3, name: "Charlie")
@@ -24,13 +27,15 @@ struct ForEachTests {
             Text(user.name)
         }
 
-        let viewList = getViewList(of: $view)
-        try expectExplicitIDs(viewList, equals: users.map(\.id))
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [2], [3]])
     }
 
     @Test
     func `Ids should match elements order`() throws {
-        @Attribute var users: [User] = [
+        let graph = Graph()
+        graph.makeCurrent()
+
+        let users: [User] = [
             User(id: 3, name: "Charlie"),
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob")
@@ -39,13 +44,15 @@ struct ForEachTests {
             Text(user.name)
         }
 
-        let viewList = getViewList(of: $view)
-        try expectExplicitIDs(viewList, equals: users.map(\.id))
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[3], [1], [2]])
     }
 
     @Test
     func `Ids should be conserved in container`() throws {
-        @Attribute var users: [User] = [
+        let graph = Graph()
+        graph.makeCurrent()
+
+        let users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob"),
             User(id: 3, name: "Charlie")
@@ -56,12 +63,14 @@ struct ForEachTests {
             }
         }
 
-        let viewList = getViewList(of: $view)
-        try expectExplicitIDs(viewList, equals: users.map(\.id))
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [2], [3]])
     }
 
     @Test
     func `Ids should update when elements are reordered`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
         @Attribute var users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob"),
@@ -71,19 +80,25 @@ struct ForEachTests {
             Text(user.name)
         }
 
-        try expectExplicitIDs(getViewList(of: $view), equals: [1, 2, 3])
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [2], [3]])
 
         users = [
             User(id: 3, name: "Charlie"),
             User(id: 2, name: "Bob"),
             User(id: 1, name: "Alice")
         ]
+        view = ForEach(users) { user in
+            Text(user.name)
+        }
 
-        try expectExplicitIDs(getViewList(of: $view), equals: [3, 2, 1])
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[3], [2], [1]])
     }
 
     @Test
     func `Ids should update on insert and remove`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
         @Attribute var users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob"),
@@ -93,19 +108,26 @@ struct ForEachTests {
             Text(user.name)
         }
 
-        try expectExplicitIDs(getViewList(of: $view), equals: [1, 2, 3])
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [2], [3]])
 
         users.append(User(id: 4, name: "Dora"))
-
-        try expectExplicitIDs(getViewList(of: $view), equals: [1, 2, 3, 4])
+        view = ForEach(users) { user in
+            Text(user.name)
+        }
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [2], [3], [4]])
 
         users = [users[0], users[2], users[3]]
-
-        try expectExplicitIDs(getViewList(of: $view), equals: [1, 3, 4])
+        view = ForEach(users) { user in
+            Text(user.name)
+        }
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [3], [4]])
     }
 
     @Test
     func `Duplicate ids should be reflected in view ids`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
         let users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 1, name: "Alice Copy"),
@@ -115,11 +137,14 @@ struct ForEachTests {
             Text(user.name)
         }
 
-        try expectExplicitIDs(getViewList(of: $view), equals: [1, 1, 2])
+        try expectExplicitIDStacks(getViewList(of: $view), equals: [[1], [1], [2]])
     }
 
     @Test
     func `Implicit ids should differ between foreach elements`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
         let users: [User] = [
             User(id: 10, name: "A"),
             User(id: 20, name: "B"),
@@ -137,7 +162,10 @@ struct ForEachTests {
     }
 
     @Test
-    func `ForEach ids should be preserved with parent explicit id`() throws {
+    func `ForEach ids should include parent explicit id`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
         let users: [User] = [
             User(id: 1, name: "Alice"),
             User(id: 2, name: "Bob"),
@@ -150,7 +178,10 @@ struct ForEachTests {
         }
         .id("container")
 
-        try expectExplicitIDs(getViewList(of: $view), equals: users.map(\.id))
+        try expectExplicitIDStacks(
+            getViewList(of: $view),
+            equals: [[1, "container"], [2, "container"], [3, "container"]]
+        )
     }
 }
 
@@ -162,17 +193,16 @@ private func getViewList<V: View>(of view: Attribute<V>) -> ViewList {
     return outputs.makeViewList()
 }
 
-private func expectExplicitIDs(
+private func expectExplicitIDStacks(
     _ viewList: ViewList,
-    equals expected: [Int]
+    equals expected: [[AnyHashable]]
 ) throws {
     let viewIds = try #require(viewList.viewIds)
     #expect(viewIds.count == expected.count)
 
     for index in 0..<expected.count {
-        print(viewIds[index])
-        let explicit = try #require(viewIds[index].explicit)
-        #expect(explicit.id == AnyHashable(expected[index]))
+        let actual = viewIds[index].explicit.map(\.id)
+        #expect(actual == expected[index])
     }
 }
 

@@ -29,7 +29,7 @@ extension IDView {
         let explicitId: ViewId.Explicit = .init(id: view.wrappedValue.id)
 
         var modifiedInputs: ViewInputs = inputs
-        modifiedInputs.append(explicitId, to: ExplicitIdInput.self)
+        modifiedInputs.append([explicitId], to: ExplicitIdInput.self)
         defer { _ = modifiedInputs.popLast(ExplicitIdInput.self) }
 
         let content = view.map(\.content)
@@ -42,18 +42,12 @@ extension IDView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let explicitId: ViewId.Explicit = .init(id: view.wrappedValue.id)
-
-        var modifiedInputs: ViewListInputs = inputs
-        modifiedInputs.append(explicitId, to: ExplicitIdInput.self)
-        defer { _ = modifiedInputs.popLast(ExplicitIdInput.self) }
-
         let content = view.map(\.content)
         content.label = "\(Content.self)"
 
         let childOutputs: ViewListOutputs = Content.makeViewList(
             content,
-            inputs: modifiedInputs
+            inputs: inputs
         )
         let view = view.wrappedValue
         let base = childOutputs.makeViewList()

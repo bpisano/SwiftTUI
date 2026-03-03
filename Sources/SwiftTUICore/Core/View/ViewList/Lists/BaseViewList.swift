@@ -12,23 +12,23 @@ struct BaseViewList: ViewList {
     var viewIds: ViewId.Views? {
         ImplicitViewIds(
             implicitId: implicitId,
-            explicit: explicitId,
+            explicitIds: explicitIds,
             count: elements.count
         )
     }
 
     private let elements: any ViewListElements
     private let implicitId: Int
-    private let explicitId: ViewId.Explicit?
+    private let explicitIds: [ViewId.Explicit]
 
     init(
         elements: any ViewListElements,
         implicitId: Int,
-        explicitId: ViewId.Explicit?
+        explicitIds: [ViewId.Explicit]
     ) {
         self.elements = elements
         self.implicitId = implicitId
-        self.explicitId = explicitId
+        self.explicitIds = explicitIds
     }
 
     func makeViews(
@@ -44,6 +44,6 @@ struct BaseViewList: ViewList {
 
 extension BaseViewList: CustomStringConvertible {
     var description: String {
-        "BaseViewList(elements: \(elements), implicitId: \(implicitId), explicitId: \(explicitId?.id, default: "nil"))"
+        "BaseViewList(elements: \(elements), implicitId: \(implicitId), explicitId: \(explicitIds.map(\.id))"
     }
 }

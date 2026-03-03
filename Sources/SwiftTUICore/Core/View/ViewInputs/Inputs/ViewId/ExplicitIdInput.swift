@@ -8,17 +8,17 @@
 import Foundation
 
 struct ExplicitIdInput: ViewInputKey {
-    typealias Value = ViewId.Explicit
+    typealias Value = [ViewId.Explicit]
 }
 
 extension ViewInputs {
-    func currentExplicitId() -> ViewId.Explicit? {
-        storage[ExplicitIdInput.self]
+    func currentExplicitIds() -> [ViewId.Explicit] {
+        storage[ExplicitIdInput.self] ?? []
     }
 }
 
 extension ViewListInputs {
-    func currentExplicitId() -> ViewId.Explicit? {
-        storage[ExplicitIdInput.self]
+    func currentExplicitIds() -> [ViewId.Explicit] {
+        storage[ExplicitIdInput.self] ?? []
     }
 }

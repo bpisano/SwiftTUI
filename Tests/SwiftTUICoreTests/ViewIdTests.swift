@@ -11,70 +11,52 @@ import Geometry
 @testable import SwiftTUICore
 import Testing
 
-@Test
-func `IDView`() {
-    let graph = Graph()
-    graph.makeCurrent()
+@Suite("ViewId")
+struct ViewIdTests {
+    @Test
+    func `Single explicit id should be present`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
 
-    @Attribute var viewId: String = "1"
-    @Attribute var view = Text("Hello")
-        .id(viewId)
-
-    var viewList = getViewList(of: $view)
-    print(viewList.viewIds?[0].explicit?.id)
-
-    viewId = "2"
-
-    viewList = getViewList(of: $view)
-    print(viewList.viewIds?[0].explicit?.id)
-}
-
-@Test
-func `ForEach`() {
-    let graph = Graph()
-    graph.makeCurrent()
-
-    @Attribute var users: [User] = [
-        User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob"),
-        User(id: 3, name: "Charlie")
-    ]
-    @Attribute var view = ForEach(users) { user in
-        Text(user.name)
-    }
-
-    var viewList = getViewList(of: $view)
-    print(viewList.viewIds?.map(\.explicit?.id))
-
-
-    users.append(User(id: 4, name: "David"))
-    viewList = getViewList(of: $view)
-    print(viewList.viewIds?.map(\.explicit?.id))
-}
-
-@Test
-func `Mixed`() throws {
-    let graph = Graph()
-    graph.makeCurrent()
-
-    @Attribute var users: [User] = [
-        User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob"),
-        User(id: 3, name: "Charlie")
-    ]
-    @Attribute var view = VStack {
-        Text("Hello")
+        @Attribute var view = Text("Hello")
             .id("1")
-        Text("World")
-            .id("2")
+
+        let viewIds = try #require(getViewList(of: $view).viewIds)
+        #expect(viewIds.count == 1)
+        #expect(viewIds[0].explicit.map(\.id) == [AnyHashable("1")])
     }
 
-    let viewList = getViewList(of: $view)
-    let viewIds = try #require(viewList.viewIds)
+    @Test
+    func `Nested id should stack explicit ids`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
 
-    #expect(viewIds.count == 2)
-    #expect(viewIds[0].explicit?.id == AnyHashable("1"))
-    #expect(viewIds[1].explicit?.id == AnyHashable("2"))
+        @Attribute var view = Text("Hello")
+            .id("child")
+            .id("parent")
+
+        let viewIds = try #require(getViewList(of: $view).viewIds)
+        #expect(viewIds.count == 1)
+        #expect(viewIds[0].explicit.map(\.id) == [AnyHashable("child"), AnyHashable("parent")])
+    }
+
+    @Test
+    func `Sibling ids in container should stay independent`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
+        @Attribute var view = VStack {
+            Text("Hello")
+                .id("1")
+            Text("World")
+                .id("2")
+        }
+
+        let viewIds = try #require(getViewList(of: $view).viewIds)
+        #expect(viewIds.count == 2)
+        #expect(viewIds[0].explicit.map(\.id) == [AnyHashable("1")])
+        #expect(viewIds[1].explicit.map(\.id) == [AnyHashable("2")])
+    }
 }
 
 private func getViewList<V: View>(of view: Attribute<V>) -> ViewList {
@@ -83,9 +65,4 @@ private func getViewList<V: View>(of view: Attribute<V>) -> ViewList {
         inputs: .init()
     )
     return outputs.makeViewList()
-}
-
-private struct User: Identifiable {
-    let id: Int
-    let name: String
 }
