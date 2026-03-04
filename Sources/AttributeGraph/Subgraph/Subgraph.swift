@@ -24,7 +24,7 @@ public final class Subgraph {
         graph.subgraph = self
         defer {
             graph.subgraph = previousSubgraph
-            print(attributeLabels)
+//            print(attributeLabels)
         }
         return body()
     }

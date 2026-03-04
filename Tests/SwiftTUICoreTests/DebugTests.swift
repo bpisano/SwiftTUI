@@ -50,7 +50,7 @@ func debugPlaygroundCode() {
 
     @Attribute var users: [User] = [
         User(id: 1, name: "Alice"),
-//        User(id: 2, name: "Bob")
+        User(id: 2, name: "Bob")
     ]
     @Attribute var view = VStack {
         ForEach(users) { user in
@@ -69,17 +69,17 @@ func debugPlaygroundCode() {
 
     let _ = outputs.displayList.wrappedValue
 
-    viewPhase = .active
-
-    let _ = outputs.displayList.wrappedValue
-    CallbackQueue.shared.executeAll()
-
-//    users = [
-//        User(id: 1, name: "Alice")
-//    ]
+//    viewPhase = .active
 //
 //    let _ = outputs.displayList.wrappedValue
 //    CallbackQueue.shared.executeAll()
+
+    users = [
+        User(id: 1, name: "Alice")
+    ]
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
 
     copyToClipboard(graph.description)
 }

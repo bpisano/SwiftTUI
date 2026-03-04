@@ -105,7 +105,8 @@ extension LayoutView {
 
         list.wrappedValue.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
             let childGeometry = childGeometries.map { [currentIndex] geometry in
-                geometry[currentIndex]
+                print(currentIndex, list.label)
+                return geometry[currentIndex]
             }
             childGeometry.label = "\(L.self) Child \(currentIndex) Geometry"
 

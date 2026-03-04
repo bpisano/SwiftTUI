@@ -8,37 +8,84 @@
 import Foundation
 import AttributeGraph
 
+private enum Edit {
+    case insertion(newOffset: Int)
+    case removal(oldOffset: Int)
+}
+
+private struct DiffContext<ID: Hashable> {
+    let oldOrdered: [ID]
+    let oldOffsets: [ID: Int]
+    let oldIDs: Set<ID>
+
+    var newOrdered: [ID] = []
+    var newIDs: Set<ID> = []
+
+    var editsById: [ID: Edit] = [:]
+
+    var pendingRemovals: [ID] = []
+
+    init(oldOrdered: [ID]) {
+        self.oldOrdered = oldOrdered
+        self.oldOffsets = Dictionary(uniqueKeysWithValues: oldOrdered.enumerated().map { ($1, $0) })
+        self.oldIDs = Set(oldOrdered)
+    }
+
+    mutating func appendNew(_ id: ID) {
+        newOrdered.append(id)
+        newIDs.insert(id)
+    }
+
+    func removedIDs() -> Set<ID> {
+        oldIDs.subtracting(newIDs)
+    }
+
+    func oldOffset(for id: ID) -> Int {
+        oldOffsets[id] ?? -1
+    }
+}
+
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
-    var view: Attribute<ForEach<Data, ID, Content>>?
-    var itemsByIds: [ID: Item] = [:]
-    var orderedIds: [ID] = []
+    private(set) var view: Attribute<ForEach<Data, ID, Content>>?
+
+    private(set) var itemsById: [ID: Item] = [:]
+    private(set) var orderedIds: [ID] = []
 
     func updateState(with view: Attribute<ForEach<Data, ID, Content>>) {
         self.view = view
 
-        let wrappedView: ForEach<Data, ID, Content> = view.wrappedValue
-        var newOrderedIds: [ID] = []
-        var index: Data.Index = wrappedView.data.startIndex
+        var diff: DiffContext<ID> = .init(oldOrdered: orderedIds)
 
-        while index != wrappedView.data.endIndex {
-            let element: Data.Element = wrappedView.data[index]
-            let elementId: ID = element[keyPath: wrappedView.id]
+        let unwrappedView: ForEach<Data, ID, Content> = view.wrappedValue
+        var index: Data.Index = unwrappedView.data.startIndex
 
-            if let item = itemsByIds[elementId] {
-                item.index = index
+        while index != unwrappedView.data.endIndex {
+            let element: Data.Element = unwrappedView.data[index]
+            let id: ID = element[keyPath: unwrappedView.id]
+            let newOffset: Int = diff.newOrdered.count
+
+            if let existingItem = itemsById[id] {
+                // Existing item, update the index
+                existingItem.index = index
             } else {
-                itemsByIds[elementId] = makeItem(
-                    id: elementId,
-                    index: index,
-                    from: view
-                )
+                // New item, create and insert
+                itemsById[id] = makeItem(id: id, index: index, from: view)
+                diff.editsById[id] = .insertion(newOffset: newOffset)
             }
 
-            newOrderedIds.append(elementId)
-            wrappedView.data.formIndex(after: &index)
+            diff.appendNew(id)
+            unwrappedView.data.formIndex(after: &index)
         }
 
-        orderedIds = newOrderedIds
+        for removedId in diff.removedIDs() {
+            let oldOffset: Int = diff.oldOffset(for: removedId)
+            diff.editsById[removedId] = .removal(oldOffset: oldOffset)
+            diff.pendingRemovals.append(removedId)
+        }
+
+        orderedIds = diff.newOrdered
+
+        print(diff.editsById)
     }
 
     private func makeItem(
@@ -48,9 +95,11 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
     ) -> Item {
         let subgraph: Subgraph = .init()
         return subgraph.withDependencyCapture {
-            let childView = Attribute {
-                let view = view.wrappedValue
-                return view.makeChildView(view.data[index])
+            let element = view.wrappedValue.data[index]
+
+            let childView: Attribute<Content> = Attribute {
+//                let view = view.wrappedValue
+                return view.wrappedValue.makeChildView(element)
             }
             childView.label = "ForEach Child View for id \(id)"
             
@@ -94,69 +143,5 @@ extension ForEachState {
 extension ForEachState: CustomStringConvertible {
     var description: String {
         "ForEachState with \(orderedIds.count) items"
-    }
-}
-
-struct ForEachViewListRule<Data: RandomAccessCollection, ID: Hashable, Content: View>: @MainActor StatefulRule {
-    typealias Value = ViewList
-
-    private let state: ForEachState<Data, ID, Content>
-
-    @Attribute private var view: ForEach<Data, ID, Content>
-
-    init(
-        state: ForEachState<Data, ID, Content>,
-        view: Attribute<ForEach<Data, ID, Content>>
-    ) {
-        self.state = state
-        self._view = view
-    }
-
-    func update() -> ViewList {
-        state.updateState(with: $view)
-        return ForEachViewList(state: state)
-    }
-}
-
-struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View>: ViewList {
-    var count: Int {
-        state.orderedIds.count
-    }
-    var viewIds: ViewId.Views? {
-        let itemLists: [Attribute<ViewList>] = state.orderedIds.compactMap { id in
-            state.itemsByIds[id]?.viewList
-        }
-        return MergedViewList(itemLists).viewIds
-    }
-
-    private let state: ForEachState<Data, ID, Content>
-
-    init(state: ForEachState<Data, ID, Content>) {
-        self.state = state
-    }
-
-    func makeViews(
-        from start: inout Int,
-        inputs: ViewInputs,
-        body: (inout Int, ViewInputs, @escaping MakeElement) -> (ViewOutputs?, Bool)
-    ) {
-        withoutActuallyEscaping(body) { escapingBody in
-            for id in state.orderedIds {
-                guard let item = state.itemsByIds[id] else { continue }
-                item.subgraph.withDependencyCapture {
-                    item.viewList.wrappedValue.makeViews(
-                        from: &start,
-                        inputs: inputs,
-                        body: body
-                    )
-                }
-            }
-        }
-    }
-}
-
-extension ForEachViewList: CustomStringConvertible {
-    var description: String {
-        "ForEachViewList with \(state.orderedIds.count) items"
     }
 }
