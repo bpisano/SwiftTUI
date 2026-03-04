@@ -13,38 +13,6 @@ private enum Edit {
     case removal(oldOffset: Int)
 }
 
-private struct DiffContext<ID: Hashable> {
-    let oldOrdered: [ID]
-    let oldOffsets: [ID: Int]
-    let oldIDs: Set<ID>
-
-    var newOrdered: [ID] = []
-    var newIDs: Set<ID> = []
-
-    var editsById: [ID: Edit] = [:]
-
-    var pendingRemovals: [ID] = []
-
-    init(oldOrdered: [ID]) {
-        self.oldOrdered = oldOrdered
-        self.oldOffsets = Dictionary(uniqueKeysWithValues: oldOrdered.enumerated().map { ($1, $0) })
-        self.oldIDs = Set(oldOrdered)
-    }
-
-    mutating func appendNew(_ id: ID) {
-        newOrdered.append(id)
-        newIDs.insert(id)
-    }
-
-    func removedIDs() -> Set<ID> {
-        oldIDs.subtracting(newIDs)
-    }
-
-    func oldOffset(for id: ID) -> Int {
-        oldOffsets[id] ?? -1
-    }
-}
-
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
     private(set) var view: Attribute<ForEach<Data, ID, Content>>?
 
@@ -54,7 +22,10 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
     func updateState(with view: Attribute<ForEach<Data, ID, Content>>) {
         self.view = view
 
-        var diff: DiffContext<ID> = .init(oldOrdered: orderedIds)
+        var diff: DiffContext = .init(
+            oldItemsById: itemsById,
+            oldOrdered: orderedIds
+        )
 
         let unwrappedView: ForEach<Data, ID, Content> = view.wrappedValue
         var index: Data.Index = unwrappedView.data.startIndex
@@ -69,6 +40,7 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
                 existingItem.index = index
             } else {
                 // New item, create and insert
+                print("Calling makeItem for new item with ID \(id) at new offset \(newOffset)")
                 itemsById[id] = makeItem(id: id, index: index, from: view)
                 diff.editsById[id] = .insertion(newOffset: newOffset)
             }
@@ -85,7 +57,17 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
 
         orderedIds = diff.newOrdered
 
+        print("Ordered IDs: \(orderedIds)")
         print(diff.editsById)
+
+        CallbackQueue.shared.enqueue { [weak self] in
+            guard let self else { return }
+            for pendingRemoval in diff.pendingRemovals {
+                guard let item = self.itemsById[pendingRemoval] else { continue }
+                print("Removing item with ID \(pendingRemoval) at old offset \(item.index)")
+                item.subgraph.clean()
+            }
+        }
     }
 
     private func makeItem(
@@ -98,7 +80,6 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
             let element = view.wrappedValue.data[index]
 
             let childView: Attribute<Content> = Attribute {
-//                let view = view.wrappedValue
                 return view.wrappedValue.makeChildView(element)
             }
             childView.label = "ForEach Child View for id \(id)"
@@ -139,6 +120,46 @@ extension ForEachState {
         }
     }
 }
+
+extension ForEachState {
+    private struct DiffContext {
+        let oldItemsById: [ID: Item]
+        let oldOrdered: [ID]
+        let oldOffsets: [ID: Int]
+        let oldIDs: Set<ID>
+
+        var newOrdered: [ID] = []
+        var newIDs: Set<ID> = []
+
+        var editsById: [ID: Edit] = [:]
+
+        var pendingRemovals: [ID] = []
+
+        init(
+            oldItemsById: [ID: Item],
+            oldOrdered: [ID]
+        ) {
+            self.oldItemsById = oldItemsById
+            self.oldOrdered = oldOrdered
+            self.oldOffsets = Dictionary(uniqueKeysWithValues: oldOrdered.enumerated().map { ($1, $0) })
+            self.oldIDs = Set(oldOrdered)
+        }
+
+        mutating func appendNew(_ id: ID) {
+            newOrdered.append(id)
+            newIDs.insert(id)
+        }
+
+        func removedIDs() -> Set<ID> {
+            oldIDs.subtracting(newIDs)
+        }
+
+        func oldOffset(for id: ID) -> Int {
+            oldOffsets[id] ?? -1
+        }
+    }
+}
+
 
 extension ForEachState: CustomStringConvertible {
     var description: String {

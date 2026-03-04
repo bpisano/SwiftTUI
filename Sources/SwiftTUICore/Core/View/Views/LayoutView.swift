@@ -104,9 +104,14 @@ extension LayoutView {
         var index = 0
 
         list.wrappedValue.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
-            let childGeometry = childGeometries.map { [currentIndex] geometry in
-                print(currentIndex, list.label)
-                return geometry[currentIndex]
+            let childGeometry = childGeometries.map { [currentIndex] geometries in
+//                print("Index", index, "CI", currentIndex)
+                guard currentIndex >= 0, currentIndex < geometries.count else {
+                    // Keep this lazy to avoid childOutputs -> childGeometries cycles.
+//                    print("LC", list.wrappedValue.count, "GC", geometries.count, "CI", currentIndex)
+                    return ViewGeometry.zero
+                }
+                return geometries[currentIndex]
             }
             childGeometry.label = "\(L.self) Child \(currentIndex) Geometry"
 
@@ -122,6 +127,8 @@ extension LayoutView {
 
             return (childOutputs, true)
         }
+
+//        print(viewOutputs.count)
 
         return viewOutputs
     }

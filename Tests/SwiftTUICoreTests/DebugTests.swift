@@ -5,12 +5,13 @@
 //  This file replicates the playground code from Test.swift for debugging with breakpoints
 //
 
+import AppKit
 import Foundation
 import Geometry
+import Testing
+
 @testable import AttributeGraph
 @testable import SwiftTUICore
-import Testing
-import AppKit
 
 private struct User: Identifiable {
     let id: Int
@@ -50,7 +51,7 @@ func debugPlaygroundCode() {
 
     @Attribute var users: [User] = [
         User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob")
+        User(id: 2, name: "Bob"),
     ]
     @Attribute var view = VStack {
         ForEach(users) { user in
@@ -69,19 +70,26 @@ func debugPlaygroundCode() {
 
     let _ = outputs.displayList.wrappedValue
 
-//    viewPhase = .active
-//
-//    let _ = outputs.displayList.wrappedValue
-//    CallbackQueue.shared.executeAll()
+    //    viewPhase = .active
+    //
+    //    let _ = outputs.displayList.wrappedValue
+    //    CallbackQueue.shared.executeAll()
 
     users = [
         User(id: 1, name: "Alice")
     ]
 
+    print("\n----------------\n")
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
+
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()
 
     copyToClipboard(graph.description)
+
+    print(graph.description)
 }
 
 private func copyToClipboard(_ string: String) {

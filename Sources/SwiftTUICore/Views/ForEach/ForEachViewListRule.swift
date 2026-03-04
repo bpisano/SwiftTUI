@@ -24,6 +24,7 @@ struct ForEachViewListRule<Data: RandomAccessCollection, ID: Hashable, Content: 
     }
 
     func update() -> ViewList {
+        print("Updating ForEachViewListRule")
         state.updateState(with: $view)
         return ForEachViewList(state: state)
     }

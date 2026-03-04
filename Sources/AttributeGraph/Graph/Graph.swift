@@ -38,6 +38,13 @@ public final class Graph {
     }
 
     func register(attributeRef: AttributeRef) {
+        // Defensive: avoid registering the same reference twice.
+        guard !attributesRefs.contains(where: { $0 === attributeRef }) else {
+            return
+        }
+        guard !attributesRefs.contains(where: { $0.attribute.id == attributeRef.attribute.id }) else {
+            return
+        }
         attributesRefs.append(attributeRef)
 
         if let subgraph {

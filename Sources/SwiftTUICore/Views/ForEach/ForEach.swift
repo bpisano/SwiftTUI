@@ -42,7 +42,7 @@ extension ForEach {
     ) -> ViewListOutputs {
         let state: ForEachState<Data, ID, Content> = .init()
 
-        let viewList = Attribute(
+        let viewList: Attribute<any ViewList> = Attribute(
             rule: ForEachViewListRule(
                 state: state,
                 view: view
