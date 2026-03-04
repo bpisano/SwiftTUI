@@ -7,12 +7,12 @@
 
 import Foundation
 
-public protocol StatefulRule: Rule where Value == Void {
-    func update()
+public protocol StatefulRule: Rule {
+    func update() -> Value
 }
 
 public extension StatefulRule {
-    func evaluate() {
+    func evaluate() -> Value {
         update()
     }
 }

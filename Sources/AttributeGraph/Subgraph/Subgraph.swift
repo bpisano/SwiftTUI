@@ -11,8 +11,22 @@ public final class Subgraph {
     private let graph: Graph
     private var attributeRefs: [AttributeRef] = []
 
+    public var attributeLabels: [String] {
+        attributeRefs.map(\.attribute.label)
+    }
+
     public init(graph: Graph = .current) {
         self.graph = graph
+    }
+
+    public func withDependencyCapture<T>(_ body: () -> T) -> T {
+        let previousSubgraph: Subgraph? = graph.subgraph
+        graph.subgraph = self
+        defer {
+            graph.subgraph = previousSubgraph
+            print(attributeLabels)
+        }
+        return body()
     }
 
     public func clean() {

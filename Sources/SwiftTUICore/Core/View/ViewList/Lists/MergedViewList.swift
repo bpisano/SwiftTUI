@@ -6,17 +6,18 @@
 //
 
 import Foundation
+import AttributeGraph
 
 struct MergedViewList: ViewList {
     let count: Int
     let viewIds: ViewId.Views?
 
-    private let lists: [ViewList]
+    private let lists: [Attribute<ViewList>]
 
-    init(_ lists: [ViewList]) {
+    init(_ lists: [Attribute<ViewList>]) {
         self.lists = lists
-        self.count = lists.reduce(0) { $0 + $1.count }
-        self.viewIds = MergedViewIds(lists.compactMap(\.viewIds))
+        self.count = lists.reduce(0) { $0 + $1.wrappedValue.count }
+        self.viewIds = MergedViewIds(lists.compactMap(\.wrappedValue.viewIds))
     }
 
     func makeViews(
@@ -26,7 +27,11 @@ struct MergedViewList: ViewList {
     ) {
         withoutActuallyEscaping(body) { escapingBody in
             for list in lists {
-                list.makeViews(from: &start, inputs: inputs, body: escapingBody)
+                list.wrappedValue.makeViews(
+                    from: &start,
+                    inputs: inputs,
+                    body: escapingBody
+                )
             }
         }
     }

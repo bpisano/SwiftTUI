@@ -9,19 +9,20 @@ import Foundation
 import AttributeGraph
 
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
-    var view: ForEach<Data, ID, Content>?
+    var view: Attribute<ForEach<Data, ID, Content>>?
     var itemsByIds: [ID: Item] = [:]
     var orderedIds: [ID] = []
 
-    func updateState(with view: ForEach<Data, ID, Content>) {
+    func updateState(with view: Attribute<ForEach<Data, ID, Content>>) {
         self.view = view
 
+        let wrappedView: ForEach<Data, ID, Content> = view.wrappedValue
         var newOrderedIds: [ID] = []
-        var index: Data.Index = view.data.startIndex
+        var index: Data.Index = wrappedView.data.startIndex
 
-        while index != view.data.endIndex {
-            let element: Data.Element = view.data[index]
-            let elementId: ID = element[keyPath: view.id]
+        while index != wrappedView.data.endIndex {
+            let element: Data.Element = wrappedView.data[index]
+            let elementId: ID = element[keyPath: wrappedView.id]
 
             if let item = itemsByIds[elementId] {
                 item.index = index
@@ -34,38 +35,39 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
             }
 
             newOrderedIds.append(elementId)
-            view.data.formIndex(after: &index)
+            wrappedView.data.formIndex(after: &index)
         }
 
         orderedIds = newOrderedIds
     }
 
-    private func makeItem(id: ID, index: Data.Index, from view: ForEach<Data, ID, Content>) -> Item {
+    private func makeItem(
+        id: ID,
+        index: Data.Index,
+        from view: Attribute<ForEach<Data, ID, Content>>
+    ) -> Item {
         let subgraph: Subgraph = .init()
-        let viewList = Attribute {
-            Graph.current.subgraph = subgraph
-            defer { Graph.current.subgraph = nil }
-
+        return subgraph.withDependencyCapture {
             let childView = Attribute {
-                view.makeChildView(view.data[index])
+                let view = view.wrappedValue
+                return view.makeChildView(view.data[index])
             }
             childView.label = "ForEach Child View for id \(id)"
-
-            let outputs = Content.makeViewList(
+            
+            let outputs: ViewListOutputs = Content.makeViewList(
                 childView,
                 inputs: .init(implicitId: 0)
             )
-            return outputs.makeViewList()
+            let viewList: Attribute<any ViewList> = outputs.makeViewListAttribute()
+            
+            return Item(
+                id: id,
+                index: index,
+                viewList: viewList,
+                subgraph: subgraph
+            )
         }
-
-        return Item(
-            id: id,
-            index: index,
-            viewList: viewList,
-            subgraph: subgraph,
-        )
     }
-
 }
 
 extension ForEachState {
@@ -79,7 +81,7 @@ extension ForEachState {
             id: ID,
             index: Data.Index,
             viewList: Attribute<ViewList>,
-            subgraph: Subgraph = .init()
+            subgraph: Subgraph
         ) {
             self.id = id
             self.index = index
@@ -95,38 +97,24 @@ extension ForEachState: CustomStringConvertible {
     }
 }
 
-struct ForEachChild<Data: RandomAccessCollection, ID: Hashable, Content: View>: Rule {
-    let state: ForEachState<Data, ID, Content>
-    let id: ID
+struct ForEachViewListRule<Data: RandomAccessCollection, ID: Hashable, Content: View>: @MainActor StatefulRule {
+    typealias Value = ViewList
 
-    func evaluate() -> Content {
-        guard
-            let view = state.view,
-            let item = state.itemsByIds[id]
-        else {
-            fatalError("ForEach: No item found for id \(id)")
-        }
+    private let state: ForEachState<Data, ID, Content>
 
-        let element = view.data[item.index]
-        return view.makeChildView(element)
+    @Attribute private var view: ForEach<Data, ID, Content>
+
+    init(
+        state: ForEachState<Data, ID, Content>,
+        view: Attribute<ForEach<Data, ID, Content>>
+    ) {
+        self.state = state
+        self._view = view
     }
-}
 
-struct ForEachInfo<Data: RandomAccessCollection, ID: Hashable, Content: View>: Rule {
-    let state: ForEachState<Data, ID, Content>
-    let view: Attribute<ForEach<Data, ID, Content>>
-
-    func evaluate() -> ForEachState<Data, ID, Content> {
-        state.updateState(with: view.wrappedValue)
-        return state
-    }
-}
-
-struct ForEachViewListRule<Data: RandomAccessCollection, ID: Hashable, Content: View>: Rule {
-    let info: Attribute<ForEachState<Data, ID, Content>>
-
-    func evaluate() -> ViewList {
-        ForEachViewList(state: info.wrappedValue)
+    func update() -> ViewList {
+        state.updateState(with: $view)
+        return ForEachViewList(state: state)
     }
 }
 
@@ -135,8 +123,8 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         state.orderedIds.count
     }
     var viewIds: ViewId.Views? {
-        let itemLists: [ViewList] = state.orderedIds.compactMap { id in
-            state.itemsByIds[id]?.viewList.wrappedValue
+        let itemLists: [Attribute<ViewList>] = state.orderedIds.compactMap { id in
+            state.itemsByIds[id]?.viewList
         }
         return MergedViewList(itemLists).viewIds
     }
@@ -155,7 +143,13 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         withoutActuallyEscaping(body) { escapingBody in
             for id in state.orderedIds {
                 guard let item = state.itemsByIds[id] else { continue }
-                item.viewList.wrappedValue.makeViews(from: &start, inputs: inputs, body: body)
+                item.subgraph.withDependencyCapture {
+                    item.viewList.wrappedValue.makeViews(
+                        from: &start,
+                        inputs: inputs,
+                        body: body
+                    )
+                }
             }
         }
     }

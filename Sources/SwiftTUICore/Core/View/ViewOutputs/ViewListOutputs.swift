@@ -27,16 +27,20 @@ public struct ViewListOutputs {
         self.count = count
     }
 
-    func makeViewList() -> ViewList {
+    func makeViewListAttribute() -> Attribute<ViewList> {
         switch views {
         case .staticList(let elements):
-            BaseViewList(
-                elements: elements,
-                implicitId: nextImplicitId - (count ?? 0),
-                explicitIds: explicitIds
-            )
+            let baseViewList: Attribute<any ViewList> = Attribute {
+                BaseViewList(
+                    elements: elements,
+                    implicitId: nextImplicitId - (count ?? 0),
+                    explicitIds: explicitIds
+                )
+            }
+            baseViewList.label = "BaseViewList"
+            return baseViewList
         case .dynamicList(let list):
-            list.wrappedValue
+            return list
         }
     }
 }
@@ -102,13 +106,14 @@ extension ViewListOutputs {
 
         if hasDynamic {
             // Create a dynamic merged list
-            let viewLists: [ViewList] = outputsList.map { output in
-                output.makeViewList()
+            let viewLists: [Attribute<ViewList>] = outputsList.map { output in
+                output.makeViewListAttribute()
             }
 
             let mergedViewList: Attribute<any ViewList> = Attribute {
                 MergedViewList(viewLists)
             }
+            mergedViewList.label = "MergedViewList"
 
             return .dynamicList(
                 mergedViewList,

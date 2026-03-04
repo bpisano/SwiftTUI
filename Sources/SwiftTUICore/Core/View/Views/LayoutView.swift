@@ -25,13 +25,13 @@ extension LayoutView {
         let content = view.map(\.content)
 
         let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init(from: inputs))
-        let viewList: ViewList = viewListOutputs.makeViewList()
+        let viewList: Attribute<ViewList> = viewListOutputs.makeViewListAttribute()
 
-        var childOutputs: [ViewOutputs] = []
+        var childOutputs: Attribute<[ViewOutputs]>!
 
         let layoutComputer = Attribute {
             let layout: L = view.wrappedValue.layout
-            return layout.layoutComputer(for: childOutputs.map(\.layoutComputer.wrappedValue))
+            return layout.layoutComputer(for: childOutputs.wrappedValue.map(\.layoutComputer.wrappedValue))
         }
 
         let childGeometries = Attribute {
@@ -46,15 +46,9 @@ extension LayoutView {
             )
         }
 
-        childOutputs = makeChildViewOutputs(
-            list: viewList,
-            inputs: inputs,
-            childGeometries: childGeometries
-        )
-
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] = childOutputs.map(\.displayList.wrappedValue)
+            let childDisplayLists: [DisplayList] = childOutputs.wrappedValue.map(\.displayList.wrappedValue)
 
             var items: [DisplayList.Item] = []
             for (index, childDisplayList) in childDisplayLists.enumerated() {
@@ -68,8 +62,17 @@ extension LayoutView {
             }
             return DisplayList(items)
         }
-        
+
+        childOutputs = Attribute {
+            makeChildViewOutputs(
+                list: viewList,
+                inputs: inputs,
+                childGeometries: childGeometries
+            )
+        }
+
         content.label = "\(Content.self)"
+        childOutputs.label = "\(Content.self) Child Outputs"
         layoutComputer.label = "\(type(of: Self.self)) Layout Computer"
         childGeometries.label = "\(L.self) Child Geometries"
         displayList.label = "\(Self.self) Display List"
@@ -93,14 +96,14 @@ extension LayoutView {
     }
 
     private static func makeChildViewOutputs(
-        list: ViewList,
+        list: Attribute<ViewList>,
         inputs: ViewInputs,
         childGeometries: Attribute<[ViewGeometry]>
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
         var index = 0
 
-        list.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
+        list.wrappedValue.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
             let childGeometry = childGeometries.map { [currentIndex] geometry in
                 geometry[currentIndex]
             }

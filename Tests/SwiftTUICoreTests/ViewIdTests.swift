@@ -64,5 +64,5 @@ private func getViewList<V: View>(of view: Attribute<V>) -> ViewList {
         view,
         inputs: .init()
     )
-    return outputs.makeViewList()
+    return outputs.makeViewListAttribute().wrappedValue
 }

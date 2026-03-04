@@ -48,9 +48,9 @@ func debugPlaygroundCode() {
         phase: $viewPhase
     )
 
-    let users: [User] = [
+    @Attribute var users: [User] = [
         User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob")
+//        User(id: 2, name: "Bob")
     ]
     @Attribute var view = VStack {
         ForEach(users) { user in
@@ -58,7 +58,8 @@ func debugPlaygroundCode() {
         }
     }
 
-//    @Attribute var view = Text("Hello World")
+    $users.label = "Users"
+
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
     $screenPosition.label = "Screen Origin"
@@ -67,12 +68,18 @@ func debugPlaygroundCode() {
     $view.label = "\(type(of: view))"
 
     let _ = outputs.displayList.wrappedValue
-    copyToClipboard(graph.description)
 
     viewPhase = .active
 
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()
+
+//    users = [
+//        User(id: 1, name: "Alice")
+//    ]
+//
+//    let _ = outputs.displayList.wrappedValue
+//    CallbackQueue.shared.executeAll()
 
     copyToClipboard(graph.description)
 }

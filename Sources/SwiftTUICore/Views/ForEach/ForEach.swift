@@ -42,16 +42,13 @@ extension ForEach {
     ) -> ViewListOutputs {
         let state: ForEachState<Data, ID, Content> = .init()
 
-        let info = Attribute(
-            rule: ForEachInfo(
+        let viewList = Attribute(
+            rule: ForEachViewListRule(
                 state: state,
                 view: view
             )
         )
-
-        let viewList = Attribute(
-            rule: ForEachViewListRule(info: info)
-        )
+        viewList.label = "ForEach ViewList"
 
         return .dynamicList(
             viewList,

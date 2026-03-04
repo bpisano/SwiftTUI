@@ -42,22 +42,25 @@ extension IDView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let content = view.map(\.content)
-        content.label = "\(Content.self)"
-
-        let childOutputs: ViewListOutputs = Content.makeViewList(
-            content,
-            inputs: inputs
-        )
-        let view = view.wrappedValue
-        let base = childOutputs.makeViewList()
-        let explicit = ViewId.Explicit(id: view.id)
         let idBoundViewList: Attribute<any ViewList> = Attribute {
-            IDBoundViewList(
-                base: base,
+            let content = view.map(\.content)
+            content.label = "\(Content.self)"
+
+            let childOutputs: ViewListOutputs = Content.makeViewList(
+                content,
+                inputs: inputs
+            )
+
+            let view = view.wrappedValue
+            let base = childOutputs.makeViewListAttribute()
+            let explicit = ViewId.Explicit(id: view.id)
+
+            return IDBoundViewList(
+                base: base.wrappedValue,
                 explicit: explicit
             )
         }
+        idBoundViewList.label = "IDBoundViewList"
 
         return .dynamicList(
             idBoundViewList,

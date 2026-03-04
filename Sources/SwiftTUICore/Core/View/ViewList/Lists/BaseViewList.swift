@@ -44,6 +44,6 @@ struct BaseViewList: ViewList {
 
 extension BaseViewList: CustomStringConvertible {
     var description: String {
-        "BaseViewList(elements: \(elements), implicitId: \(implicitId), explicitId: \(explicitIds.map(\.id))"
+        "BaseViewList(implicitId: \(implicitId), explicitId: \(explicitIds.map(\.id)))"
     }
 }

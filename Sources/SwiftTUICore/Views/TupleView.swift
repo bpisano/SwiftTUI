@@ -31,14 +31,13 @@ extension TupleView {
         inputs: ViewInputs
     ) -> ViewOutputs {
         let viewListOutputs: ViewListOutputs = makeViewList(view, inputs: .init(from: inputs))
-        let viewList: ViewList = viewListOutputs.makeViewList()
-        let childViewOutputs: [ViewOutputs] = makeChildViewOutputs(list: viewList, inputs: inputs)
+        let viewList: ViewList = viewListOutputs.makeViewListAttribute().wrappedValue
+
+        var childViewOutputs: Attribute<[ViewOutputs]>!
 
         let layoutComputer = Attribute {
             let vstackLayout: VStackLayout = .init(alignment: .center)
-            let childLayoutComputers: [LayoutComputer] =
-                childViewOutputs
-                .map(\.layoutComputer.wrappedValue)
+            let childLayoutComputers: [LayoutComputer] = childViewOutputs.wrappedValue.map(\.layoutComputer.wrappedValue)
             let vstackLayoutComputer = vstackLayout.layoutComputer(for: childLayoutComputers)
             return vstackLayoutComputer
         }
@@ -52,9 +51,7 @@ extension TupleView {
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] =
-                childViewOutputs
-                .map(\.displayList.wrappedValue)
+            let childDisplayLists: [DisplayList] = childViewOutputs.wrappedValue.map(\.displayList.wrappedValue)
             let displayList = combineDisplayLists(
                 childDisplayLists: childDisplayLists,
                 childGeometries: geometries
@@ -62,6 +59,14 @@ extension TupleView {
             return displayList
         }
 
+        childViewOutputs = Attribute {
+            makeChildViewOutputs(
+                list: viewList,
+                inputs: inputs
+            )
+        }
+
+        childViewOutputs.label = "TupleView Child View Outputs"
         layoutComputer.label = "TupleView Layout Computer"
         childGeometries.label = "TupleView Child Geometries"
         displayList.label = "TupleView Display List"

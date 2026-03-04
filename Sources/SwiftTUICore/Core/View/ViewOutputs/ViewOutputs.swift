@@ -130,3 +130,8 @@ private extension ViewListOutputs {
     }
 }
 
+extension ViewOutputs: CustomStringConvertible {
+    public var description: String {
+        "ViewOutputs"
+    }
+}

@@ -19,11 +19,11 @@ extension UnaryViewModifier {
         .unaryViewList(inputs: inputs) { viewInputs in
             makeView(modifier, inputs: viewInputs) { modifiedInputs in
                 let contentListOutputs = body(inputs)
-                let contentList = contentListOutputs.makeViewList()
+                let contentList = contentListOutputs.makeViewListAttribute()
 
                 var contentOutput: ViewOutputs!
                 var index = 0
-                contentList.makeViews(from: &index, inputs: modifiedInputs) {
+                contentList.wrappedValue.makeViews(from: &index, inputs: modifiedInputs) {
                     index, inputs, makeView in
                     let viewOutputs: ViewOutputs = makeView(inputs)
                     contentOutput = viewOutputs

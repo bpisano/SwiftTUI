@@ -10,7 +10,7 @@ import Foundation
 struct UnaryElement: ViewListElements {
     private let makeBody: (ViewInputs) -> ViewOutputs
 
-    var count: Int { 1 }
+    let count: Int = 1
 
     init(_ makeBody: @escaping (ViewInputs) -> ViewOutputs) {
         self.makeBody = makeBody
@@ -21,12 +21,11 @@ struct UnaryElement: ViewListElements {
         inputs: ViewInputs,
         body: Body
     ) -> (ViewOutputs?, Bool) {
-        let makeElement: MakeElement = { inputs in
-            makeBody(inputs)
+        let outputs = body(&start, inputs) { modifiedInputs in
+            makeBody(modifiedInputs)
         }
-        let result = body(&start, inputs, makeElement)
         start += 1
-        return result
+        return outputs
     }
 }
 
