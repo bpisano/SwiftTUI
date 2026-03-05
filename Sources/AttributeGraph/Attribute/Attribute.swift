@@ -102,15 +102,29 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     private let rule: AnyRule<T>
     private let storage: Storage = .init()
 
+    public init(
+        wrappedValue: @autoclosure @escaping () -> T,
+        _ label: String? = nil
+    ) {
+        self.rule = AnyRule(ValueRule(wrappedValue))
+        self.storage.ref = AttributeRef(self)
+        self.storage.label = label ?? ""
+        Graph.current.register(attributeRef: storage.ref)
+    }
+
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
         self.storage.ref = AttributeRef(self)
         Graph.current.register(attributeRef: storage.ref)
     }
 
-    public init<R: Rule>(rule: R) where R.Value == T {
+    public init<R: Rule>(
+        _ label: String? = nil,
+        rule: R
+    ) where R.Value == T {
         self.rule = AnyRule(rule)
         self.storage.ref = AttributeRef(self)
+        self.storage.label = label ?? ""
         Graph.current.register(attributeRef: storage.ref)
     }
 
