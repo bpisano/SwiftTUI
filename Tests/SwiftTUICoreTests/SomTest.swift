@@ -204,9 +204,9 @@ extension ViewOutputs: CustomStringConvertible {
 }
 
 struct ViewListOutputs {
-    let viewList: any ViewList
+    let viewList: Attribute<any ViewList>
 
-    init(viewList: any ViewList) {
+    init(viewList: Attribute<any ViewList>) {
         self.viewList = viewList
     }
 }
@@ -325,10 +325,16 @@ struct BaseViewList: ViewList {
     }
 }
 
-struct MergedViewList: ViewList {
-    private let viewLists: [any ViewList]
+extension BaseViewList: CustomStringConvertible {
+    var description: String {
+        "BaseViewList with \(elements.count) elements"
+    }
+}
 
-    init(viewLists: [any ViewList]) {
+struct MergedViewList: ViewList {
+    private let viewLists: [Attribute<any ViewList>]
+
+    init(viewLists: [Attribute<any ViewList>]) {
         self.viewLists = viewLists
     }
 
@@ -338,9 +344,18 @@ struct MergedViewList: ViewList {
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             viewLists.flatMap { viewList in
-                viewList.makeViewOutputs(inputs: inputs, makeViewOutputs: escapingMakeViewOutputs)
+                viewList.wrappedValue.makeViewOutputs(
+                    inputs: inputs,
+                    makeViewOutputs: escapingMakeViewOutputs
+                )
             }
         }
+    }
+}
+
+extension MergedViewList: CustomStringConvertible {
+    var description: String {
+        "MergedViewList with \(viewLists.count) lists"
     }
 }
 
@@ -443,7 +458,9 @@ struct Text: View {
         let element = UnaryViewElement { inputs in
             Self.makeView(view, inputs: inputs)
         }
-        let viewList = BaseViewList(elements: [element])
+        let viewList: Attribute<any ViewList> = Attribute("Text ViewList") {
+            BaseViewList(elements: [element])
+        }
         return .init(viewList: viewList)
     }
 }
@@ -478,8 +495,10 @@ struct TupleView<each V: View>: View {
             viewListOutputs.append(childViewOutputs)
         }
 
-        let viewLists: [any ViewList] = viewListOutputs.map(\.viewList)
-        let viewList = MergedViewList(viewLists: viewLists)
+        let viewLists: [Attribute<any ViewList>] = viewListOutputs.map(\.viewList)
+        let viewList: Attribute<any ViewList> = Attribute("TupleView ViewList") {
+            MergedViewList(viewLists: viewLists)
+        }
 
         return .init(viewList: viewList)
     }
@@ -561,30 +580,36 @@ struct VStack<Content: View>: View {
     }
 
     static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs {
-        let offset = MemoryLayout<VStack<Content>>.offset(of: \.content) ?? 0
-        let content: Attribute<Content> = view.unsafeOffset(at: offset, as: Content.self)
+        let content: Attribute<Content> = view.map(\.content)
+        content.label = "\(Content.self)"
+
         let childViewListOutputs: ViewListOutputs = Content.makeViewList(content)
 
         var childGeometries: Attribute<[CGRect]>!
 
-        var index = 0
-        let childViewOutputs = childViewListOutputs.viewList.makeViewOutputs(inputs: inputs) { _, makeViewOutputs in
-            let i = index
-            let modifiedInputs = ViewInputs(
-                position: Attribute { childGeometries.wrappedValue[i].origin },
-                size: Attribute { childGeometries.wrappedValue[i].size }
-            )
-            index += 1
-            return makeViewOutputs(modifiedInputs)
+        let childViewOutputs = Attribute("VStack Child ViewOutputs") {
+            var index = 0
+            return childViewListOutputs.viewList.wrappedValue.makeViewOutputs(inputs: inputs) { _, makeViewOutputs in
+                let i = index
+                let modifiedInputs = ViewInputs(
+                    position: Attribute { childGeometries.wrappedValue[i].origin },
+                    size: Attribute { childGeometries.wrappedValue[i].size }
+                )
+                index += 1
+                return makeViewOutputs(modifiedInputs)
+            }
         }
 
         let layoutComputer = Attribute("VStack LayoutComputer") {
-            VStackLayout().layoutComputer(for: childViewOutputs.map(\.layoutComputer.wrappedValue))
+            VStackLayout().layoutComputer(
+                for: childViewOutputs.wrappedValue.map(\.layoutComputer.wrappedValue)
+            )
         }
 
         let displayList = Attribute("VStack DisplayList") {
             DisplayList(
                 childViewOutputs
+                    .wrappedValue
                     .map(\.displayList.wrappedValue)
                     .map { .childList($0) }
             )
@@ -607,6 +632,138 @@ struct VStack<Content: View>: View {
         let offset = MemoryLayout<VStack<Content>>.offset(of: \.content) ?? 0
         let content: Attribute<Content> = view.unsafeOffset(at: offset, as: Content.self)
         return Content.makeViewList(content)
+    }
+}
+
+// MARK: - ForEach
+
+final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
+    private(set) var orderedIds: [ID] = []
+    private(set) var itemsById: [ID: Item] = [:]
+
+    func update(with view: ForEach<Data, ID, Content>) {
+        orderedIds = []
+
+        var index: Data.Index = view.data.startIndex
+
+        while index != view.data.endIndex {
+            let element: Data.Element = view.data[index]
+            let id: ID = element[keyPath: view.id]
+
+            if let existingItem = itemsById[id] {
+                existingItem.index = index
+            } else {
+                let subgraph = Subgraph()
+
+                let childView: Attribute<Content> = Attribute("ForEach Child View \(id)") {
+                    view.makeChildView(element)
+                }
+                let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
+
+                let item = Item(
+                    index: index,
+                    subgraph: subgraph,
+                    viewList: childViewListOutputs.viewList
+                )
+
+                itemsById[id] = item
+            }
+
+            orderedIds.append(id)
+
+            view.data.formIndex(after: &index)
+        }
+    }
+}
+
+extension ForEachState {
+    final class Item {
+        var index: Data.Index
+        let subgraph: Subgraph
+        let viewList: Attribute<any ViewList>
+
+        init(
+            index: Data.Index,
+            subgraph: Subgraph,
+            viewList: Attribute<any ViewList>
+        ) {
+            self.index = index
+            self.subgraph = subgraph
+            self.viewList = viewList
+        }
+    }
+}
+
+struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View>: ViewList {
+    private let view: Attribute<ForEach<Data, ID, Content>>
+    private let state: ForEachState<Data, ID, Content>
+
+    init(
+        view: Attribute<ForEach<Data, ID, Content>>,
+        state: ForEachState<Data, ID, Content>
+    ) {
+        self.view = view
+        self.state = state
+    }
+
+    func makeViewOutputs(
+        inputs: ViewInputs,
+        makeViewOutputs: (ViewInputs, MakeViewOutputs) -> ViewOutputs?
+    ) -> [ViewOutputs] {
+        var viewOutputs: [ViewOutputs] = []
+
+        for elementId in state.orderedIds {
+            guard let stateItem = state.itemsById[elementId] else { continue }
+            let outputs: [ViewOutputs] = stateItem.viewList
+                .wrappedValue
+                .makeViewOutputs(inputs: inputs)
+            viewOutputs.append(contentsOf: outputs)
+        }
+
+        return viewOutputs
+    }
+}
+
+extension ForEachViewList: CustomStringConvertible {
+    var description: String {
+        "ForEachViewList with \(state.orderedIds.count) items"
+    }
+}
+
+struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View {
+    let data: Data
+    let id: KeyPath<Data.Element, ID>
+    let makeChildView: (Data.Element) -> Content
+
+    init(
+        _ data: Data,
+        id: KeyPath<Data.Element, ID>,
+        makeChildView: @escaping (Data.Element) -> Content
+    ) {
+        self.data = data
+        self.id = id
+        self.makeChildView = makeChildView
+    }
+
+    static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs {
+        fatalError("Not implemented")
+    }
+
+    static func makeViewList(_ view: Attribute<Self>) -> ViewListOutputs {
+        let state = ForEachState<Data, ID, Content>()
+
+        let viewList: Attribute<any ViewList> = Attribute("ForEach ViewList") {
+            state.update(with: view.wrappedValue)
+            return ForEachViewList(view: view, state: state)
+        }
+
+        return .init(viewList: viewList)
+    }
+}
+
+extension ForEach: CustomStringConvertible {
+    var description: String {
+        "ForEach with \(data.count) elements"
     }
 }
 
@@ -633,8 +790,44 @@ func main() {
     copyToClipboard(Graph.current.description)
 }
 
+@Test
+func forEach() {
+    @Attribute("Screen position") var position: CGPoint = .zero
+    @Attribute("Screen size") var size = CGSize(width: 10, height: 20)
+    let inputs = ViewInputs(
+        position: $position,
+        size: $size
+    )
+    @Attribute("Users") var users: [User] = [
+        User(id: 1, name: "Alice"),
+    ]
+    @Attribute var view = VStack(
+        ForEach(users, id: \.id) { user in
+            Text(user.name)
+        }
+    )
+    $view.label = "\(type(of: view))"
+
+    let outputs = type(of: view).makeView($view, inputs: inputs)
+
+    _ = outputs.displayList.wrappedValue
+
+    copyToClipboard(Graph.current.description)
+}
+
 private func copyToClipboard(_ string: String) {
     let pasteboard: NSPasteboard = .general
     pasteboard.clearContents()
     pasteboard.setString(string, forType: .string)
+}
+
+private struct User: Identifiable {
+    let id: Int
+    let name: String
+}
+
+extension User: CustomStringConvertible {
+    var description: String {
+        name
+    }
 }
