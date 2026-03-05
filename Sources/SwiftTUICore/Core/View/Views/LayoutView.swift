@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 27/01/2026.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 import Geometry
 
 protocol LayoutView: View {
@@ -24,14 +24,16 @@ extension LayoutView {
     ) -> ViewOutputs {
         let content = view.map(\.content)
 
-        let viewListOutputs: ViewListOutputs = Content.makeViewList(content, inputs: .init(from: inputs))
+        let viewListOutputs: ViewListOutputs = Content.makeViewList(
+            content, inputs: .init(from: inputs))
         let viewList: Attribute<ViewList> = viewListOutputs.makeViewListAttribute()
 
         var childOutputs: Attribute<[ViewOutputs]>!
 
         let layoutComputer = Attribute {
             let layout: L = view.wrappedValue.layout
-            return layout.layoutComputer(for: childOutputs.wrappedValue.map(\.layoutComputer.wrappedValue))
+            return layout.layoutComputer(
+                for: childOutputs.wrappedValue.map(\.layoutComputer.wrappedValue))
         }
 
         let childGeometries = Attribute {
@@ -48,7 +50,8 @@ extension LayoutView {
 
         let displayList = Attribute {
             let geometries: [ViewGeometry] = childGeometries.wrappedValue
-            let childDisplayLists: [DisplayList] = childOutputs.wrappedValue.map(\.displayList.wrappedValue)
+            let childDisplayLists: [DisplayList] = childOutputs.wrappedValue.map(
+                \.displayList.wrappedValue)
 
             var items: [DisplayList.Item] = []
             for (index, childDisplayList) in childDisplayLists.enumerated() {
@@ -103,12 +106,13 @@ extension LayoutView {
         var viewOutputs: [ViewOutputs] = []
         var index = 0
 
-        list.wrappedValue.makeViews(from: &index, inputs: inputs) { currentIndex, parentInputs, makeView in
+        list.wrappedValue.makeViews(from: &index, inputs: inputs) {
+            currentIndex, parentInputs, makeView in
             let childGeometry = childGeometries.map { [currentIndex] geometries in
-//                print("Index", index, "CI", currentIndex)
+                //                print("Index", index, "CI", currentIndex)
                 guard currentIndex >= 0, currentIndex < geometries.count else {
                     // Keep this lazy to avoid childOutputs -> childGeometries cycles.
-//                    print("LC", list.wrappedValue.count, "GC", geometries.count, "CI", currentIndex)
+                    //                    print("LC", list.wrappedValue.count, "GC", geometries.count, "CI", currentIndex)
                     return ViewGeometry.zero
                 }
                 return geometries[currentIndex]
@@ -128,7 +132,7 @@ extension LayoutView {
             return (childOutputs, true)
         }
 
-//        print(viewOutputs.count)
+        //        print(viewOutputs.count)
 
         return viewOutputs
     }

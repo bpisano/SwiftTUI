@@ -34,12 +34,27 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         for id in state.orderedIds {
             guard let item = state.itemsById[id] else { continue }
             print(item.index)
-            item.subgraph.withDependencyCapture {
-                item.viewList.wrappedValue.makeViews(
-                    from: &start,
-                    inputs: inputs,
-                    body: body
-                )
+            if let outputs = item.viewOutputs {
+                print("Using cached outputs for item with ID \(id) at index \(item.index)")
+                let result = body(&start, inputs) { _ in
+                    outputs.wrappedValue
+                }
+                if !result.1 {
+                    break
+                }
+            } else {
+                item.subgraph.withDependencyCapture {
+//                    item.viewList.wrappedValue.makeViews(
+//                        from: &start,
+//                        inputs: inputs,
+//                        body: body
+//                    )
+                    item.viewList.wrappedValue.makeViews(from: &start, inputs: inputs) { _, inputs, makeElements in
+                        let viewOutputs = makeElements(inputs)
+                        item.viewOutputs = Attribute(wrappedValue: viewOutputs)
+                        return (viewOutputs, true)
+                    }
+                }
             }
         }
     }

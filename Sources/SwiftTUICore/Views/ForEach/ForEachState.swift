@@ -60,14 +60,14 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         print("Ordered IDs: \(orderedIds)")
         print(diff.editsById)
 
-        CallbackQueue.shared.enqueue { [weak self] in
-            guard let self else { return }
-            for pendingRemoval in diff.pendingRemovals {
-                guard let item = self.itemsById[pendingRemoval] else { continue }
-                print("Removing item with ID \(pendingRemoval) at old offset \(item.index)")
-                item.subgraph.clean()
-            }
-        }
+//        CallbackQueue.shared.enqueue { [weak self] in
+//            guard let self else { return }
+//            for pendingRemoval in diff.pendingRemovals {
+//                guard let item = self.itemsById[pendingRemoval] else { continue }
+//                print("Removing item with ID \(pendingRemoval) at old offset \(item.index)")
+//                item.subgraph.clean()
+//            }
+//        }
     }
 
     private func makeItem(
@@ -106,6 +106,8 @@ extension ForEachState {
         var index: Data.Index
         let viewList: Attribute<ViewList>
         let subgraph: Subgraph
+
+        var viewOutputs: Attribute<ViewOutputs>?
 
         init(
             id: ID,
