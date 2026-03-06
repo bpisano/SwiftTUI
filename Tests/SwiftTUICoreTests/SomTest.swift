@@ -283,7 +283,8 @@ protocol ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs:
+            @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
     ) -> [ViewOutputs]
 }
 
@@ -313,7 +314,8 @@ struct BaseViewList: ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs:
+            @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             elements.compactMap { element in
@@ -392,6 +394,25 @@ struct DisplayList {
     }
 }
 
+extension DisplayList: CustomStringConvertible {
+    var description: String {
+        if items.isEmpty {
+            return "Empty"
+        }
+
+        let parts: [String] = items.map { item in
+            switch item {
+            case .command(let command):
+                return "\(command.text) at \(command.position)"
+            case .childList(let list):
+                return "childList(\(list.items.count) items)"
+            }
+        }
+
+        return parts.joined(separator: "\n")
+    }
+}
+
 // MARK: - Views
 
 struct Text: View {
@@ -423,7 +444,11 @@ struct Text: View {
 
         let displayList = Attribute("Text DisplayList") {
             let textGeometries = layoutComputer.wrappedValue.viewGeometries(
-                CGRect(origin: .zero, size: inputs.size.wrappedValue))
+                CGRect(
+                    origin: .zero,
+                    size: inputs.size.wrappedValue
+                )
+            )
             let textGeometry = textGeometries[0]
 
             let text: String = view.wrappedValue.text
@@ -589,7 +614,8 @@ struct VStack<Content: View>: View {
 
         let childViewOutputs = Attribute("VStack Child ViewOutputs") {
             var index: Int = 0
-            return childViewListOutputs.viewList.wrappedValue.makeViewOutputs(inputs: inputs) { _, makeViewOutputs in
+            return childViewListOutputs.viewList.wrappedValue.makeViewOutputs(inputs: inputs) {
+                _, makeViewOutputs in
                 let currentIndex: Int = index
                 let modifiedInputs = ViewInputs(
                     position: Attribute {
@@ -623,7 +649,11 @@ struct VStack<Content: View>: View {
             let proposal = ProposedViewSize(inputs.size.wrappedValue)
             let containerSize = layoutComputer.wrappedValue.sizeThatFits(proposal)
             return layoutComputer.wrappedValue.viewGeometries(
-                CGRect(origin: .zero, size: containerSize))
+                CGRect(
+                    origin: .zero,
+                    size: containerSize
+                )
+            )
         }
 
         return .init(
@@ -695,7 +725,8 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
                 fatalError("Element with ID \(id) not found in orderedIds")
             }
             let view: ForEach<Data, ID, Content> = view.wrappedValue
-            let element: Data.Element = view.data[view.data.index(view.data.startIndex, offsetBy: elementIndex)]
+            let element: Data.Element = view.data[
+                view.data.index(view.data.startIndex, offsetBy: elementIndex)]
             return view.makeChildView(element)
         }
     }
@@ -843,7 +874,8 @@ func forEach() {
     _ = outputs.displayList.wrappedValue
 
     users = [
-        User(id: 1, name: "Alice update")
+        User(id: 1, name: "Alice"),
+        User(id: 2, name: "Bob"),
     ]
 
     _ = outputs.displayList.wrappedValue

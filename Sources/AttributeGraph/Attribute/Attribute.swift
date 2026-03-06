@@ -162,11 +162,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(storage.ref)
-        if isInitialEvaluation {
-            Graph.current.withDependencyCapture(of: storage.ref) {
-                storage.value = rule.evaluate()
-            }
-        } else {
+        Graph.current.withDependencyCapture(of: storage.ref) {
             storage.value = rule.evaluate()
         }
 
