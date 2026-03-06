@@ -154,13 +154,19 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         // Or if is initial evaluation
         let isInitialEvaluation: Bool = storage.value == nil
         let isTransactional: Bool = flags.contains(.transactional)
-        guard storage.state == .potentiallyDirty || isInitialEvaluation || isTransactional else { return }
+        guard storage.state == .potentiallyDirty || isInitialEvaluation || isTransactional else {
+            return
+        }
 
         storage.state = .clean
 
         // Evaluate the rule within dependency capture context
         Graph.current.reevaluate(storage.ref)
-        Graph.current.withDependencyCapture(of: storage.ref) {
+        if isInitialEvaluation {
+            Graph.current.withDependencyCapture(of: storage.ref) {
+                storage.value = rule.evaluate()
+            }
+        } else {
             storage.value = rule.evaluate()
         }
 
@@ -213,25 +219,27 @@ extension Attribute {
         let formattedId: String = storage.id.uuidString.replacing("-", with: "")
         var properties: [String] = []
 
-        // Build HTML-like label for better formatting
-        if !storage.label.isEmpty || storage.value != nil {
-            var labelHTML = "<"
-            labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\">"
+        var labelHTML = "<"
+        labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\" ALIGN=\"LEFT\">"
 
-            if !storage.label.isEmpty {
-                let escapedLabel = storage.label.htmlEscaped
-                labelHTML += "<TR><TD><B>\(escapedLabel)</B></TD></TR>"
-            }
-
-            if let value = storage.value {
-                let stringValue: String = "\(value)".htmlEscaped
-                labelHTML += "<TR><TD><FONT POINT-SIZE=\"10\">\(stringValue)</FONT></TD></TR>"
-            }
-
-            labelHTML += "</TABLE>"
-            labelHTML += ">"
-            properties.append("label=\(labelHTML)")
+        if !storage.label.isEmpty {
+            let escapedLabel = storage.label.htmlEscaped
+            labelHTML += "<TR><TD ALIGN=\"LEFT\"><B>\(escapedLabel)</B></TD></TR>"
         }
+
+        if let value = storage.value {
+            let stringValue: String = "\(value)".htmlEscaped
+            labelHTML +=
+                "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"10\">\(stringValue)</FONT></TD></TR>"
+        }
+
+        let shortId: String = String(formattedId.prefix(8)).lowercased()
+        labelHTML +=
+            "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"8\" COLOR=\"#888888\">\(shortId)</FONT></TD></TR>"
+
+        labelHTML += "</TABLE>"
+        labelHTML += ">"
+        properties.append("label=\(labelHTML)")
 
         if storage.state == .potentiallyDirty {
             properties.append("style=dashed")
@@ -241,8 +249,8 @@ extension Attribute {
     }
 }
 
-private extension String {
-    var htmlEscaped: String {
+extension String {
+    fileprivate var htmlEscaped: String {
         self
             .replacing("&", with: "&amp;")
             .replacing("<", with: "&lt;")

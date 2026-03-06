@@ -283,7 +283,7 @@ protocol ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
     ) -> [ViewOutputs]
 }
 
@@ -313,7 +313,7 @@ struct BaseViewList: ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             elements.compactMap { element in
@@ -370,9 +370,7 @@ struct UnaryViewElement: ViewElement {
         inputs: ViewInputs,
         makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
     ) -> ViewOutputs? {
-        withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
-            escapingMakeViewOutputs(inputs, makeOutputs)
-        }
+        makeViewOutputs(inputs, makeOutputs)
     }
 }
 
@@ -459,7 +457,8 @@ struct Text: View {
             Self.makeView(view, inputs: inputs)
         }
         let viewList: Attribute<any ViewList> = Attribute("Text ViewList") {
-            BaseViewList(elements: [element])
+            _ = view.wrappedValue
+            return BaseViewList(elements: [element])
         }
         return .init(viewList: viewList)
     }
@@ -497,7 +496,8 @@ struct TupleView<each V: View>: View {
 
         let viewLists: [Attribute<any ViewList>] = viewListOutputs.map(\.viewList)
         let viewList: Attribute<any ViewList> = Attribute("TupleView ViewList") {
-            MergedViewList(viewLists: viewLists)
+            _ = view.wrappedValue
+            return MergedViewList(viewLists: viewLists)
         }
 
         return .init(viewList: viewList)
@@ -588,12 +588,16 @@ struct VStack<Content: View>: View {
         var childGeometries: Attribute<[CGRect]>!
 
         let childViewOutputs = Attribute("VStack Child ViewOutputs") {
-            var index = 0
+            var index: Int = 0
             return childViewListOutputs.viewList.wrappedValue.makeViewOutputs(inputs: inputs) { _, makeViewOutputs in
-                let i = index
+                let currentIndex: Int = index
                 let modifiedInputs = ViewInputs(
-                    position: Attribute { childGeometries.wrappedValue[i].origin },
-                    size: Attribute { childGeometries.wrappedValue[i].size }
+                    position: Attribute {
+                        childGeometries.wrappedValue[currentIndex].origin
+                    },
+                    size: Attribute {
+                        childGeometries.wrappedValue[currentIndex].size
+                    }
                 )
                 index += 1
                 return makeViewOutputs(modifiedInputs)
@@ -641,37 +645,58 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
     private(set) var orderedIds: [ID] = []
     private(set) var itemsById: [ID: Item] = [:]
 
-    func update(with view: ForEach<Data, ID, Content>) {
+    func update(with view: Attribute<ForEach<Data, ID, Content>>) {
         orderedIds = []
 
-        var index: Data.Index = view.data.startIndex
+        let unwrappedView: ForEach<Data, ID, Content> = view.wrappedValue
+        var index: Data.Index = unwrappedView.data.startIndex
 
-        while index != view.data.endIndex {
-            let element: Data.Element = view.data[index]
-            let id: ID = element[keyPath: view.id]
+        while index != unwrappedView.data.endIndex {
+            let element: Data.Element = unwrappedView.data[index]
+            let id: ID = element[keyPath: unwrappedView.id]
 
             if let existingItem = itemsById[id] {
                 existingItem.index = index
             } else {
-                let subgraph = Subgraph()
-
-                let childView: Attribute<Content> = Attribute("ForEach Child View \(id)") {
-                    view.makeChildView(element)
-                }
-                let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
-
-                let item = Item(
-                    index: index,
-                    subgraph: subgraph,
-                    viewList: childViewListOutputs.viewList
+                let item: Item = makeCachedItem(
+                    for: id,
+                    at: index,
+                    view: view
                 )
-
                 itemsById[id] = item
             }
 
             orderedIds.append(id)
 
-            view.data.formIndex(after: &index)
+            unwrappedView.data.formIndex(after: &index)
+        }
+    }
+
+    private func makeCachedItem(
+        for id: ID,
+        at index: Data.Index,
+        view: Attribute<ForEach<Data, ID, Content>>,
+    ) -> Item {
+        let childView: Attribute<Content> = makeChildView(for: id, view: view)
+        let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
+        return .init(
+            index: index,
+            subgraph: .init(),
+            viewList: childViewListOutputs.viewList
+        )
+    }
+
+    private func makeChildView(
+        for id: ID,
+        view: Attribute<ForEach<Data, ID, Content>>
+    ) -> Attribute<Content> {
+        Attribute("ForEach Child View \(id)") { [unowned self] in
+            guard let elementIndex = self.orderedIds.firstIndex(of: id) else {
+                fatalError("Element with ID \(id) not found in orderedIds")
+            }
+            let view: ForEach<Data, ID, Content> = view.wrappedValue
+            let element: Data.Element = view.data[view.data.index(view.data.startIndex, offsetBy: elementIndex)]
+            return view.makeChildView(element)
         }
     }
 }
@@ -681,6 +706,7 @@ extension ForEachState {
         var index: Data.Index
         let subgraph: Subgraph
         let viewList: Attribute<any ViewList>
+        var viewOutputs: [ViewOutputs]?
 
         init(
             index: Data.Index,
@@ -708,18 +734,22 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (ViewInputs, MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: @escaping (ViewInputs, MakeViewOutputs) -> ViewOutputs?
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
-
         for elementId in state.orderedIds {
             guard let stateItem = state.itemsById[elementId] else { continue }
-            let outputs: [ViewOutputs] = stateItem.viewList
-                .wrappedValue
-                .makeViewOutputs(inputs: inputs)
-            viewOutputs.append(contentsOf: outputs)
+            if let cachedOutputs = stateItem.viewOutputs {
+                viewOutputs.append(contentsOf: cachedOutputs)
+            } else {
+                let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
+                    inputs: inputs,
+                    makeViewOutputs: makeViewOutputs
+                )
+                stateItem.viewOutputs = outputs
+                viewOutputs.append(contentsOf: outputs)
+            }
         }
-
         return viewOutputs
     }
 }
@@ -753,7 +783,7 @@ struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View 
         let state = ForEachState<Data, ID, Content>()
 
         let viewList: Attribute<any ViewList> = Attribute("ForEach ViewList") {
-            state.update(with: view.wrappedValue)
+            state.update(with: view)
             return ForEachViewList(view: view, state: state)
         }
 
@@ -799,7 +829,7 @@ func forEach() {
         size: $size
     )
     @Attribute("Users") var users: [User] = [
-        User(id: 1, name: "Alice"),
+        User(id: 1, name: "Alice")
     ]
     @Attribute var view = VStack(
         ForEach(users, id: \.id) { user in
@@ -809,6 +839,12 @@ func forEach() {
     $view.label = "\(type(of: view))"
 
     let outputs = type(of: view).makeView($view, inputs: inputs)
+
+    _ = outputs.displayList.wrappedValue
+
+    users = [
+        User(id: 1, name: "Alice update")
+    ]
 
     _ = outputs.displayList.wrappedValue
 
