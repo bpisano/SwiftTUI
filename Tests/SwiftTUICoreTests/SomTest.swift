@@ -280,11 +280,11 @@ protocol View {
 
 protocol ViewList {
     typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+    typealias MakeViewOutputsInterceptor = (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs:
-            @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: @escaping MakeViewOutputsInterceptor
     ) -> [ViewOutputs]
 }
 
@@ -298,10 +298,11 @@ extension ViewList {
 
 protocol ViewElement {
     typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+    typealias MakeViewOutputsInterceptor = (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: MakeViewOutputsInterceptor
     ) -> ViewOutputs?
 }
 
@@ -314,8 +315,7 @@ struct BaseViewList: ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs:
-            @escaping (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             elements.compactMap { element in
@@ -342,7 +342,7 @@ struct MergedViewList: ViewList {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             viewLists.flatMap { viewList in
@@ -370,7 +370,7 @@ struct UnaryViewElement: ViewElement {
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: (_ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: MakeViewOutputsInterceptor
     ) -> ViewOutputs? {
         makeViewOutputs(inputs, makeOutputs)
     }
@@ -451,8 +451,6 @@ struct Text: View {
             )
             let textGeometry = textGeometries[0]
 
-            print("Text Geometry:", textGeometry.width)
-            print(inputs.size)
             let text: String = view.wrappedValue.text
             let lines: [String] = text.slice(Int(textGeometry.width))
 
@@ -616,8 +614,8 @@ struct VStack<Content: View>: View {
 
         let childViewOutputs = Attribute("VStack Child ViewOutputs") {
             var index: Int = 0
-            return childViewListOutputs.viewList.wrappedValue.makeViewOutputs(inputs: inputs) {
-                _, makeViewOutputs in
+            let childViewList: any ViewList = childViewListOutputs.viewList.wrappedValue
+            return childViewList.makeViewOutputs(inputs: inputs) { _, makeViewOutputs in
                 let currentIndex: Int = index
                 let modifiedInputs = ViewInputs(
                     position: Attribute {
@@ -708,7 +706,8 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         let idsToRemove: Set<ID> = existingIds.subtracting(currentIds)
         for idToRemove in idsToRemove {
             guard let itemToRemove: Item = itemsById[idToRemove] else { continue }
-            itemToRemove.subgraph.clean()
+            itemToRemove.viewSubgraph.clean()
+            itemToRemove.viewOutputsSubgraph.clean()
             itemsById.removeValue(forKey: idToRemove)
         }
     }
@@ -718,13 +717,15 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         at index: Data.Index,
         view: Attribute<ForEach<Data, ID, Content>>,
     ) -> Item {
-        let subgraph: Subgraph = .init()
-        return subgraph.withDependencyCapture {
+        let viewSubgraph: Subgraph = .init()
+        let viewOutputsSubgraph: Subgraph = .init()
+        return viewSubgraph.withDependencyCapture {
             let childView: Attribute<Content> = makeChildView(for: id, view: view)
             let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
             return .init(
                 index: index,
-                subgraph: subgraph,
+                viewSubgraph: viewSubgraph,
+                viewOutputsSubgraph: viewOutputsSubgraph,
                 viewList: childViewListOutputs.viewList
             )
         }
@@ -751,18 +752,28 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
 
 extension ForEachState {
     final class Item {
-        var index: Data.Index
-        let subgraph: Subgraph
+        let viewSubgraph: Subgraph
+        let viewOutputsSubgraph: Subgraph
         let viewList: Attribute<any ViewList>
         var viewOutputs: [ViewOutputs]?
 
+        var index: Data.Index {
+            willSet {
+                guard newValue != index else { return }
+                viewOutputsSubgraph.clean()
+                viewOutputs = nil
+            }
+        }
+
         init(
             index: Data.Index,
-            subgraph: Subgraph,
+            viewSubgraph: Subgraph,
+            viewOutputsSubgraph: Subgraph,
             viewList: Attribute<any ViewList>
         ) {
             self.index = index
-            self.subgraph = subgraph
+            self.viewSubgraph = viewSubgraph
+            self.viewOutputsSubgraph = viewOutputsSubgraph
             self.viewList = viewList
         }
     }
@@ -782,7 +793,7 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
 
     func makeViewOutputs(
         inputs: ViewInputs,
-        makeViewOutputs: @escaping (ViewInputs, MakeViewOutputs) -> ViewOutputs?
+        makeViewOutputs: @escaping MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
         for elementId in state.orderedIds {
@@ -790,7 +801,7 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
             if let cachedOutputs = stateItem.viewOutputs {
                 viewOutputs.append(contentsOf: cachedOutputs)
             } else {
-                stateItem.subgraph.withDependencyCapture {
+                stateItem.viewOutputsSubgraph.withDependencyCapture {
                     let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
                         inputs: inputs,
                         makeViewOutputs: makeViewOutputs

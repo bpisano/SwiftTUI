@@ -166,12 +166,12 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             storage.value = rule.evaluate()
         }
 
-        if !isInitialEvaluation {
-            // Mark incoming edges as clean
-            for edge in incomingEdges {
-                edge.state = .clean
-            }
+        // Mark incoming edges as clean
+        for edge in incomingEdges {
+            edge.state = .clean
+        }
 
+        if !isInitialEvaluation {
             // Mark outgoing edges as dirty
             for edge in outgoingEdges {
                 edge.state = .dirty
