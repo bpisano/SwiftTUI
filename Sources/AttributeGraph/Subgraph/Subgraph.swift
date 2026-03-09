@@ -22,15 +22,13 @@ public final class Subgraph {
     public func withDependencyCapture<T>(_ body: () -> T) -> T {
         let previousSubgraph: Subgraph? = graph.subgraph
         graph.subgraph = self
-        defer {
-            graph.subgraph = previousSubgraph
-            print("Subgraph", attributeLabels)
-        }
+        defer { graph.subgraph = previousSubgraph }
         return body()
     }
 
     public func clean() {
         for attributeRef in attributeRefs {
+            attributeRef.attribute.makeClean()
             for incomingEdge in attributeRef.attribute.incomingEdges {
                 incomingEdge.fromRef.attribute.removeOutgoing(edge: incomingEdge)
                 attributeRef.attribute.removeIncoming(edge: incomingEdge)

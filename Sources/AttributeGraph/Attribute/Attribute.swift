@@ -190,6 +190,10 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             edge.toRef.attribute.makePotentiallyDirty()
         }
     }
+
+    public func makeClean() {
+        storage.state = .clean
+    }
 }
 
 extension Attribute {

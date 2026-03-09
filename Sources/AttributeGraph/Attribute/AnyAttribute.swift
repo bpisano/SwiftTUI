@@ -22,4 +22,5 @@ public protocol AnyAttribute: CustomStringConvertible {
     func removeOutgoing(edge: Edge)
 
     func makePotentiallyDirty()
+    func makeClean()
 }

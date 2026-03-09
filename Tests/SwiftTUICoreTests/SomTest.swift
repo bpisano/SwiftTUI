@@ -451,6 +451,8 @@ struct Text: View {
             )
             let textGeometry = textGeometries[0]
 
+            print("Text Geometry:", textGeometry.width)
+            print(inputs.size)
             let text: String = view.wrappedValue.text
             let lines: [String] = text.slice(Int(textGeometry.width))
 
@@ -678,12 +680,12 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
     func update(with view: Attribute<ForEach<Data, ID, Content>>) {
         orderedIds = []
 
-        let unwrappedView: ForEach<Data, ID, Content> = view.wrappedValue
-        var index: Data.Index = unwrappedView.data.startIndex
+        let forEach: ForEach<Data, ID, Content> = view.wrappedValue
+        var index: Data.Index = forEach.data.startIndex
 
-        while index != unwrappedView.data.endIndex {
-            let element: Data.Element = unwrappedView.data[index]
-            let id: ID = element[keyPath: unwrappedView.id]
+        while index != forEach.data.endIndex {
+            let element: Data.Element = forEach.data[index]
+            let id: ID = element[keyPath: forEach.id]
 
             if let existingItem = itemsById[id] {
                 existingItem.index = index
@@ -698,7 +700,16 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
 
             orderedIds.append(id)
 
-            unwrappedView.data.formIndex(after: &index)
+            forEach.data.formIndex(after: &index)
+        }
+
+        let currentIds: Set<ID> = Set(orderedIds)
+        let existingIds: Set<ID> = Set(itemsById.keys)
+        let idsToRemove: Set<ID> = existingIds.subtracting(currentIds)
+        for idToRemove in idsToRemove {
+            guard let itemToRemove: Item = itemsById[idToRemove] else { continue }
+            itemToRemove.subgraph.clean()
+            itemsById.removeValue(forKey: idToRemove)
         }
     }
 
@@ -707,13 +718,16 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         at index: Data.Index,
         view: Attribute<ForEach<Data, ID, Content>>,
     ) -> Item {
-        let childView: Attribute<Content> = makeChildView(for: id, view: view)
-        let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
-        return .init(
-            index: index,
-            subgraph: .init(),
-            viewList: childViewListOutputs.viewList
-        )
+        let subgraph: Subgraph = .init()
+        return subgraph.withDependencyCapture {
+            let childView: Attribute<Content> = makeChildView(for: id, view: view)
+            let childViewListOutputs: ViewListOutputs = Content.makeViewList(childView)
+            return .init(
+                index: index,
+                subgraph: subgraph,
+                viewList: childViewListOutputs.viewList
+            )
+        }
     }
 
     private func makeChildView(
@@ -721,12 +735,15 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         view: Attribute<ForEach<Data, ID, Content>>
     ) -> Attribute<Content> {
         Attribute("ForEach Child View \(id)") { [unowned self] in
-            guard let elementIndex = self.orderedIds.firstIndex(of: id) else {
+            guard let elementIndexOffset = self.orderedIds.firstIndex(of: id) else {
                 fatalError("Element with ID \(id) not found in orderedIds")
             }
             let view: ForEach<Data, ID, Content> = view.wrappedValue
-            let element: Data.Element = view.data[
-                view.data.index(view.data.startIndex, offsetBy: elementIndex)]
+            let elementIndex: Data.Index = view.data.index(
+                view.data.startIndex,
+                offsetBy: elementIndexOffset
+            )
+            let element: Data.Element = view.data[elementIndex]
             return view.makeChildView(element)
         }
     }
@@ -773,12 +790,14 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
             if let cachedOutputs = stateItem.viewOutputs {
                 viewOutputs.append(contentsOf: cachedOutputs)
             } else {
-                let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
-                    inputs: inputs,
-                    makeViewOutputs: makeViewOutputs
-                )
-                stateItem.viewOutputs = outputs
-                viewOutputs.append(contentsOf: outputs)
+                stateItem.subgraph.withDependencyCapture {
+                    let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
+                        inputs: inputs,
+                        makeViewOutputs: makeViewOutputs
+                    )
+                    stateItem.viewOutputs = outputs
+                    viewOutputs.append(contentsOf: outputs)
+                }
             }
         }
         return viewOutputs
@@ -860,7 +879,8 @@ func forEach() {
         size: $size
     )
     @Attribute("Users") var users: [User] = [
-        User(id: 1, name: "Alice")
+        User(id: 1, name: "Alice"),
+        User(id: 2, name: "Bob"),
     ]
     @Attribute var view = VStack(
         ForEach(users, id: \.id) { user in
@@ -874,8 +894,8 @@ func forEach() {
     _ = outputs.displayList.wrappedValue
 
     users = [
-        User(id: 1, name: "Alice"),
         User(id: 2, name: "Bob"),
+        User(id: 1, name: "Alice"),
     ]
 
     _ = outputs.displayList.wrappedValue
