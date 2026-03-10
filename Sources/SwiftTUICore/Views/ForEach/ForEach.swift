@@ -1,8 +1,8 @@
 //
-//  File.swift
-//  AttributeGraph
+//  ForEach.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 22/02/2026.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
@@ -16,53 +16,39 @@ struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View,
     init(
         _ data: Data,
         id: KeyPath<Data.Element, ID>,
-        @ViewBuilder _ content: @escaping (Data.Element) -> Content
+        makeChildView: @escaping (Data.Element) -> Content
     ) {
         self.data = data
         self.id = id
-        self.makeChildView = content
-    }
-}
-
-extension ForEach where Data.Element: Identifiable, ID == Data.Element.ID {
-    init(
-        _ data: Data,
-        @ViewBuilder _ content: @escaping (Data.Element) -> Content
-    ) {
-        self.data = data
-        self.id = \.id
-        self.makeChildView = content
+        self.makeChildView = makeChildView
     }
 }
 
 extension ForEach {
+    static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs {
+        fatalError("Not implemented")
+    }
+
     static func makeViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let state: ForEachState<Data, ID, Content> = .init()
+        let state = ForEachState<Data, ID, Content>()
 
-        let viewList: Attribute<any ViewList> = Attribute(
-            rule: ForEachViewListRule(
-                state: state,
-                view: view
-            )
-        )
-        viewList.label = "ForEach ViewList"
+        let viewList: Attribute<any ViewList> = Attribute("ForEach ViewList") {
+            state.update(with: view, inputs: inputs)
+            return ForEachViewList(view: view, state: state)
+        }
 
-        return .dynamicList(
-            viewList,
-            inputs: inputs
-        )
-    }
-
-    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
-        nil
+        return .init(viewList: viewList)
     }
 }
 
-extension ForEach: CustomStringConvertible {
-    var description: String {
-        "ForEach with \(data.count) items"
+extension ForEach: AttributeValueRepresentable {
+    var attributeValueDescription: String {
+        "ForEach with \(data.count) elements"
     }
 }

@@ -1,36 +1,32 @@
 //
-//  File.swift
-//  AttributeGraph
+//  ViewModifier.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 02/12/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
-import AttributeGraph
 import Foundation
+import AttributeGraph
 
 public protocol ViewModifier {
     associatedtype Body: View
 
+    typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+    typealias MakeViewListOutputs = (ViewListInputs) -> ViewListOutputs
     typealias Content = ViewModifierContent<Self>
 
     static func makeView(
         _ modifier: Attribute<Self>,
         inputs: ViewInputs,
-        body: @escaping (ViewInputs) -> ViewOutputs
+        makeViewOutputs: @escaping MakeViewOutputs
     ) -> ViewOutputs
 
     static func makeViewList(
         _ modifier: Attribute<Self>,
         inputs: ViewListInputs,
-        body: @escaping (ViewListInputs) -> ViewListOutputs
+        makeViewListOutputs: @escaping MakeViewListOutputs
     ) -> ViewListOutputs
 
-    static func viewListCount(
-        inputs: ViewListCountInputs,
-        body: (ViewListCountInputs) -> Int?
-    ) -> Int?
-
-    @ViewBuilder
     func body(content: Content) -> Body
 }
 
@@ -38,53 +34,101 @@ extension ViewModifier {
     public static func makeView(
         _ modifier: Attribute<Self>,
         inputs: ViewInputs,
-        body: @escaping (ViewInputs) -> ViewOutputs
+        makeViewOutputs: @escaping MakeViewOutputs
     ) -> ViewOutputs {
         var inputs: ViewInputs = inputs
-        inputs.append(.view(body), to: BodyInput<Content>.self)
+        inputs.append(.view(makeViewOutputs), to: MakeViewOutputsInputStorageKey.self)
 
-        let modifierBody = Attribute {
-            modifier.updateDynamicProperties()
-            return modifier.wrappedValue.body(content: .init())
+        let modifiedBody = Attribute("\(Self.self) body") {
+            let modifierContent: ViewModifierContent<Self> = .init()
+            return modifier.wrappedValue.body(content: modifierContent)
         }
-        modifierBody.label = "\(Self.self) body"
 
-        return Body.makeView(modifierBody, inputs: inputs)
+        return Body.makeView(modifiedBody, inputs: inputs)
     }
 
     public static func makeViewList(
         _ modifier: Attribute<Self>,
         inputs: ViewListInputs,
-        body: @escaping (ViewListInputs) -> ViewListOutputs
+        makeViewListOutputs: @escaping MakeViewListOutputs
     ) -> ViewListOutputs {
         var inputs: ViewListInputs = inputs
-        inputs.append(.list(body), to: BodyInput<Content>.self)
+        inputs.append(.viewList(makeViewListOutputs), to: MakeViewOutputsInputStorageKey.self)
 
-        let modifierBody = Attribute {
-            modifier.updateDynamicProperties()
-            return modifier.wrappedValue.body(content: .init())
-        }
-        modifierBody.label = "\(Self.self) body"
-
-        return Body.makeViewList(modifierBody, inputs: inputs)
-    }
-
-    public static func viewListCount(
-        inputs: ViewListCountInputs,
-        body: (ViewListCountInputs) -> Int?
-    ) -> Int? {
-        var inputs: ViewListCountInputs = inputs
-
-        withoutActuallyEscaping(body) { escapingBody in
-            inputs.append(escapingBody, to: BodyCountInput<Content>.self)
+        let modifiedBody = Attribute("\(Self.self) body") {
+            let modifierContent: ViewModifierContent<Self> = .init()
+            return modifier.wrappedValue.body(content: modifierContent)
         }
 
-        return Body.viewListCount(inputs: inputs)
+        return Body.makeViewList(modifiedBody, inputs: inputs)
     }
 }
 
-extension View {
-    public func modifier<M: ViewModifier>(_ modifier: M) -> some View {
-        ModifiedContent(self, modifier: modifier)
+/// A ViewModifier that doesn't have a body.
+protocol PrimitiveViewModifier: ViewModifier where Body == Never {}
+
+extension PrimitiveViewModifier {
+    func body(content: Content) -> Never {
+        fatalError("PrimitiveViewModifier doesn't have a body")
+    }
+}
+
+struct MakeViewOutputsInputStorageKey: ViewInputsStorageKey {
+    typealias Value = OutputsType
+}
+
+extension MakeViewOutputsInputStorageKey {
+    enum OutputsType {
+        typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+        typealias MakeViewListOutputs = (ViewListInputs) -> ViewListOutputs
+
+        case view(MakeViewOutputs)
+        case viewList(MakeViewListOutputs)
+    }
+}
+
+public struct ViewModifierContent<Modifier: ViewModifier>: View, PrimitiveView { }
+
+extension ViewModifierContent {
+    public static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs {
+        var inputs: ViewInputs = inputs
+        let outputsType = getOutputsType(inputs: &inputs)
+        switch outputsType {
+        case let .view(makeViewOutputs):
+            return makeViewOutputs(inputs)
+        case let .viewList(makeViewListOutputs):
+            return .unaryViewOutputs(
+                inputs: inputs,
+                makeViewListOutputs: makeViewListOutputs
+            )
+        }
+    }
+
+    public static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        var inputs: ViewListInputs = inputs
+        let outputsType = getOutputsType(inputs: &inputs)
+        switch outputsType {
+        case let .view(makeViewOutputs):
+            return .unaryViewListOutputs { inputs in
+                makeViewOutputs(inputs)
+            }
+        case let .viewList(makeViewListOutputs):
+            return makeViewListOutputs(inputs)
+        }
+    }
+
+    private static func getOutputsType<S: InputStorage>(
+        inputs: inout S
+    ) -> MakeViewOutputsInputStorageKey.OutputsType {
+        guard let outputsType = inputs.popLast(MakeViewOutputsInputStorageKey.self) else {
+            fatalError("Outputs type not found in inputs")
+        }
+        return outputsType
     }
 }

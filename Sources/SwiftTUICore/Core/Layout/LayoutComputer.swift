@@ -1,36 +1,14 @@
 //
-//  File.swift
-//  AttributeGraph
+//  LayoutComputer.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 20/11/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
 import Geometry
 
-public struct LayoutComputer {
-    private let sizeThatFits: (_ proposal: ProposedViewSize) -> Size
-    private let childGeometries: (Rect) -> [ViewGeometry]
-
-    init(
-        sizeThatFits: @escaping (_ proposal: ProposedViewSize) -> Size,
-        childGeometries: @escaping (_ rect: Rect) -> [ViewGeometry]
-    ) {
-        self.sizeThatFits = sizeThatFits
-        self.childGeometries = childGeometries
-    }
-
-    func sizeThatFits(_ proposal: ProposedViewSize) -> Size {
-        sizeThatFits(proposal)
-    }
-
-    func childGeometries(in rect: Rect) -> [ViewGeometry] {
-        childGeometries(rect)
-    }
-}
-
-extension LayoutComputer: CustomStringConvertible {
-    public var description: String {
-        "LayoutComputer"
-    }
+struct LayoutComputer {
+    let sizeThatFits: (_ proposedSize: ProposedViewSize) -> Size
+    let viewGeometries: (_ rect: Rect) -> [ViewGeometry]
 }

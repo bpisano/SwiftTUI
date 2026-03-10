@@ -1,41 +1,45 @@
 //
-//  File.swift
-//  AttributeGraph
+//  View.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 20/11/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
-import AttributeGraph
 import Foundation
-import Geometry
+import AttributeGraph
 
 public protocol View {
     associatedtype Body: View
 
-    static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs
-    static func makeViewList(_ view: Attribute<Self>, inputs: ViewListInputs) -> ViewListOutputs
-    static func viewListCount(inputs: ViewListCountInputs) -> Int?
+    static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs
 
-    @ViewBuilder
-    var body: Body { get }
+    static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs
+
+    var body: Self.Body { get }
 }
 
-public extension View {
-    static func makeView(_ view: Attribute<Self>, inputs: ViewInputs) -> ViewOutputs {
+extension View {
+    public static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs {
         let body = view.map(\.body)
-        body.label = "\(Self.self) body"
-        view.updateDynamicProperties()
+        body.label = "\(Body.self)"
         return Body.makeView(body, inputs: inputs)
     }
 
-    static func makeViewList(_ view: Attribute<Self>, inputs: ViewListInputs) -> ViewListOutputs {
+    public static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
         let body = view.map(\.body)
-        body.label = "\(Self.self) body"
-        view.updateDynamicProperties()
+        body.label = "\(Body.self)"
         return Body.makeViewList(body, inputs: inputs)
-    }
-
-    static func viewListCount(inputs: ViewListCountInputs) -> Int? {
-        Body.viewListCount(inputs: inputs)
     }
 }

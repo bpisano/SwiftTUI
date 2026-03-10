@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol AnyAttribute: CustomStringConvertible {
+public protocol AnyAttribute: DigraphRepresentable {
     var id: UUID { get }
     var flags: Set<AttributeFlag> { get }
     var label: String { get }

@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "AttributeGraph",
+    name: "SwiftTUI",
     platforms: [
         .macOS(.v26),
         .iOS(.v26)

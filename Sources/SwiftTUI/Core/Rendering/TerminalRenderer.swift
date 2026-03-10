@@ -49,7 +49,8 @@ final class TerminalRenderer<V: View> {
         let inputs: ViewInputs = .init(
             position: $screenOrigin,
             size: $screenSize,
-            phase: $viewPhase
+            phase: $viewPhase,
+            storage: .init()
         )
         outputs = V.makeView($view, inputs: inputs)
 
@@ -67,7 +68,7 @@ final class TerminalRenderer<V: View> {
             assertionFailure("Outputs not set up. Call setup() before rendering.")
             return
         }
-        fillBuffer(with: outputs.displayList.wrappedValue, at: .zero)
+        fillBuffer(with: outputs.displayList.wrappedValue)
     }
 
     func render() {
@@ -78,23 +79,21 @@ final class TerminalRenderer<V: View> {
         CallbackQueue.shared.executeAll()
     }
 
-    private func fillBuffer(with displayList: DisplayList, at origin: Point) {
+    private func fillBuffer(with displayList: DisplayList) {
         for item in displayList.items {
-            switch item.content {
-            case .empty:
-                continue
-            case .command(let drawCommand):
-                fillBufferCell(with: drawCommand, at: origin + item.frame.origin)
-            case .childList(let wrappedDisplayList):
-                fillBuffer(with: wrappedDisplayList, at: origin + item.frame.origin)
+            switch item {
+            case let .childList(wrappedDisplayList):
+                fillBuffer(with: wrappedDisplayList)
+            case let .command(command):
+                fillBufferCell(with: command)
             }
         }
     }
 
-    private func fillBufferCell(with command: DrawCommand, at origin: Point) {
-        switch command {
-        case .putLine(let line):
-            buffer.putLine(line, at: origin)
+    private func fillBufferCell(with command: DisplayList.Command) {
+        switch command.action {
+        case let .putLine(line):
+            buffer.putLine(line, at: command.frame.origin)
         }
     }
 }

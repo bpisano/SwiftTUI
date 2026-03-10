@@ -1,8 +1,8 @@
 //
-//  File.swift
-//  AttributeGraph
+//  ViewPhaseEffect.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 29/01/2026.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation

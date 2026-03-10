@@ -93,14 +93,14 @@ public final class Graph {
     }
 }
 
-extension Graph: CustomStringConvertible {
-    public var description: String {
+extension Graph: DigraphRepresentable {
+    public var digraph: String {
         let attributesDescription = attributesRefs
-            .map(\.attribute.description)
+            .map(\.attribute.digraph)
             .joined(separator: "\n    ")
         let edgesDescription = attributesRefs
             .flatMap { ref in
-                ref.attribute.outgoingEdges.map(\.description)
+                ref.attribute.outgoingEdges.map(\.digraph)
             }
             .joined(separator: "\n    ")
 

@@ -1,8 +1,8 @@
 //
-//  File.swift
-//  AttributeGraph
+//  Layout.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 20/11/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
@@ -14,7 +14,7 @@ protocol Layout {
         subviews: [LayoutProxy]
     ) -> Size
 
-    func place(
+    func placeSubviews(
         in bounds: Rect,
         subviews: [LayoutProxy]
     )
@@ -24,16 +24,15 @@ extension Layout {
     func layoutComputer(for subviews: [LayoutComputer]) -> LayoutComputer {
         var geometries: [ViewGeometry] = Array(repeating: .zero, count: subviews.count)
         let proxies: [LayoutProxy] = subviews.enumerated().map { index, computer in
-            LayoutProxy(layoutComputer: computer) { rect, proposal in
-                let dimensions: ViewDimensions = .init(frame: rect)
-                geometries[index] = .init(dimensions: dimensions)
+            LayoutProxy(layoutComputer: computer) { rect in
+                geometries[index] = rect
             }
         }
 
         return LayoutComputer { proposal in
             sizeThatFits(proposal: proposal, subviews: proxies)
-        } childGeometries: { rect in
-            place(in: rect, subviews: proxies)
+        } viewGeometries: { rect in
+            placeSubviews(in: rect, subviews: proxies)
             return geometries
         }
     }

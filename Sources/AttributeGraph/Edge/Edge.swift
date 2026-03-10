@@ -26,8 +26,8 @@ public final class Edge {
     }
 }
 
-extension Edge: CustomStringConvertible {
-    public var description: String {
+extension Edge: DigraphRepresentable {
+    public var digraph: String {
         let fromId: String = fromRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
         let toId: String = toRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
         return "\"\(fromId)\" -> \"\(toId)\"\(state == .dirty ? " [style=dashed]" : "")"

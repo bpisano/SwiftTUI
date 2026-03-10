@@ -1,8 +1,8 @@
 //
 //  ProposedViewSize.swift
-//  AttributeGraph
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 20/11/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
@@ -13,10 +13,13 @@ struct ProposedViewSize {
     static let infinity: Self = .init(width: .infinity, height: .infinity)
     static let unspecified: Self = .init(width: nil, height: nil)
 
-    let width: Double?
-    let height: Double?
+    let width: GeometryUnit?
+    let height: GeometryUnit?
 
-    init(width: Double?, height: Double?) {
+    init(
+        width: GeometryUnit?,
+        height: GeometryUnit?
+    ) {
         self.width = width
         self.height = height
     }
@@ -29,7 +32,7 @@ struct ProposedViewSize {
     func replacingUnspecifiedDimensions(
         by size: Size = .init(width: 10, height: 10)
     ) -> Size {
-        Size(
+        .init(
             width: width ?? size.width,
             height: height ?? size.height
         )

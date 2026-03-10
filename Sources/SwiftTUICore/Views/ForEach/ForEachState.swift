@@ -1,170 +1,127 @@
 //
-//  File.swift
-//  AttributeGraph
+//  ForEachState.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 03/03/2026.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
 import AttributeGraph
 
-private enum Edit {
-    case insertion(newOffset: Int)
-    case removal(oldOffset: Int)
-}
-
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
-    private(set) var view: Attribute<ForEach<Data, ID, Content>>?
+    typealias ForEachType = ForEach<Data, ID, Content>
 
-    private(set) var itemsById: [ID: Item] = [:]
     private(set) var orderedIds: [ID] = []
+    private(set) var itemsById: [ID: Item] = [:]
 
-    func updateState(with view: Attribute<ForEach<Data, ID, Content>>) {
-        self.view = view
+    func update(
+        with view: Attribute<ForEachType>,
+        inputs: ViewListInputs
+    ) {
+        orderedIds = []
 
-        var diff: DiffContext = .init(
-            oldItemsById: itemsById,
-            oldOrdered: orderedIds
-        )
+        let forEach: ForEachType = view.wrappedValue
+        var index: Data.Index = forEach.data.startIndex
 
-        let unwrappedView: ForEach<Data, ID, Content> = view.wrappedValue
-        var index: Data.Index = unwrappedView.data.startIndex
-
-        while index != unwrappedView.data.endIndex {
-            let element: Data.Element = unwrappedView.data[index]
-            let id: ID = element[keyPath: unwrappedView.id]
-            let newOffset: Int = diff.newOrdered.count
+        while index != forEach.data.endIndex {
+            let element: Data.Element = forEach.data[index]
+            let id: ID = element[keyPath: forEach.id]
 
             if let existingItem = itemsById[id] {
-                // Existing item, update the index
                 existingItem.index = index
             } else {
-                // New item, create and insert
-                print("Calling makeItem for new item with ID \(id) at new offset \(newOffset)")
-                itemsById[id] = makeItem(id: id, index: index, from: view)
-                diff.editsById[id] = .insertion(newOffset: newOffset)
+                let item: Item = makeCachedItem(
+                    for: id,
+                    at: index,
+                    view: view,
+                    inputs: inputs
+                )
+                itemsById[id] = item
             }
 
-            diff.appendNew(id)
-            unwrappedView.data.formIndex(after: &index)
+            orderedIds.append(id)
+
+            forEach.data.formIndex(after: &index)
         }
 
-        for removedId in diff.removedIDs() {
-            let oldOffset: Int = diff.oldOffset(for: removedId)
-            diff.editsById[removedId] = .removal(oldOffset: oldOffset)
-            diff.pendingRemovals.append(removedId)
+        let currentIds: Set<ID> = Set(orderedIds)
+        let existingIds: Set<ID> = Set(itemsById.keys)
+        let idsToRemove: Set<ID> = existingIds.subtracting(currentIds)
+        for idToRemove in idsToRemove {
+            guard let itemToRemove: Item = itemsById[idToRemove] else { continue }
+            itemToRemove.viewSubgraph.clean()
+            itemToRemove.viewOutputsSubgraph.clean()
+            itemsById.removeValue(forKey: idToRemove)
         }
-
-        orderedIds = diff.newOrdered
-
-        print("Ordered IDs: \(orderedIds)")
-        print(diff.editsById)
-
-//        CallbackQueue.shared.enqueue { [weak self] in
-//            guard let self else { return }
-//            for pendingRemoval in diff.pendingRemovals {
-//                guard let item = self.itemsById[pendingRemoval] else { continue }
-//                print("Removing item with ID \(pendingRemoval) at old offset \(item.index)")
-//                item.subgraph.clean()
-//            }
-//        }
     }
 
-    private func makeItem(
-        id: ID,
-        index: Data.Index,
-        from view: Attribute<ForEach<Data, ID, Content>>
+    private func makeCachedItem(
+        for id: ID,
+        at index: Data.Index,
+        view: Attribute<ForEachType>,
+        inputs: ViewListInputs
     ) -> Item {
-        let subgraph: Subgraph = .init()
-        return subgraph.withDependencyCapture {
-            let element = view.wrappedValue.data[index]
-
-            let childView: Attribute<Content> = Attribute {
-                return view.wrappedValue.makeChildView(element)
-            }
-            childView.label = "ForEach Child View for id \(id)"
-            
-            let outputs: ViewListOutputs = Content.makeViewList(
+        let viewSubgraph: Subgraph = .init()
+        let viewOutputsSubgraph: Subgraph = .init()
+        return viewSubgraph.withDependencyCapture {
+            let childView: Attribute<Content> = makeChildView(for: id, view: view)
+            let childViewListOutputs: ViewListOutputs = Content.makeViewList(
                 childView,
-                inputs: .init(implicitId: 0)
+                inputs: inputs
             )
-            let viewList: Attribute<any ViewList> = outputs.makeViewListAttribute()
-            
-            return Item(
-                id: id,
+            return .init(
                 index: index,
-                viewList: viewList,
-                subgraph: subgraph
+                viewSubgraph: viewSubgraph,
+                viewOutputsSubgraph: viewOutputsSubgraph,
+                viewList: childViewListOutputs.viewList
             )
+        }
+    }
+
+    private func makeChildView(
+        for id: ID,
+        view: Attribute<ForEachType>
+    ) -> Attribute<Content> {
+        Attribute("ForEach Child View \(id)") { [unowned self] in
+            guard let elementIndexOffset = self.orderedIds.firstIndex(of: id) else {
+                fatalError("Element with ID \(id) not found in orderedIds")
+            }
+            let view: ForEach<Data, ID, Content> = view.wrappedValue
+            let elementIndex: Data.Index = view.data.index(
+                view.data.startIndex,
+                offsetBy: elementIndexOffset
+            )
+            let element: Data.Element = view.data[elementIndex]
+            return view.makeChildView(element)
         }
     }
 }
 
 extension ForEachState {
     final class Item {
-        let id: ID
-        var index: Data.Index
-        let viewList: Attribute<ViewList>
-        let subgraph: Subgraph
+        let viewSubgraph: Subgraph
+        let viewOutputsSubgraph: Subgraph
+        let viewList: Attribute<any ViewList>
+        var viewOutputs: [ViewOutputs]?
 
-        var viewOutputs: Attribute<ViewOutputs>?
+        var index: Data.Index {
+            willSet {
+                guard newValue != index else { return }
+                viewOutputsSubgraph.clean()
+                viewOutputs = nil
+            }
+        }
 
         init(
-            id: ID,
             index: Data.Index,
-            viewList: Attribute<ViewList>,
-            subgraph: Subgraph
+            viewSubgraph: Subgraph,
+            viewOutputsSubgraph: Subgraph,
+            viewList: Attribute<any ViewList>
         ) {
-            self.id = id
             self.index = index
+            self.viewSubgraph = viewSubgraph
+            self.viewOutputsSubgraph = viewOutputsSubgraph
             self.viewList = viewList
-            self.subgraph = subgraph
         }
-    }
-}
-
-extension ForEachState {
-    private struct DiffContext {
-        let oldItemsById: [ID: Item]
-        let oldOrdered: [ID]
-        let oldOffsets: [ID: Int]
-        let oldIDs: Set<ID>
-
-        var newOrdered: [ID] = []
-        var newIDs: Set<ID> = []
-
-        var editsById: [ID: Edit] = [:]
-
-        var pendingRemovals: [ID] = []
-
-        init(
-            oldItemsById: [ID: Item],
-            oldOrdered: [ID]
-        ) {
-            self.oldItemsById = oldItemsById
-            self.oldOrdered = oldOrdered
-            self.oldOffsets = Dictionary(uniqueKeysWithValues: oldOrdered.enumerated().map { ($1, $0) })
-            self.oldIDs = Set(oldOrdered)
-        }
-
-        mutating func appendNew(_ id: ID) {
-            newOrdered.append(id)
-            newIDs.insert(id)
-        }
-
-        func removedIDs() -> Set<ID> {
-            oldIDs.subtracting(newIDs)
-        }
-
-        func oldOffset(for id: ID) -> Int {
-            oldOffsets[id] ?? -1
-        }
-    }
-}
-
-
-extension ForEachState: CustomStringConvertible {
-    var description: String {
-        "ForEachState with \(orderedIds.count) items"
     }
 }

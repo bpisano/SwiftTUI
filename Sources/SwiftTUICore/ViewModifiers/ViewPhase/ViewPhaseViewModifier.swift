@@ -1,23 +1,23 @@
 //
 //  File.swift
-//  AttributeGraph
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 29/01/2026.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
 import Foundation
 import AttributeGraph
 
-struct ViewPhaseViewModifier: ViewModifier, UnaryViewModifier, PrimitiveViewModifier {
+struct ViewPhaseViewModifier: ViewModifier, PrimitiveViewModifier {
     let onAppear: (() -> Void)?
     let onDisappear: (() -> Void)?
 }
 
 extension ViewPhaseViewModifier {
     static func makeView(
-        _ modifier: Attribute<Self>,
+        _ modifier: Attribute<ViewPhaseViewModifier>,
         inputs: ViewInputs,
-        body: @escaping (ViewInputs) -> ViewOutputs
+        makeViewOutputs: @escaping MakeViewOutputs
     ) -> ViewOutputs {
         let effect = ViewPhaseEffect(modifier: modifier, phase: inputs.phase)
         let effectAttribute = Attribute(rule: effect)
@@ -34,7 +34,14 @@ extension ViewPhaseViewModifier {
 
         _ = effectAttribute.wrappedValue
 
-        return body(inputs)
+        return makeViewOutputs(inputs)
+    }
+
+    static func makeViewList(
+        _ modifier: Attribute<ViewPhaseViewModifier>,
+        makeViewListOutputs: @escaping MakeViewListOutputs
+    ) -> ViewListOutputs {
+        fatalError("Not implemented")
     }
 }
 

@@ -1,15 +1,15 @@
 //
-//  File.swift
-//  AttributeGraph
+//  Text.swift
+//  SwiftTUI
 //
-//  Created by Benjamin Pisano on 25/11/2025.
+//  Created by Benjamin Pisano on 10/03/2026.
 //
 
-import AttributeGraph
 import Foundation
 import Geometry
+import AttributeGraph
 
-public struct Text: UnaryView, PrimitiveView {
+public struct Text: View, PrimitiveView {
     private let text: String
 
     public init(_ text: String) {
@@ -18,114 +18,69 @@ public struct Text: UnaryView, PrimitiveView {
 }
 
 extension Text {
-    public static func makeView(_ view: Attribute<Text>, inputs: ViewInputs) -> ViewOutputs {
-        let resolvedText = Attribute {
-            view.wrappedValue.text
-        }
-        resolvedText.label = "Resolved Text"
-
-        let layoutComputer = Attribute {
-            let resolvedText = resolvedText.wrappedValue
-            let textLength = resolvedText.count
-            return LayoutComputer { proposal in
-                if let proposedWidth = proposal.width {
-                    if Double(textLength) <= proposedWidth {
-                        return Size(width: Double(textLength), height: 1)
-                    } else {
-                        var width: Double = 0
-                        var height: Double = 1
-
-                        for character in resolvedText {
-                            if character == "\n" {
-                                height += 1
-                                width = 0
-                            } else {
-                                width += 1
-                            }
-
-                            if width >= proposedWidth {
-                                width = 0
-                                height += 1
-                            }
-                        }
-
-                        return Size(width: proposedWidth, height: height)
-                    }
+    public static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs {
+        let layoutComputer = Attribute("Text Layout Computer") {
+            let text: String = view.wrappedValue.text
+            return LayoutComputer { proposedSize in
+                let lines: [String] =
+                if let proposedWidth = proposedSize.width {
+                    text.slice(Int(proposedWidth))
                 } else {
-                    return Size(width: Double(textLength), height: 1)
+                    [text]
                 }
-            } childGeometries: { rect in
-                let dimensions: ViewDimensions = .init(frame: rect)
-                return [ViewGeometry(dimensions: dimensions)]
+                let maxWidth = lines.map { $0.count }.max() ?? 0
+                return Size(
+                    width: Double(maxWidth),
+                    height: Double(lines.count)
+                )
+            } viewGeometries: { rect in
+                [rect]
             }
         }
-        layoutComputer.label = "Text Layout Computer"
 
-        let textGeometry = Attribute {
+        let displayList = Attribute("Text DisplayList") {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let inputsSize: Size = inputs.size.wrappedValue
-            let textSize: Size = layoutComputer.sizeThatFits(.init(inputsSize))
-            return layoutComputer.childGeometries(
-                in: .init(
-                    origin: inputs.position.wrappedValue,
-                    size: textSize
+            let textGeometries: [ViewGeometry] = layoutComputer.viewGeometries(
+                Rect(
+                    origin: .zero,
+                    size: inputs.size.wrappedValue
                 )
-            )[0]
-        }
-        textGeometry.label = "Text Geometry"
+            )
+            let textGeometry: ViewGeometry = textGeometries[0]
 
-        let displayList = Attribute {
-            let textGeometry: ViewGeometry = textGeometry.wrappedValue
-            let viewOrigin: Point = textGeometry.dimensions.origin
-            let viewSize: Size = textGeometry.dimensions.size
-            let lines: [String] = split(resolvedText.wrappedValue, by: Int(viewSize.width))
-            let items = lines.enumerated().map { index, line in
-                DisplayList.Item(
-                    content: .command(.putLine(line)),
-                    frame: .init(
-                        x: viewOrigin.x,
-                        y: viewOrigin.y + Double(index),
-                        width: viewSize.width,
-                        height: 1
+            let text: String = view.wrappedValue.text
+            let lines: [String] = text.slice(Int(textGeometry.width))
+
+            let inputPosition: Point = inputs.position.wrappedValue
+
+            return DisplayList(
+                lines.enumerated().map { index, line in
+                    let origin: Point = .init(x: 0, y: inputPosition.y + Double(index))
+                    let size: Size = .init(width: textGeometry.width, height: 1)
+                    let commandFrame: Rect = .init(origin: origin, size: size)
+                    return DisplayList.Command(
+                        .putLine(line),
+                        in: commandFrame
                     )
-                )
-            }
-            return DisplayList(items)
+                }
+            )
         }
-        displayList.label = "Text Display List"
 
-        return ViewOutputs(
+        return .init(
             layoutComputer: layoutComputer,
             displayList: displayList
         )
     }
 
-    private static func split(_ text: String, by count: Int) -> [String] {
-        guard count > 0 else { return [] }
-
-        var result: [String] = .init()
-        var currentIndex: String.Index = text.startIndex
-
-        while currentIndex < text.endIndex {
-            let endIndex: String.Index =
-                text.index(
-                    currentIndex,
-                    offsetBy: count,
-                    limitedBy: text.endIndex
-                ) ?? text.endIndex
-
-            let chunk: String = .init(text[currentIndex..<endIndex])
-            result.append(chunk)
-
-            currentIndex = endIndex
+    public static func makeViewList(
+        _ view: Attribute<Self>,
+        inputs: ViewListInputs
+    ) -> ViewListOutputs {
+        .unaryViewListOutputs("Text ViewList") { inputs in
+            Self.makeView(view, inputs: inputs)
         }
-
-        return result
-    }
-}
-
-extension Text: CustomStringConvertible {
-    public var description: String {
-        "Text"
     }
 }

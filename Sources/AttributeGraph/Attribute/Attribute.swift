@@ -215,7 +215,7 @@ extension Attribute {
 }
 
 extension Attribute {
-    public var description: String {
+    public var digraph: String {
         let formattedId: String = storage.id.uuidString.replacing("-", with: "")
         var properties: [String] = []
 
@@ -228,9 +228,12 @@ extension Attribute {
         }
 
         if let value = storage.value {
-            let stringValue: String = "\(value)".htmlEscaped
-            labelHTML +=
-                "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"10\">\(stringValue)</FONT></TD></TR>"
+            let stringValue: String = if let value = value as? AttributeValueRepresentable {
+                "\(value.attributeValueDescription)".htmlEscaped
+            } else {
+                "\(value)".htmlEscaped
+            }
+            labelHTML += "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"10\">\(stringValue)</FONT></TD></TR>"
         }
 
         let shortId: String = String(formattedId.prefix(8)).lowercased()
