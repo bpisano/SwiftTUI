@@ -31,6 +31,7 @@ extension View {
     ) -> ViewOutputs {
         let body = view.map(\.body)
         body.label = "\(Body.self)"
+        view.updateDynamicProperties()
         return Body.makeView(body, inputs: inputs)
     }
 
