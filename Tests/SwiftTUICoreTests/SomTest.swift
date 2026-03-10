@@ -7,7 +7,7 @@
 
 import AppKit
 import AttributeGraph
-import SwiftUI
+import Geometry
 import Testing
 
 /// A utility for introspecting Swift tuple types at runtime.
@@ -168,6 +168,36 @@ private struct TupleMetadata {
     }
 }
 
+struct ProposedViewSize {
+    static let zero: Self = .init(width: nil, height: nil)
+    static let infinity: Self = .init(width: .infinity, height: .infinity)
+    static let unspecified: Self = .init(width: nil, height: nil)
+
+    let width: Double?
+    let height: Double?
+
+    init(width: Double?, height: Double?) {
+        self.width = width
+        self.height = height
+    }
+
+    init(_ size: Size) {
+        self.width = size.width.isFinite ? size.width : nil
+        self.height = size.height.isFinite ? size.height : nil
+    }
+
+    func replacingUnspecifiedDimensions(
+        by size: Size = .init(width: 10, height: 10)
+    ) -> Size {
+        Size(
+            width: width ?? size.width,
+            height: height ?? size.height
+        )
+    }
+}
+
+typealias ViewGeometry = Rect
+
 extension String {
     func slice(_ size: Int) -> [String] {
         guard size > 0 else { return [] }
@@ -187,9 +217,15 @@ extension String {
     }
 }
 
+extension Double {
+    func clamped(_ minValue: Double, _ maxValue: Double) -> Double {
+        min(max(self, minValue), maxValue)
+    }
+}
+
 struct ViewInputs {
-    let position: Attribute<CGPoint>
-    let size: Attribute<CGSize>
+    let position: Attribute<Point>
+    let size: Attribute<Size>
 }
 
 struct ViewOutputs {
@@ -218,27 +254,27 @@ extension ViewListOutputs: CustomStringConvertible {
 }
 
 struct LayoutComputer {
-    let sizeThatFits: (_ proposedSize: ProposedViewSize) -> CGSize
-    let viewGeometries: (_ rect: CGRect) -> [CGRect]
+    let sizeThatFits: (_ proposedSize: ProposedViewSize) -> Size
+    let viewGeometries: (_ rect: Rect) -> [ViewGeometry]
 }
 
 struct LayoutProxy {
     private let layoutComputer: LayoutComputer
-    private let place: (CGRect) -> Void
+    private let place: (Rect) -> Void
 
     init(
         layoutComputer: LayoutComputer,
-        place: @escaping (_ rect: CGRect) -> Void
+        place: @escaping (_ rect: Rect) -> Void
     ) {
         self.layoutComputer = layoutComputer
         self.place = place
     }
 
-    func size(in proposal: ProposedViewSize) -> CGSize {
+    func size(in proposal: ProposedViewSize) -> Size {
         layoutComputer.sizeThatFits(proposal)
     }
 
-    func place(in rect: CGRect) {
+    func place(in rect: Rect) {
         place(rect)
     }
 }
@@ -247,17 +283,17 @@ protocol Layout {
     func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: [LayoutProxy]
-    ) -> CGSize
+    ) -> Size
 
     func placeSubviews(
-        in bounds: CGRect,
+        in bounds: Rect,
         subviews: [LayoutProxy]
     )
 }
 
 extension Layout {
     func layoutComputer(for subviews: [LayoutComputer]) -> LayoutComputer {
-        var geometries: [CGRect] = Array(repeating: .zero, count: subviews.count)
+        var geometries: [ViewGeometry] = Array(repeating: .zero, count: subviews.count)
         let proxies: [LayoutProxy] = subviews.enumerated().map { index, computer in
             LayoutProxy(layoutComputer: computer) { rect in
                 geometries[index] = rect
@@ -378,7 +414,7 @@ struct UnaryViewElement: ViewElement {
 
 struct PutLineCommand {
     let text: String
-    let position: CGPoint
+    let position: Point
 }
 
 struct DisplayList {
@@ -433,9 +469,9 @@ struct Text: View {
                         [text]
                     }
                 let maxWidth = lines.map { $0.count }.max() ?? 0
-                return CGSize(
-                    width: CGFloat(maxWidth),
-                    height: CGFloat(lines.count)
+                return Size(
+                    width: Double(maxWidth),
+                    height: Double(lines.count)
                 )
             } viewGeometries: { rect in
                 [rect]
@@ -443,27 +479,28 @@ struct Text: View {
         }
 
         let displayList = Attribute("Text DisplayList") {
-            let textGeometries = layoutComputer.wrappedValue.viewGeometries(
-                CGRect(
+            let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
+            let textGeometries: [ViewGeometry] = layoutComputer.viewGeometries(
+                Rect(
                     origin: .zero,
                     size: inputs.size.wrappedValue
                 )
             )
-            let textGeometry = textGeometries[0]
+            let textGeometry: ViewGeometry = textGeometries[0]
 
             let text: String = view.wrappedValue.text
             let lines: [String] = text.slice(Int(textGeometry.width))
 
-            let inputPosition: CGPoint = inputs.position.wrappedValue
+            let inputPosition: Point = inputs.position.wrappedValue
 
             return DisplayList(
                 lines.enumerated().map { index, line in
                     return .command(
                         PutLineCommand(
                             text: line,
-                            position: CGPoint(
+                            position: Point(
                                 x: 0,
-                                y: inputPosition.y + CGFloat(index)
+                                y: inputPosition.y + Double(index)
                             )
                         )
                     )
@@ -548,21 +585,21 @@ struct VStackLayout: Layout {
     func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: [LayoutProxy]
-    ) -> CGSize {
+    ) -> Size {
         let frames = viewFrames(proposal: proposal, subviews: subviews)
-        var totalHeight: CGFloat = 0
-        var maxWidth: CGFloat = 0
+        var totalHeight: Double = 0
+        var maxWidth: Double = 0
 
         for frame in frames {
             totalHeight += frame.height
             maxWidth = max(maxWidth, frame.width)
         }
 
-        return CGSize(width: maxWidth, height: totalHeight)
+        return Size(width: maxWidth, height: totalHeight)
     }
 
     func placeSubviews(
-        in bounds: CGRect,
+        in bounds: Rect,
         subviews: [LayoutProxy]
     ) {
         let frames = viewFrames(
@@ -577,13 +614,13 @@ struct VStackLayout: Layout {
     private func viewFrames(
         proposal: ProposedViewSize,
         subviews: [LayoutProxy]
-    ) -> [CGRect] {
-        var frames: [CGRect] = []
-        var yPosition: CGFloat = 0
+    ) -> [Rect] {
+        var frames: [Rect] = []
+        var yPosition: Double = 0
 
         for subview in subviews {
             let subviewSize = subview.size(in: proposal)
-            let frame = CGRect(
+            let frame = Rect(
                 x: 0,
                 y: yPosition,
                 width: subviewSize.width,
@@ -610,7 +647,7 @@ struct VStack<Content: View>: View {
 
         let childViewListOutputs: ViewListOutputs = Content.makeViewList(content)
 
-        var childGeometries: Attribute<[CGRect]>!
+        var childGeometries: Attribute<[Rect]>!
 
         let childViewOutputs = Attribute("VStack Child ViewOutputs") {
             var index: Int = 0
@@ -649,7 +686,7 @@ struct VStack<Content: View>: View {
             let proposal = ProposedViewSize(inputs.size.wrappedValue)
             let containerSize = layoutComputer.wrappedValue.sizeThatFits(proposal)
             return layoutComputer.wrappedValue.viewGeometries(
-                CGRect(
+                Rect(
                     origin: .zero,
                     size: containerSize
                 )
@@ -858,10 +895,205 @@ extension ForEach: CustomStringConvertible {
     }
 }
 
+// MARK: - View Modifiers
+
+protocol ViewModifier {
+    typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+    typealias MakeViewListOutputs = () -> ViewListOutputs
+
+    static func makeView(
+        _ modifier: Attribute<Self>,
+        inputs: ViewInputs,
+        makeViewOutputs: @escaping MakeViewOutputs
+    ) -> ViewOutputs
+
+    static func makeViewList(
+        _ modifier: Attribute<Self>,
+        makeViewListOutputs: @escaping MakeViewListOutputs
+    ) -> ViewListOutputs
+}
+
+struct ModifiedView<Content: View, Modifier: ViewModifier>: View {
+    private let content: Content
+    private let modifier: Modifier
+
+    init(
+        content: Content,
+        modifier: Modifier
+    ) {
+        self.content = content
+        self.modifier = modifier
+    }
+}
+
+extension View {
+    func modifier<M: ViewModifier>(_ modifier: M) -> some View {
+        ModifiedView(content: self, modifier: modifier)
+    }
+}
+
+extension ModifiedView {
+    static func makeView(
+        _ view: Attribute<Self>,
+        inputs: ViewInputs
+    ) -> ViewOutputs {
+        let content: Attribute<Content> = view.map(\.content)
+        let modifier: Attribute<Modifier> = view.map(\.modifier)
+
+        content.label = "\(Content.self)"
+        modifier.label = "\(Modifier.self)"
+
+        return Modifier.makeView(modifier, inputs: inputs) { modifiedInputs in
+            Content.makeView(content, inputs: modifiedInputs)
+        }
+    }
+
+    static func makeViewList(_ view: Attribute<Self>) -> ViewListOutputs {
+        let content: Attribute<Content> = view.map(\.content)
+        let modifier: Attribute<Modifier> = view.map(\.modifier)
+
+        content.label = "\(Content.self)"
+        modifier.label = "\(Modifier.self)"
+
+        return Modifier.makeViewList(modifier) {
+            Content.makeViewList(content)
+        }
+    }
+}
+
+struct FrameLayout: Layout {
+    let width: Double?
+    let height: Double?
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: [LayoutProxy]
+    ) -> Size {
+        let proposedSize: ProposedViewSize = .init(
+            width: width ?? proposal.width,
+            height: height ?? proposal.height
+        )
+        return subviews.first?.size(in: proposedSize) ?? .zero
+    }
+
+    func placeSubviews(
+        in bounds: Rect,
+        subviews: [LayoutProxy]
+    ) {
+        for subview in subviews {
+            let proposedSize: ProposedViewSize = .init(
+                width: width ?? bounds.width,
+                height: height ?? bounds.height
+            )
+            let subviewSize: Size = subview.size(in: proposedSize)
+            let placementFrame: Rect = .init(
+                origin: bounds.origin,
+                size: subviewSize
+            )
+            subview.place(in: placementFrame)
+        }
+    }
+}
+
+struct FrameViewModifier: ViewModifier {
+    private let width: Double?
+    private let height: Double?
+
+    init(
+        width: Double?,
+        height: Double?
+    ) {
+        self.width = width
+        self.height = height
+    }
+}
+
+extension FrameViewModifier {
+    static func makeView(
+        _ modifier: Attribute<Self>,
+        inputs: ViewInputs,
+        makeViewOutputs: @escaping MakeViewOutputs
+    ) -> ViewOutputs {
+        var childViewOutputs: [ViewOutputs] = []
+
+        let layoutComputer = Attribute("Frame LayoutComputer") {
+            let modifier: FrameViewModifier = modifier.wrappedValue
+            let layout: FrameLayout = .init(
+                width: modifier.width,
+                height: modifier.height
+            )
+            return layout.layoutComputer(for: childViewOutputs.map(\.layoutComputer.wrappedValue))
+        }
+
+        let modifiedPosition = Attribute {
+            let inputFrame: Rect = .init(
+                origin: inputs.position.wrappedValue,
+                size: inputs.size.wrappedValue
+            )
+            let layoutGeometries: [ViewGeometry] = layoutComputer.wrappedValue.viewGeometries(inputFrame)
+            let layoutGeometry: ViewGeometry = layoutGeometries[0]
+            return layoutGeometry.origin
+        }
+
+        let modifiedSize = Attribute {
+            let inputFrame: Rect = .init(
+                origin: inputs.position.wrappedValue,
+                size: inputs.size.wrappedValue
+            )
+            let layoutGeometries: [ViewGeometry] = layoutComputer.wrappedValue.viewGeometries(inputFrame)
+            let layoutGeometry: ViewGeometry = layoutGeometries[0]
+
+            var layoutGeometrySize: Size = layoutGeometry.size
+            layoutGeometrySize.width = layoutGeometrySize.width.clamped(0, inputFrame.size.width)
+            layoutGeometrySize.height = layoutGeometrySize.height.clamped(0, inputFrame.size.height)
+
+            return layoutGeometrySize
+        }
+
+        let modifiedInputs: ViewInputs = .init(
+            position: modifiedPosition,
+            size: modifiedSize
+        )
+
+        childViewOutputs = [makeViewOutputs(modifiedInputs)]
+
+        return .init(
+            layoutComputer: layoutComputer,
+            displayList: childViewOutputs[0].displayList
+        )
+    }
+
+    static func makeViewList(
+        _ modifier: Attribute<Self>,
+        makeViewListOutputs: @escaping MakeViewListOutputs
+    ) -> ViewListOutputs {
+        let unaryViewElement: UnaryViewElement = .init { inputs in
+            Self.makeView(modifier, inputs: inputs) { modifiedInputs in
+                let childViewListOutputs: ViewListOutputs = makeViewListOutputs()
+                let childViewList: Attribute<any ViewList> = childViewListOutputs.viewList
+                let viewOutputs: [ViewOutputs] = childViewList.wrappedValue.makeViewOutputs(inputs: modifiedInputs)
+                return viewOutputs[0]
+            }
+        }
+        let viewList: Attribute<any ViewList> = Attribute("Frame Modifier ViewList") {
+            BaseViewList(elements: [unaryViewElement])
+        }
+        return .init(viewList: viewList)
+    }
+}
+
+extension View {
+    func frame(width: Double? = nil, height: Double? = nil) -> some View {
+        modifier(FrameViewModifier(width: width, height: height))
+    }
+}
+
+// MARK: - Tests
+
 @Test
 func main() {
-    @Attribute("Screen position") var position: CGPoint = .zero
-    @Attribute("Screen size") var size = CGSize(width: 2, height: 20)
+    @Attribute("Screen position") var position: Point = .zero
+    @Attribute("Screen size") var size = Size(width: 2, height: 20)
     let inputs = ViewInputs(
         position: $position,
         size: $size
@@ -883,8 +1115,8 @@ func main() {
 
 @Test
 func forEach() {
-    @Attribute("Screen position") var position: CGPoint = .zero
-    @Attribute("Screen size") var size = CGSize(width: 10, height: 20)
+    @Attribute("Screen position") var position: Point = .zero
+    @Attribute("Screen size") var size = Size(width: 10, height: 20)
     let inputs = ViewInputs(
         position: $position,
         size: $size
@@ -896,6 +1128,7 @@ func forEach() {
     @Attribute var view = VStack(
         ForEach(users, id: \.id) { user in
             Text(user.name)
+                .frame(width: 2)
         }
     )
     $view.label = "\(type(of: view))"
@@ -908,6 +1141,25 @@ func forEach() {
         User(id: 2, name: "Bob"),
         User(id: 1, name: "Alice"),
     ]
+
+    _ = outputs.displayList.wrappedValue
+
+    copyToClipboard(Graph.current.description)
+}
+
+@Test
+func frame() {
+    @Attribute("Screen position") var position: Point = .zero
+    @Attribute("Screen size") var size = Size(width: 20, height: 20)
+    let inputs = ViewInputs(
+        position: $position,
+        size: $size
+    )
+    @Attribute var view = Text("Hello world")
+        .frame(width: 2)
+    $view.label = "\(type(of: view))"
+
+    let outputs = type(of: view).makeView($view, inputs: inputs)
 
     _ = outputs.displayList.wrappedValue
 
