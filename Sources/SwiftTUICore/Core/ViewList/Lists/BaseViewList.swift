@@ -16,13 +16,14 @@ struct BaseViewList: ViewList {
     }
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             elements.compactMap { element in
-                element.makeViewOutputs(inputs: inputs) { inputs, makeViewOutputs in
-                    escapingMakeViewOutputs(inputs, makeViewOutputs)
+                element.makeViewOutputs(startIndex: &startIndex, inputs: inputs) { index, inputs, makeViewOutputs in
+                    escapingMakeViewOutputs(&index, inputs, makeViewOutputs)
                 }
             }
         }

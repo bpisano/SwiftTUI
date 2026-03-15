@@ -10,10 +10,13 @@ import Foundation
 protocol ViewElement {
     typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
     typealias MakeViewOutputsInterceptor = (
-        _ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs
+        _ startIndex: inout Int,
+        _ inputs: ViewInputs,
+        _ makeViewOutputs: MakeViewOutputs
     ) -> ViewOutputs?
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: MakeViewOutputsInterceptor
     ) -> ViewOutputs?

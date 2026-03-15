@@ -8,16 +8,23 @@
 import Foundation
 
 struct UnaryViewElement: ViewElement {
-    private let makeOutputs: (ViewInputs) -> ViewOutputs
+    typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
 
-    init(makeOutputs: @escaping (ViewInputs) -> ViewOutputs) {
+    private let makeOutputs: MakeViewOutputs
+
+    init(makeOutputs: @escaping MakeViewOutputs) {
         self.makeOutputs = makeOutputs
     }
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: MakeViewOutputsInterceptor
     ) -> ViewOutputs? {
-        makeViewOutputs(inputs, makeOutputs)
+        let viewOutputs: ViewOutputs? = makeViewOutputs(&startIndex, inputs, makeOutputs)
+        if viewOutputs != nil {
+            startIndex += 1
+        }
+        return viewOutputs
     }
 }

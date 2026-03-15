@@ -35,7 +35,7 @@ extension VStack {
         let childViewOutputs = Attribute("VStack Child ViewOutputs") {
             var index: Int = 0
             let childViewList: any ViewList = childViewListOutputs.viewList.wrappedValue
-            return childViewList.makeViewOutputs(inputs: inputs) { inputs, makeViewOutputs in
+            return childViewList.makeViewOutputs(startIndex: &index, inputs: inputs) { index, inputs, makeViewOutputs in
                 let currentIndex: Int = index
                 let modifiedInputs = ViewInputs(
                     position: Attribute {
@@ -47,7 +47,6 @@ extension VStack {
                     phase: inputs.phase,
                     storage: inputs.storage
                 )
-                index += 1
                 return makeViewOutputs(modifiedInputs)
             }
         }

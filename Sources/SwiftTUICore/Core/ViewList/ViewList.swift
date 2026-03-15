@@ -8,12 +8,15 @@
 import Foundation
 
 protocol ViewList {
-    typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
+    typealias MakeViewOutputs = (_ inputs: ViewInputs) -> ViewOutputs
     typealias MakeViewOutputsInterceptor = (
-        _ inputs: ViewInputs, _ makeViewOutputs: MakeViewOutputs
+        _ startIndex: inout Int,
+        _ inputs: ViewInputs,
+        _ makeViewOutputs: MakeViewOutputs
     ) -> ViewOutputs?
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: @escaping MakeViewOutputsInterceptor
     ) -> [ViewOutputs]
@@ -21,7 +24,8 @@ protocol ViewList {
 
 extension ViewList {
     func makeViewOutputs(inputs: ViewInputs) -> [ViewOutputs] {
-        makeViewOutputs(inputs: inputs) { inputs, makeViewOutputs in
+        var index: Int = 0
+        return makeViewOutputs(startIndex: &index, inputs: inputs) { index, inputs, makeViewOutputs in
             makeViewOutputs(inputs)
         }
     }

@@ -16,12 +16,14 @@ struct MergedViewList: ViewList {
     }
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             viewLists.flatMap { viewList in
                 viewList.wrappedValue.makeViewOutputs(
+                    startIndex: &startIndex,
                     inputs: inputs,
                     makeViewOutputs: escapingMakeViewOutputs
                 )

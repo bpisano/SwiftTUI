@@ -24,6 +24,7 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
     }
 
     func makeViewOutputs(
+        startIndex: inout Int,
         inputs: ViewInputs,
         makeViewOutputs: @escaping MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
@@ -35,6 +36,7 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
             } else {
                 stateItem.viewOutputsSubgraph.withDependencyCapture {
                     let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
+                        startIndex: &startIndex,
                         inputs: inputs,
                         makeViewOutputs: makeViewOutputs
                     )
