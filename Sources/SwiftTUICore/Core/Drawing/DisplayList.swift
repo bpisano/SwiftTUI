@@ -16,7 +16,7 @@ public struct DisplayList {
         self.items = items
     }
 
-    init(_ commands: [Command]) {
+    init(commands: [Command]) {
         self.items = commands.map { .command($0) }
     }
 }

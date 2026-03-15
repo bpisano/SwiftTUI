@@ -57,7 +57,7 @@ extension Text {
             let inputPosition: Point = inputs.position.wrappedValue
 
             return DisplayList(
-                lines.enumerated().map { index, line in
+                commands: lines.enumerated().map { index, line in
                     let origin: Point = .init(x: 0, y: inputPosition.y + Double(index))
                     let size: Size = .init(width: textGeometry.width, height: 1)
                     let commandFrame: Rect = .init(origin: origin, size: size)

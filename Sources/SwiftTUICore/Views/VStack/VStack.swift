@@ -12,8 +12,8 @@ import AttributeGraph
 struct VStack<Content: View>: View, PrimitiveView {
     private let content: Content
 
-    init(_ content: Content) {
-        self.content = content
+    init(@ViewBuilder _ content: () -> Content) {
+        self.content = content()
     }
 }
 

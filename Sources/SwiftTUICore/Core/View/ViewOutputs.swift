@@ -86,3 +86,9 @@ extension ViewOutputs: AttributeValueRepresentable {
         "ViewOutputs"
     }
 }
+
+extension Array: AttributeValueRepresentable where Element == ViewOutputs {
+    public var attributeValueDescription: String {
+        "Array of \(count) ViewOutputs"
+    }
+}
