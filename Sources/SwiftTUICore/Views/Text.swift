@@ -5,9 +5,9 @@
 //  Created by Benjamin Pisano on 10/03/2026.
 //
 
+import AttributeGraph
 import Foundation
 import Geometry
-import AttributeGraph
 
 public struct Text: View, PrimitiveView {
     private let text: String
@@ -26,11 +26,11 @@ extension Text {
             let text: String = view.wrappedValue.text
             return LayoutComputer { proposedSize in
                 let lines: [String] =
-                if let proposedWidth = proposedSize.width {
-                    text.slice(Int(proposedWidth))
-                } else {
-                    [text]
-                }
+                    if let proposedWidth = proposedSize.width {
+                        text.slice(Int(proposedWidth))
+                    } else {
+                        [text]
+                    }
                 let maxWidth = lines.map { $0.count }.max() ?? 0
                 return Size(
                     width: Double(maxWidth),
@@ -58,7 +58,8 @@ extension Text {
 
             return DisplayList(
                 commands: lines.enumerated().map { index, line in
-                    let origin: Point = .init(x: 0, y: inputPosition.y + Double(index))
+                    let origin: Point = .init(
+                        x: inputPosition.x, y: inputPosition.y + Double(index))
                     let size: Size = .init(width: textGeometry.width, height: 1)
                     let commandFrame: Rect = .init(origin: origin, size: size)
                     return DisplayList.Command(
