@@ -12,13 +12,16 @@ import AttributeGraph
 struct FrameViewModifier: ViewModifier, PrimitiveViewModifier {
     private let width: GeometryUnit?
     private let height: GeometryUnit?
+    private let alignment: Alignment
 
     init(
         width: GeometryUnit?,
-        height: GeometryUnit?
+        height: GeometryUnit?,
+        alignment: Alignment
     ) {
         self.width = width
         self.height = height
+        self.alignment = alignment
     }
 }
 
@@ -34,7 +37,8 @@ extension FrameViewModifier {
             let modifier: FrameViewModifier = modifier.wrappedValue
             let layout: FrameLayout = .init(
                 width: modifier.width,
-                height: modifier.height
+                height: modifier.height,
+                alignment: modifier.alignment
             )
             return layout.layoutComputer(for: childViewOutputs.map(\.layoutComputer.wrappedValue))
         }
@@ -101,12 +105,14 @@ extension FrameViewModifier {
 extension View {
     public func frame(
         width: GeometryUnit? = nil,
-        height: GeometryUnit? = nil
+        height: GeometryUnit? = nil,
+        alignment: Alignment = .center
     ) -> some View {
         modifier(
             FrameViewModifier(
                 width: width,
-                height: height
+                height: height,
+                alignment: alignment
             )
         )
     }

@@ -5,24 +5,25 @@
 //  Created by Benjamin Pisano on 16/03/2026.
 //
 
-import Foundation
-import Testing
 import AttributeGraph
+import Foundation
 import Geometry
+import Testing
+
 @testable import SwiftTUI
 @testable import SwiftTUICore
 
 final class UnitTestRenderer<V: View> {
     private var buffer: TerminalBuffer
     private var outputs: ViewOutputs?
-    
+
     var emptyChar: Character = " "
-    
+
     @Attribute private var position: Point = .zero
     @Attribute private var size: Size
     @Attribute private var viewPhase: ViewPhase = .active
     @Attribute private var view: V
-    
+
     init(
         in size: Size,
         @ViewBuilder _ view: () -> V
@@ -33,7 +34,7 @@ final class UnitTestRenderer<V: View> {
         self._view = .init(wrappedValue: viewInstance)
         setup()
     }
-    
+
     private func setup() {
         let inputs: ViewInputs = .init(
             position: $position,
@@ -43,34 +44,34 @@ final class UnitTestRenderer<V: View> {
         )
         outputs = V.makeView($view, inputs: inputs)
     }
-    
+
     func render() -> String {
         guard let outputs else {
             assertionFailure("Outputs not set up.")
             return ""
         }
-        
+
         buffer = TerminalBuffer(size: size)
-        
+
         fillBuffer(with: outputs.displayList.wrappedValue)
-        
+
         return buffer.makeStringFrame(emptyChar: emptyChar)
     }
-    
+
     private func fillBuffer(with displayList: DisplayList) {
         for item in displayList.items {
             switch item {
-            case let .childList(wrappedDisplayList):
+            case .childList(let wrappedDisplayList):
                 fillBuffer(with: wrappedDisplayList)
-            case let .command(command):
+            case .command(let command):
                 fillBufferCell(with: command)
             }
         }
     }
-    
+
     private func fillBufferCell(with command: DisplayList.Command) {
         switch command.action {
-        case let .putLine(line):
+        case .putLine(let line):
             buffer.putLine(line, at: command.frame.origin)
         }
     }

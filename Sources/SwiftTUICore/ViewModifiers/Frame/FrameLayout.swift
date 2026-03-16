@@ -11,6 +11,7 @@ import Geometry
 struct FrameLayout: Layout {
     let width: GeometryUnit?
     let height: GeometryUnit?
+    let alignment: Alignment
 
     func sizeThatFits(
         proposal: ProposedViewSize,
