@@ -9,13 +9,15 @@ import Foundation
 import Geometry
 
 struct TerminalBuffer: Sendable {
+    typealias Frame = [[TerminalBufferCell]]
+
     let size: Size
-    
-    private var cells: [[TerminalBufferCell]]
+
+    private var frame: Frame
 
     init(size: Size) {
         self.size = size
-        self.cells = Array(
+        self.frame = Array(
             repeating: Array(
                 repeating: TerminalBufferCell(),
                 count: Int(size.width)
@@ -30,15 +32,15 @@ struct TerminalBuffer: Sendable {
         for (i, character) in line.enumerated() {
             let columnIndex: Int = Int(origin.x) + i
             guard columnIndex >= 0 && columnIndex < Int(size.width) else { continue }
-            cells[rowIndex][columnIndex].setCharacter(character)
+            frame[rowIndex][columnIndex].setCharacter(character)
         }
     }
 
-    func stringValue() -> String {
-        cells.map { row in
+    func makeStringFrame(emptyChar: Character = " ") -> String {
+        frame.map { row in
             row.map { cell in
-                cell.stringValue()
+                cell.stringValue(emptyChar: emptyChar)
             }.joined()
-        }.joined()
+        }.joined(separator: "\n")
     }
 }

@@ -18,8 +18,9 @@ struct TerminalBufferCell: Sendable {
         self.character = character
     }
 
-    func stringValue() -> String {
-        "\(character)"
-//        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
+    func stringValue(emptyChar: Character = " ") -> String {
+        let displayChar: Character = character == " " ? emptyChar : character
+        return "\(displayChar)"
+        //        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
     }
 }

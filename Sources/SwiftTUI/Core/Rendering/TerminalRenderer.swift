@@ -19,7 +19,7 @@ final class TerminalRenderer<V: View> {
 
     @Attribute private var screenOrigin: Point = .zero
     @Attribute private var screenSize: Size
-    @Attribute private var viewPhase: ViewPhase = .inactive
+    @Attribute private var viewPhase: ViewPhase = .active
     @Attribute private var view: V
 
     init(
@@ -53,14 +53,6 @@ final class TerminalRenderer<V: View> {
             storage: .init()
         )
         outputs = V.makeView($view, inputs: inputs)
-
-        prepareForRender()
-        render()
-
-        viewPhase = .active
-
-        prepareForRender()
-        render()
     }
 
     func prepareForRender() {
@@ -72,9 +64,10 @@ final class TerminalRenderer<V: View> {
     }
 
     func render() {
-        let stringBuffer: String = buffer.stringValue()
+        let stringFrame: String = buffer.makeStringFrame()
+
         terminal.cursor.move(to: .zero)
-        terminal.cursor.write(stringBuffer)
+        terminal.cursor.write(stringFrame)
 
         CallbackQueue.shared.executeAll()
     }
