@@ -8,14 +8,14 @@
 import Foundation
 import Geometry
 
-struct TerminalBuffer: Sendable {
+public struct TerminalBuffer: Sendable {
     typealias Frame = [[TerminalBufferCell]]
 
-    let size: Size
+    public let size: Size
 
     private var frame: Frame
 
-    init(size: Size) {
+    public init(size: Size) {
         self.size = size
         self.frame = Array(
             repeating: Array(
@@ -26,7 +26,7 @@ struct TerminalBuffer: Sendable {
         )
     }
 
-    mutating func putLine(_ line: String, at origin: Point) {
+    public mutating func putLine(_ line: String, at origin: Point) {
         guard origin.y >= 0 && origin.y < size.height else { return }
         let rowIndex: Int = Int(origin.y)
         for (i, character) in line.enumerated() {
@@ -36,7 +36,7 @@ struct TerminalBuffer: Sendable {
         }
     }
 
-    func makeStringFrame(emptyChar: Character = " ") -> String {
+    public func makeStringFrame(emptyChar: Character = " ") -> String {
         frame.map { row in
             row.map { cell in
                 cell.stringValue(emptyChar: emptyChar)

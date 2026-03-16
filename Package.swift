@@ -67,6 +67,7 @@ let package = Package(
                 "Geometry",
                 "AttributeGraph",
                 "SwiftTUICore",
+                "SwiftTUI",
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)
