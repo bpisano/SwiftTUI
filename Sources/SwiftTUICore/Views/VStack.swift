@@ -27,7 +27,7 @@ extension VStack {
         proposal: ProposedViewSize,
         subviews: [Subview]
     ) -> Size {
-        let frames = viewFrames(proposal: proposal, subviews: subviews)
+        let frames: [Rect] = viewFrames(proposal: proposal, subviews: subviews)
         var totalHeight: GeometryUnit = 0
         var maxWidth: GeometryUnit = 0
 
@@ -43,7 +43,7 @@ extension VStack {
         in bounds: Rect,
         subviews: [Subview]
     ) {
-        let frames = viewFrames(
+        let frames: [Rect] = viewFrames(
             proposal: ProposedViewSize(bounds.size),
             subviews: subviews
         )

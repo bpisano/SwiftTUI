@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Testing
 import AttributeGraph
 import Geometry
 @testable import SwiftTUI
@@ -74,18 +73,4 @@ final class UnitTestRenderer<V: View> {
             buffer.putLine(line, at: command.frame.origin)
         }
     }
-}
-
-func expectView<V: View>(
-    in size: Size,
-    @ViewBuilder _ makeView: () -> V,
-    toRender expectation: () -> String
-) {
-    let renderer = UnitTestRenderer(in: size) {
-        makeView()
-    }
-    renderer.emptyChar = "."
-
-    let output: String = renderer.render()
-    #expect(output == expectation())
 }
