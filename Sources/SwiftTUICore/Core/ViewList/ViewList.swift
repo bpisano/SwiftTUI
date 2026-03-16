@@ -10,7 +10,7 @@ import Foundation
 protocol ViewList {
     typealias MakeViewOutputs = (_ inputs: ViewInputs) -> ViewOutputs
     typealias MakeViewOutputsInterceptor = (
-        _ startIndex: inout Int,
+        _ index: inout Int,
         _ inputs: ViewInputs,
         _ makeViewOutputs: MakeViewOutputs
     ) -> ViewOutputs?

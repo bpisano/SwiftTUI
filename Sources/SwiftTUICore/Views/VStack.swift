@@ -1,5 +1,5 @@
 //
-//  VStackLayout.swift
+//  VStack.swift
 //  SwiftTUI
 //
 //  Created by Benjamin Pisano on 10/03/2026.
@@ -8,10 +8,24 @@
 import Foundation
 import Geometry
 
-struct VStackLayout: Layout {
-    func sizeThatFits(
+public struct VStack: Layout {
+    private let spacing: GeometryUnit
+
+    public init(spacing: GeometryUnit) {
+        self.spacing = spacing
+    }
+
+    public init() {
+        self.init(
+            spacing: 0
+        )
+    }
+}
+
+extension VStack {
+    public func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [LayoutProxy]
+        subviews: [Subview]
     ) -> Size {
         let frames = viewFrames(proposal: proposal, subviews: subviews)
         var totalHeight: GeometryUnit = 0
@@ -25,9 +39,9 @@ struct VStackLayout: Layout {
         return Size(width: maxWidth, height: totalHeight)
     }
 
-    func placeSubviews(
+    public func placeSubviews(
         in bounds: Rect,
-        subviews: [LayoutProxy]
+        subviews: [Subview]
     ) {
         let frames = viewFrames(
             proposal: ProposedViewSize(bounds.size),
@@ -40,7 +54,7 @@ struct VStackLayout: Layout {
 
     private func viewFrames(
         proposal: ProposedViewSize,
-        subviews: [LayoutProxy]
+        subviews: [Subview]
     ) -> [Rect] {
         var frames: [Rect] = []
         var yPosition: GeometryUnit = 0

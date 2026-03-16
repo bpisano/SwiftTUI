@@ -25,7 +25,6 @@ func `VStack`() {
 
     @Attribute var view = VStack {
         Text("Alice")
-        EmptyView()
         Text("Bob")
     }
     $view.label = "\(type(of: view))"

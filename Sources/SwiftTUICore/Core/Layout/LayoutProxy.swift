@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-struct LayoutProxy {
+public struct LayoutProxy {
     private let layoutComputer: LayoutComputer
     private let place: (Rect) -> Void
 

@@ -130,14 +130,14 @@ func makeConditionalContent(
     let rule: ConditionalRule<String, String> = .init(
         condition: condition(),
         trueContent: {
-            var content = Attribute {
+            let content = Attribute {
                 trueContent()
             }
             content.label = "True content"
             return content.wrappedValue
         },
         falseContent: {
-            var content = Attribute {
+            let content = Attribute {
                 falseContent()
             }
             content.label = "False content"

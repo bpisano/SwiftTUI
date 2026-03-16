@@ -8,15 +8,15 @@
 import Foundation
 import Geometry
 
-struct ProposedViewSize {
+public struct ProposedViewSize {
     static let zero: Self = .init(width: nil, height: nil)
     static let infinity: Self = .init(width: .infinity, height: .infinity)
     static let unspecified: Self = .init(width: nil, height: nil)
 
-    let width: GeometryUnit?
-    let height: GeometryUnit?
+    public let width: GeometryUnit?
+    public let height: GeometryUnit?
 
-    init(
+    public init(
         width: GeometryUnit?,
         height: GeometryUnit?
     ) {
@@ -24,12 +24,12 @@ struct ProposedViewSize {
         self.height = height
     }
 
-    init(_ size: Size) {
+    public init(_ size: Size) {
         self.width = size.width.isFinite ? size.width : nil
         self.height = size.height.isFinite ? size.height : nil
     }
 
-    func replacingUnspecifiedDimensions(
+    public func replacingUnspecifiedDimensions(
         by size: Size = .init(width: 10, height: 10)
     ) -> Size {
         .init(
