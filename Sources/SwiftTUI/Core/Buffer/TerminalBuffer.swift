@@ -8,25 +8,30 @@
 import Foundation
 import Geometry
 
-public struct TerminalBuffer: Sendable {
+struct TerminalBuffer: Sendable {
     typealias Frame = [[TerminalBufferCell]]
 
-    public let size: Size
+    let configuration: RenderingConfiguration
+    let size: Size
 
     private var frame: Frame
 
-    public init(size: Size) {
+    init(
+        configuration: RenderingConfiguration,
+        size: Size
+    ) {
+        self.configuration = configuration
         self.size = size
         self.frame = Array(
             repeating: Array(
-                repeating: TerminalBufferCell(),
+                repeating: TerminalBufferCell(configuration.emptyChar),
                 count: Int(size.width)
             ),
             count: Int(size.height)
         )
     }
 
-    public mutating func putLine(_ line: String, at origin: Point) {
+    mutating func putLine(_ line: String, at origin: Point) {
         guard origin.y >= 0 && origin.y < size.height else { return }
         let rowIndex: Int = Int(origin.y)
         for (i, character) in line.enumerated() {
@@ -36,11 +41,11 @@ public struct TerminalBuffer: Sendable {
         }
     }
 
-    public func makeStringFrame(emptyChar: Character = " ") -> String {
+    func makeStringFrame() -> String {
         frame.map { row in
             row.map { cell in
-                cell.stringValue(emptyChar: emptyChar)
+                cell.stringValue()
             }.joined()
-        }.joined()
+        }.joined(separator: configuration.lineJoinSeparator)
     }
 }

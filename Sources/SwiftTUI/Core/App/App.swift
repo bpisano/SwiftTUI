@@ -24,7 +24,8 @@ extension App {
         let view: Body = app.body
 
         let terminal: Terminal = .current
-        let renderer: TerminalRenderer = .init(
+        let engine: TerminalEngine = .init(
+            configuration: .standard,
             terminal: terminal,
             view: RootLayout {
                 view
@@ -40,7 +41,7 @@ extension App {
             needsRender = true
         }
 
-        renderer.setup()
+        engine.setup()
 
         let timer = Timer.scheduledTimer(
             withTimeInterval: frameRate,
@@ -49,8 +50,7 @@ extension App {
             Task { @MainActor in
                 guard needsRender else { return }
                 needsRender = false
-                renderer.prepareForRender()
-                renderer.render()
+                engine.render()
             }
         }
 

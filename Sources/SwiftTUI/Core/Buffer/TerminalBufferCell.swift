@@ -10,17 +10,20 @@ import Geometry
 import Terminal
 
 struct TerminalBufferCell: Sendable {
-    private var character: Character = " "
+    private var character: Character
     private var foregroundColor: ANSIColor = .default
     private var backgroundColor: ANSIColor = .default
+
+    init(_ character: Character) {
+        self.character = character
+    }
 
     mutating func setCharacter(_ character: Character) {
         self.character = character
     }
 
-    func stringValue(emptyChar: Character = " ") -> String {
-        let displayChar: Character = character == " " ? emptyChar : character
-        return "\(displayChar)"
+    func stringValue() -> String {
+        "\(character)"
         //        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
     }
 }
