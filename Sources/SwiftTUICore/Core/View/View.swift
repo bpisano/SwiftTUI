@@ -22,6 +22,7 @@ public protocol View {
         inputs: ViewListInputs
     ) -> ViewListOutputs
 
+    @ViewBuilder
     var body: Self.Body { get }
 }
 

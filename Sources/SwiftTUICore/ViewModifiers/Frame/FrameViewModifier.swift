@@ -5,9 +5,9 @@
 //  Created by Benjamin Pisano on 10/03/2026.
 //
 
+import AttributeGraph
 import Foundation
 import Geometry
-import AttributeGraph
 
 struct FrameViewModifier: ViewModifier, PrimitiveViewModifier {
     private let width: GeometryUnit?
@@ -93,9 +93,11 @@ extension FrameViewModifier {
         .unaryViewListOutputs("Frame Modifier ViewList") { inputs in
             Self.makeView(modifier, inputs: inputs) { modifiedInputs in
                 let modifiedViewListInputs: ViewListInputs = .init(viewInputs: modifiedInputs)
-                let childViewListOutputs: ViewListOutputs = makeViewListOutputs(modifiedViewListInputs)
+                let childViewListOutputs: ViewListOutputs = makeViewListOutputs(
+                    modifiedViewListInputs)
                 let childViewList: any ViewList = childViewListOutputs.viewList.wrappedValue
-                let viewOutputs: [ViewOutputs] = childViewList.makeViewOutputs(inputs: modifiedInputs)
+                let viewOutputs: [ViewOutputs] = childViewList.makeViewOutputs(
+                    inputs: modifiedInputs)
                 return viewOutputs[0]
             }
         }

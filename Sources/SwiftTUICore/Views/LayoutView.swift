@@ -78,7 +78,7 @@ extension LayoutView {
             let containerSize: Size = layoutComputer.wrappedValue.sizeThatFits(proposal)
             return layoutComputer.wrappedValue.viewGeometries(
                 Rect(
-                    origin: .zero,
+                    origin: inputs.position.wrappedValue,
                     size: containerSize
                 )
             )
@@ -94,8 +94,8 @@ extension LayoutView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let offset: Int = MemoryLayout<Self>.offset(of: \.content) ?? 0
-        let content: Attribute<Content> = view.unsafeOffset(at: offset, as: Content.self)
-        return Content.makeViewList(content, inputs: inputs)
+        .unaryViewListOutputs("\(Content.self) ViewList") { inputs in
+            Self.makeView(view, inputs: inputs)
+        }
     }
 }

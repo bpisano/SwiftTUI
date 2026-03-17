@@ -41,6 +41,6 @@ public struct TerminalBuffer: Sendable {
             row.map { cell in
                 cell.stringValue(emptyChar: emptyChar)
             }.joined()
-        }.joined(separator: "\n")
+        }.joined()
     }
 }

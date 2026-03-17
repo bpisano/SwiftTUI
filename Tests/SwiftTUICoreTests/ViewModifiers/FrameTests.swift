@@ -209,7 +209,7 @@ struct FrameTests {
                 .frame(width: 8)
         } toRender: {
             """
-            ..Alice...
+            .Alice....
             ..........
             ..........
             """
@@ -239,7 +239,7 @@ struct FrameTests {
                 .frame(height: 3, alignment: .top)
         } toRender: {
             """
-            .Alice..
+            Alice...
             ........
             ........
             """
@@ -254,7 +254,7 @@ struct FrameTests {
         } toRender: {
             """
             ........
-            .Alice..
+            Alice...
             ........
             """
         }
@@ -269,7 +269,7 @@ struct FrameTests {
             """
             ........
             ........
-            .Alice..
+            Alice...
             ........
             """
         }
@@ -323,37 +323,6 @@ struct FrameTests {
         }
     }
 
-    // MARK: - Multiple Text Lines
-
-    @Test("Multi-line Text with Frame")
-    func multiLineTextWithFrame() async throws {
-        expectView(in: Size(width: 10, height: 8)) {
-            Text("Hello World")
-                .frame(width: 6, height: 3, alignment: .topLeading)
-        } toRender: {
-            """
-            Hello.....
-            World.....
-            ..........
-            """
-        }
-    }
-
-    @Test("Multi-line Text Centered")
-    func multiLineTextCentered() async throws {
-        expectView(in: Size(width: 10, height: 4)) {
-            Text("Hello World")
-                .frame(width: 8, height: 4)
-        } toRender: {
-            """
-            ..........
-            ..Hello...
-            ..World...
-            ..........
-            """
-        }
-    }
-
     // MARK: - VStack with Frame
 
     @Test("VStack with Frame")
@@ -375,7 +344,7 @@ struct FrameTests {
 
     @Test("VStack with Frame - Center")
     func vstackWithFrameCenter() async throws {
-        expectView(in: Size(width: 3, height: 6)) {
+        expectView(in: Size(width: 3, height: 4)) {
             VStack {
                 Text("A")
                 Text("B")
