@@ -20,11 +20,11 @@ public struct LayoutProxy {
         self.place = place
     }
 
-    func size(in proposal: ProposedViewSize) -> Size {
+    public func size(in proposal: ProposedViewSize) -> Size {
         layoutComputer.sizeThatFits(proposal)
     }
 
-    func place(in rect: Rect) {
+    public func place(in rect: Rect) {
         place(rect)
     }
 }

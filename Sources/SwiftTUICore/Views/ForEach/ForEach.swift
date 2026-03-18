@@ -8,15 +8,15 @@
 import Foundation
 import AttributeGraph
 
-struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View, PrimitiveView {
+public struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View, PrimitiveView {
     let data: Data
     let id: KeyPath<Data.Element, ID>
     let makeChildView: (Data.Element) -> Content
 
-    init(
+    public init(
         _ data: Data,
         id: KeyPath<Data.Element, ID>,
-        makeChildView: @escaping (Data.Element) -> Content
+        @ViewBuilder _ makeChildView: @escaping (Data.Element) -> Content
     ) {
         self.data = data
         self.id = id
@@ -24,15 +24,28 @@ struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View,
     }
 }
 
+extension ForEach where Data.Element: Identifiable, ID == Data.Element.ID {
+    public init(
+        _ data: Data,
+        @ViewBuilder _ makeChildView: @escaping (Data.Element) -> Content
+    ) {
+        self.init(
+            data,
+            id: \.id,
+            makeChildView
+        )
+    }
+}
+
 extension ForEach {
-    static func makeView(
+    public static func makeView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
         fatalError("Not implemented")
     }
 
-    static func makeViewList(
+    public static func makeViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
@@ -48,7 +61,7 @@ extension ForEach {
 }
 
 extension ForEach: AttributeValueRepresentable {
-    var attributeValueDescription: String {
+    public var attributeValueDescription: String {
         "ForEach with \(data.count) elements"
     }
 }

@@ -57,8 +57,8 @@ struct TerminalRenderer {
         switch command.action {
         case let .putLine(line):
             buffer.putLine(line, at: command.frame.origin)
+        case let .backgroundColor(color):
+            buffer.setBackgroundColor(color, at: command.frame.origin)
         }
     }
 }
-
-

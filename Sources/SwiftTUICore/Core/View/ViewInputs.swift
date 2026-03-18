@@ -16,6 +16,13 @@ public struct ViewInputs: InputStorage {
 
     var storage: ViewInputsStorage
 
+    var frame: Rect {
+        .init(
+            origin: position.wrappedValue,
+            size: size.wrappedValue
+        )
+    }
+
     public init(
         position: Attribute<Point>,
         size: Attribute<Size>,

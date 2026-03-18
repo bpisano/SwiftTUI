@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Terminal
 import Geometry
 import AttributeGraph
 
@@ -29,6 +30,7 @@ extension DisplayList {
 
     public enum CommandAction {
         case putLine(_ line: String)
+        case backgroundColor(_ color: ANSIColor)
     }
 
     public struct Command {

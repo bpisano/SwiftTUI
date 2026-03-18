@@ -7,6 +7,7 @@
 
 import Foundation
 import Geometry
+import Terminal
 
 struct TerminalBuffer: Sendable {
     typealias Frame = [[TerminalBufferCell]]
@@ -39,6 +40,13 @@ struct TerminalBuffer: Sendable {
             guard columnIndex >= 0 && columnIndex < Int(size.width) else { continue }
             frame[rowIndex][columnIndex].setCharacter(character)
         }
+    }
+
+    mutating func setBackgroundColor(_ color: ANSIColor, at origin: Point) {
+        guard origin.y >= 0 && origin.y < size.height else { return }
+        let rowIndex: Int = Int(origin.y)
+        let columnIndex: Int = Int(origin.x)
+        frame[rowIndex][columnIndex].setBackgroundColor(color)
     }
 
     func makeStringFrame() -> String {

@@ -22,8 +22,15 @@ struct TerminalBufferCell: Sendable {
         self.character = character
     }
 
+    mutating func setForegroundColor(_ color: ANSIColor) {
+        self.foregroundColor = color
+    }
+
+    mutating func setBackgroundColor(_ color: ANSIColor) {
+        self.backgroundColor = color
+    }
+
     func stringValue() -> String {
-        "\(character)"
-        //        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
+        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
     }
 }

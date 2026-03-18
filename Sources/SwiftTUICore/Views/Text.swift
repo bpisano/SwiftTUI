@@ -43,23 +43,18 @@ extension Text {
 
         let displayList = Attribute("Text DisplayList") {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
-            let textGeometries: [ViewGeometry] = layoutComputer.viewGeometries(
-                Rect(
-                    origin: .zero,
-                    size: inputs.size.wrappedValue
-                )
-            )
+            let textGeometries: [ViewGeometry] = layoutComputer.viewGeometries(inputs.frame)
             let textGeometry: ViewGeometry = textGeometries[0]
 
             let text: String = view.wrappedValue.text
             let lines: [String] = text.slice(Int(textGeometry.width))
 
-            let inputPosition: Point = inputs.position.wrappedValue
-
             return DisplayList(
                 commands: lines.enumerated().map { index, line in
                     let origin: Point = .init(
-                        x: inputPosition.x, y: inputPosition.y + Double(index))
+                        x: textGeometry.x,
+                        y: textGeometry.y + GeometryUnit(index)
+                    )
                     let size: Size = .init(width: textGeometry.width, height: 1)
                     let commandFrame: Rect = .init(origin: origin, size: size)
                     return DisplayList.Command(
