@@ -24,7 +24,7 @@ struct MyView: View {
             ForEach(0..<8, id: \.self) { row in
                 ForEach(0..<8, id: \.self) { column in
                     let isBlack = (row + column) % 2 != 0
-                    Color(isBlack ? .red : .blue)
+                    Color(isBlack ? .brightBlack : .white)
                 }
             }
         }
