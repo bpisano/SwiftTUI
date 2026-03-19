@@ -10,12 +10,15 @@ import Foundation
 struct RenderingConfiguration {
     let emptyChar: Character
     let lineJoinSeparator: String
+    let renderColor: Bool
 
     init(
         emptyChar: Character,
-        lineJoinSeparator: String
+        lineJoinSeparator: String,
+        renderColor: Bool
     ) {
         self.emptyChar = emptyChar
         self.lineJoinSeparator = lineJoinSeparator
+        self.renderColor = renderColor
     }
 }

@@ -23,8 +23,11 @@ struct MyView: View {
         ChessBoardLayout(cellSize: 4) {
             ForEach(0..<8, id: \.self) { row in
                 ForEach(0..<8, id: \.self) { column in
-                    let isBlack = (row + column) % 2 != 0
-                    Color(isBlack ? .brightBlack : .white)
+                    ZStack {
+                        let isBlack = (row + column) % 2 != 0
+                        Color(isBlack ? .brightBlack : .white)
+                        Text("\(row),\(column)")
+                    }
                 }
             }
         }

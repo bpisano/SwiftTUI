@@ -30,7 +30,11 @@ struct TerminalBufferCell: Sendable {
         self.backgroundColor = color
     }
 
-    func stringValue() -> String {
-        "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
+    func stringValue(includeColors: Bool = true) -> String {
+        if includeColors {
+            "\(foregroundColor.foregroundCode)\(backgroundColor.backgroundCode)\(character)\(ANSIColor.default.foregroundCode)\(ANSIColor.default.backgroundCode)"
+        } else {
+            String(character)
+        }
     }
 }

@@ -35,7 +35,8 @@ func expectView<V: View>(
 
     let configuration: RenderingConfiguration = .init(
         emptyChar: ".",
-        lineJoinSeparator: "\n"
+        lineJoinSeparator: "\n",
+        includeColors: false
     )
     let renderer: TerminalRenderer = .init(configuration: configuration)
     let frame: String = renderer.renderFrame(

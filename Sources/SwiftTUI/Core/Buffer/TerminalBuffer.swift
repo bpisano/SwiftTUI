@@ -52,7 +52,7 @@ struct TerminalBuffer: Sendable {
     func makeStringFrame() -> String {
         frame.map { row in
             row.map { cell in
-                cell.stringValue()
+                cell.stringValue(includeColors: configuration.renderColor)
             }.joined()
         }.joined(separator: configuration.lineJoinSeparator)
     }

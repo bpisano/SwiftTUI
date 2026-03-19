@@ -75,6 +75,7 @@ final class TerminalEngine<V: View> {
 extension RenderingConfiguration {
     static let standard: Self = .init(
         emptyChar: " ",
-        lineJoinSeparator: ""
+        lineJoinSeparator: "",
+        renderColor: true
     )
 }

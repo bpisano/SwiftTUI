@@ -33,7 +33,8 @@ let package = Package(
             name: "SwiftTUICore",
             dependencies: [
                 "Geometry",
-                "AttributeGraph"
+                "AttributeGraph",
+                "Terminal"
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self)
