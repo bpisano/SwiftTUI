@@ -24,7 +24,6 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             return storage.value!
         }
         nonmutating set {
-            Graph.current.invalidate(storage.ref)
             storage.value = newValue
             for edge in outgoingEdges {
                 edge.state = .dirty
@@ -32,7 +31,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
                 if edge.toRef.attribute.flags.contains(.transactional) {
                     edge.toRef.attribute.evaluateIfNeeded()
                 } else {
-                    edge.toRef.attribute.makePotentiallyDirty()
+                    Graph.current.invalidate(edge.toRef)
                 }
             }
         }
@@ -81,7 +80,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
-    public var incomingEdges: [Edge] {
+    public var incomingEdges: Set<Edge> {
         get {
             storage.incomingEdges
         }
@@ -90,12 +89,21 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         }
     }
 
-    public var outgoingEdges: [Edge] {
+    public var outgoingEdges: Set<Edge> {
         get {
             storage.outgoingEdges
         }
         nonmutating set {
             storage.outgoingEdges = newValue
+        }
+    }
+
+    public var state: AttributeState {
+        get {
+            storage.state
+        }
+        nonmutating set {
+            storage.state = newValue
         }
     }
 
@@ -129,33 +137,35 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     }
 
     public func addIncoming(edge: Edge) {
-        incomingEdges.append(edge)
+        incomingEdges.insert(edge)
     }
 
     public func addOutgoing(edge: Edge) {
-        outgoingEdges.append(edge)
+        outgoingEdges.insert(edge)
     }
 
     public func removeIncoming(edge: Edge) {
-        incomingEdges.removeAll { $0 === edge }
+        incomingEdges.remove(edge)
     }
 
     public func removeOutgoing(edge: Edge) {
-        outgoingEdges.removeAll { $0 === edge }
+        outgoingEdges.remove(edge)
     }
 
     public func evaluateIfNeeded() {
-        // Ensure all dependencies are up to date
-        for edge in incomingEdges {
-            edge.fromRef.attribute.evaluateIfNeeded()
-        }
-
         // Check if any incoming edge is still pending
         // Or if is initial evaluation
         let isInitialEvaluation: Bool = storage.value == nil
         let isTransactional: Bool = flags.contains(.transactional)
         guard storage.state == .potentiallyDirty || isInitialEvaluation || isTransactional else {
             return
+        }
+
+        // Ensure all dependencies are up to date
+        if state == .potentiallyDirty {
+            for edge in incomingEdges {
+                edge.fromRef.attribute.evaluateIfNeeded()
+            }
         }
 
         storage.state = .clean
@@ -178,22 +188,6 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             }
         }
     }
-
-    public func makePotentiallyDirty() {
-        if flags.contains(.transactional) {
-            evaluateIfNeeded()
-        } else {
-            storage.state = .potentiallyDirty
-        }
-
-        for edge in outgoingEdges {
-            edge.toRef.attribute.makePotentiallyDirty()
-        }
-    }
-
-    public func makeClean() {
-        storage.state = .clean
-    }
 }
 
 extension Attribute {
@@ -203,14 +197,9 @@ extension Attribute {
         var flags: Set<AttributeFlag> = []
         var label: String = ""
         var value: T?
-        var incomingEdges: [Edge] = []
-        var outgoingEdges: [Edge] = []
-        var state: State = .clean
-    }
-
-    enum State {
-        case clean
-        case potentiallyDirty
+        var incomingEdges: Set<Edge> = []
+        var outgoingEdges: Set<Edge> = []
+        var state: AttributeState = .clean
     }
 }
 

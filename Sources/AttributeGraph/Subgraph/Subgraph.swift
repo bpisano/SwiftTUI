@@ -9,7 +9,7 @@ import Foundation
 
 public final class Subgraph {
     private let graph: Graph
-    private var attributeRefs: [AttributeRef] = []
+    private var attributeRefs: Set<AttributeRef> = []
 
     public var attributeLabels: [String] {
         attributeRefs.map(\.attribute.label)
@@ -28,14 +28,14 @@ public final class Subgraph {
 
     public func clean() {
         for attributeRef in attributeRefs {
-            attributeRef.attribute.makeClean()
+            attributeRef.attribute.state = .clean
             for incomingEdge in attributeRef.attribute.incomingEdges {
                 incomingEdge.fromRef.attribute.removeOutgoing(edge: incomingEdge)
                 attributeRef.attribute.removeIncoming(edge: incomingEdge)
             }
             for outgoingEdge in attributeRef.attribute.outgoingEdges {
                 outgoingEdge.toRef.attribute.removeIncoming(edge: outgoingEdge)
-                outgoingEdge.toRef.attribute.makePotentiallyDirty()
+                graph.invalidate(outgoingEdge.toRef)
                 attributeRef.attribute.removeOutgoing(edge: outgoingEdge)
             }
             graph.unregister(attributeRef: attributeRef)
@@ -44,6 +44,6 @@ public final class Subgraph {
     }
 
     func register(attributeRef: AttributeRef) {
-        attributeRefs.append(attributeRef)
+        attributeRefs.insert(attributeRef)
     }
 }

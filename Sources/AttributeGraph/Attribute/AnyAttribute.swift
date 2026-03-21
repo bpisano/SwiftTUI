@@ -11,8 +11,9 @@ public protocol AnyAttribute: DigraphRepresentable {
     var id: UUID { get }
     var flags: Set<AttributeFlag> { get }
     var label: String { get }
-    var incomingEdges: [Edge] { get }
-    var outgoingEdges: [Edge] { get }
+    var incomingEdges: Set<Edge> { get }
+    var outgoingEdges: Set<Edge> { get }
+    var state: AttributeState { get set }
 
     func evaluateIfNeeded()
 
@@ -20,7 +21,4 @@ public protocol AnyAttribute: DigraphRepresentable {
     func addOutgoing(edge: Edge)
     func removeIncoming(edge: Edge)
     func removeOutgoing(edge: Edge)
-
-    func makePotentiallyDirty()
-    func makeClean()
 }

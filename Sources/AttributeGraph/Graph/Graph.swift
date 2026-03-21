@@ -14,7 +14,7 @@ public final class Graph {
 
     public var subgraph: Subgraph?
 
-    private var attributesRefs: [AttributeRef] = []
+    private var attributesRefs: Set<AttributeRef> = []
     private var transactionalAttributeRefs: [AttributeRef] = []
     private var currentComputationRef: AttributeRef?
 
@@ -38,7 +38,7 @@ public final class Graph {
     }
 
     func register(attributeRef: AttributeRef) {
-        attributesRefs.append(attributeRef)
+        attributesRefs.insert(attributeRef)
 
         if let subgraph {
             subgraph.register(attributeRef: attributeRef)
@@ -46,7 +46,7 @@ public final class Graph {
     }
 
     func unregister(attributeRef: AttributeRef) {
-        attributesRefs.removeAll { $0 === attributeRef }
+        attributesRefs.remove(attributeRef)
     }
 
     func registerDependency(_ attributeRef: AttributeRef) {
@@ -74,10 +74,30 @@ public final class Graph {
     }
 
     func invalidate(_ attribute: AttributeRef) {
-        onInvalidate?()
+        var attributesToVisit: [AttributeRef] = [attribute]
+        var visitedAttributes: Set<AttributeRef> = []
+
+        while !attributesToVisit.isEmpty {
+            let currentAttribute: AttributeRef = attributesToVisit.removeFirst()
+
+            guard !visitedAttributes.contains(currentAttribute) else { continue }
+            visitedAttributes.insert(currentAttribute)
+
+            currentAttribute.attribute.state = .potentiallyDirty
+
+            for outgoingEdge in currentAttribute.attribute.outgoingEdges {
+                let dependentAttribute: AttributeRef = outgoingEdge.toRef
+                guard dependentAttribute.attribute.state != .potentiallyDirty else { continue }
+                
+                attributesToVisit.append(dependentAttribute)
+            }
+        }
+
         if tracksTransaction {
             transaction.invalidations.append(attribute)
         }
+
+        onInvalidate?()
     }
 
     func reevaluate(_ attribute: AttributeRef) {
