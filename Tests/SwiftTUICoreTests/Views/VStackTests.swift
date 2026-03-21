@@ -16,8 +16,8 @@ import Testing
 struct VStackTests {
     // MARK: - Basic Layout Tests
 
-    @Test("Two Text Views - No Spacing")
-    func twoTextsNoSpacing() async throws {
+    @Test
+    func `Two Text Views - No Spacing`() async throws {
         expectView(in: Size(width: 10, height: 3)) {
             VStack {
                 Text("Alice")
@@ -32,8 +32,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Three Text Views - No Spacing")
-    func threeTextsNoSpacing() async throws {
+    @Test
+    func `Three Text Views - No Spacing`() async throws {
         expectView(in: Size(width: 10, height: 4)) {
             VStack {
                 Text("A")
@@ -52,8 +52,8 @@ struct VStackTests {
 
     // MARK: - Spacing Tests
 
-    @Test("Two Text Views - With Spacing")
-    func twoTextsWithSpacing() async throws {
+    @Test
+    func `Two Text Views - With Spacing`() async throws {
         expectView(in: Size(width: 10, height: 5)) {
             VStack(spacing: 1) {
                 Text("Alice")
@@ -70,8 +70,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Three Text Views - With Spacing")
-    func threeTextsWithSpacing() async throws {
+    @Test
+    func `Three Text Views - With Spacing`() async throws {
         expectView(in: Size(width: 6, height: 10)) {
             VStack(spacing: 2) {
                 Text("A")
@@ -96,8 +96,8 @@ struct VStackTests {
 
     // MARK: - Alignment Tests
 
-    @Test("Leading Alignment")
-    func leadingAlignment() async throws {
+    @Test
+    func `Leading Alignment`() async throws {
         expectView(in: Size(width: 10, height: 4)) {
             VStack(alignment: .leading) {
                 Text("A")
@@ -114,8 +114,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Center Alignment (Default)")
-    func centerAlignment() async throws {
+    @Test
+    func `Center Alignment (Default)`() async throws {
         expectView(in: Size(width: 10, height: 4)) {
             VStack {
                 Text("A")
@@ -132,8 +132,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Trailing Alignment")
-    func trailingAlignment() async throws {
+    @Test
+    func `Trailing Alignment`() async throws {
         expectView(in: Size(width: 10, height: 4)) {
             VStack(alignment: .trailing) {
                 Text("A")
@@ -150,8 +150,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Center Alignment with Spacing")
-    func centerAlignmentWithSpacing() async throws {
+    @Test
+    func `Center Alignment with Spacing`() async throws {
         expectView(in: Size(width: 10, height: 5)) {
             VStack(spacing: 1) {
                 Text("A")
@@ -170,8 +170,8 @@ struct VStackTests {
 
     // MARK: - Flexible View Tests
 
-    @Test("Single Expanding View")
-    func singleExpandingView() async throws {
+    @Test
+    func `Single Expanding View`() async throws {
         expectView(in: Size(width: 5, height: 5)) {
             VStack {
                 ExpandingView(char: "X")
@@ -187,8 +187,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Text and Expanding View")
-    func textAndExpandingView() async throws {
+    @Test
+    func `Text and Expanding View`() async throws {
         expectView(in: Size(width: 5, height: 5)) {
             VStack {
                 Text("Hi")
@@ -205,8 +205,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Expanding View and Text")
-    func expandingViewAndText() async throws {
+    @Test
+    func `Expanding View and Text`() async throws {
         expectView(in: Size(width: 5, height: 5)) {
             VStack {
                 ExpandingView(char: "X")
@@ -223,8 +223,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Text, Expanding View, Text")
-    func textExpandingViewText() async throws {
+    @Test
+    func `Text, Expanding View, Text`() async throws {
         expectView(in: Size(width: 6, height: 6)) {
             VStack {
                 Text("Top")
@@ -243,8 +243,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Two Expanding Views Split Space")
-    func twoExpandingViewsSplitSpace() async throws {
+    @Test
+    func `Two Expanding Views Split Space`() async throws {
         expectView(in: Size(width: 4, height: 6)) {
             VStack {
                 ExpandingView(char: "A")
@@ -262,8 +262,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Expanding Views with Spacing")
-    func expandingViewsWithSpacing() async throws {
+    @Test
+    func `Expanding Views with Spacing`() async throws {
         expectView(in: Size(width: 4, height: 7)) {
             VStack(spacing: 1) {
                 ExpandingView(char: "A")
@@ -282,8 +282,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Expanding View with Center Alignment")
-    func expandingViewWithCenterAlignment() async throws {
+    @Test
+    func `Expanding View with Center Alignment`() async throws {
         expectView(in: Size(width: 10, height: 3)) {
             VStack {
                 ExpandingView(char: "X")
@@ -297,8 +297,8 @@ struct VStackTests {
         }
     }
 
-    @Test("Mixed Views with Trailing Alignment")
-    func mixedViewsWithTrailingAlignment() async throws {
+    @Test
+    func `Mixed Views with Trailing Alignment`() async throws {
         expectView(in: Size(width: 10, height: 5)) {
             VStack(alignment: .trailing, spacing: 1) {
                 Text("A")
