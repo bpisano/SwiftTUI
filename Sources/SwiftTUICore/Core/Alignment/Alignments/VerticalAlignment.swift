@@ -7,24 +7,24 @@
 
 import Foundation
 
-struct VerticalAlignment: @MainActor AlignmentGuide {
-    let key: AlignmentKey
+public struct VerticalAlignment: @MainActor AlignmentGuide {
+    public let key: AlignmentKey
 
-    init(_ id: any AlignmentID.Type) {
+    public init(_ id: any AlignmentID.Type) {
         self.key = AlignmentKey(id: id, axis: .vertical)
     }
 }
 
 extension VerticalAlignment {
-    static func == (lhs: VerticalAlignment, rhs: VerticalAlignment) -> Bool {
+    public static func == (lhs: VerticalAlignment, rhs: VerticalAlignment) -> Bool {
         lhs.key == rhs.key
     }
 }
 
 extension VerticalAlignment {
-    static let top = VerticalAlignment(TopAlignmentID.self)
-    static let center = VerticalAlignment(CenterAlignmentID.self)
-    static let bottom = VerticalAlignment(BottomAlignmentID.self)
+    public static let top = VerticalAlignment(TopAlignmentID.self)
+    public static let center = VerticalAlignment(CenterAlignmentID.self)
+    public static let bottom = VerticalAlignment(BottomAlignmentID.self)
 
     private struct TopAlignmentID: AlignmentID {
         static func defaultValue(in context: ViewDimensions) -> Double {
@@ -46,7 +46,7 @@ extension VerticalAlignment {
 }
 
 extension VerticalAlignment: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         switch key.id {
         case is TopAlignmentID.Type:
             return ".top"
