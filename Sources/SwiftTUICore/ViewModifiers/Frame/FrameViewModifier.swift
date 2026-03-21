@@ -9,7 +9,7 @@ import AttributeGraph
 import Foundation
 import Geometry
 
-struct FrameViewModifier: ViewModifier, PrimitiveViewModifier {
+struct FrameViewModifier: ViewModifier, PrimitiveViewModifier, UnaryViewModifier {
     private let width: GeometryUnit?
     private let height: GeometryUnit?
     private let alignment: Alignment
@@ -83,24 +83,6 @@ extension FrameViewModifier {
             layoutComputer: layoutComputer,
             displayList: childViewOutputs[0].displayList
         )
-    }
-
-    static func makeViewList(
-        _ modifier: Attribute<Self>,
-        inputs: ViewListInputs,
-        makeViewListOutputs: @escaping MakeViewListOutputs
-    ) -> ViewListOutputs {
-        .unaryViewListOutputs("Frame Modifier ViewList") { inputs in
-            Self.makeView(modifier, inputs: inputs) { modifiedInputs in
-                let modifiedViewListInputs: ViewListInputs = .init(viewInputs: modifiedInputs)
-                let childViewListOutputs: ViewListOutputs = makeViewListOutputs(
-                    modifiedViewListInputs)
-                let childViewList: any ViewList = childViewListOutputs.viewList.wrappedValue
-                let viewOutputs: [ViewOutputs] = childViewList.makeViewOutputs(
-                    inputs: modifiedInputs)
-                return viewOutputs[0]
-            }
-        }
     }
 }
 

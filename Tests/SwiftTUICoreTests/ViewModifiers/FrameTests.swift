@@ -12,7 +12,7 @@ import Testing
 @testable import AttributeGraph
 @testable import SwiftTUICore
 
-@Suite("Frame Modifier")
+@Suite(".frame")
 struct FrameTests {
     // MARK: - Basic Frame Tests
 

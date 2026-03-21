@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 10/03/2026.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 
 public protocol ViewModifier {
     associatedtype Body: View
@@ -36,7 +36,6 @@ extension ViewModifier {
         inputs: ViewInputs,
         makeViewOutputs: @escaping MakeViewOutputs
     ) -> ViewOutputs {
-        var inputs: ViewInputs = inputs
         inputs.append(.view(makeViewOutputs), to: MakeViewOutputsInputStorageKey.self)
 
         let modifiedBody = Attribute("\(Self.self) body") {
@@ -54,7 +53,6 @@ extension ViewModifier {
         inputs: ViewListInputs,
         makeViewListOutputs: @escaping MakeViewListOutputs
     ) -> ViewListOutputs {
-        var inputs: ViewListInputs = inputs
         inputs.append(.viewList(makeViewListOutputs), to: MakeViewOutputsInputStorageKey.self)
 
         let modifiedBody = Attribute("\(Self.self) body") {

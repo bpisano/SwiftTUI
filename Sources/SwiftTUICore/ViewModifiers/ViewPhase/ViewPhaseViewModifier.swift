@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-struct ViewPhaseViewModifier: ViewModifier, PrimitiveViewModifier {
+struct ViewPhaseViewModifier: ViewModifier, PrimitiveViewModifier, UnaryViewModifier {
     let onAppear: (() -> Void)?
     let onDisappear: (() -> Void)?
 }
@@ -35,13 +35,6 @@ extension ViewPhaseViewModifier {
         _ = effectAttribute.wrappedValue
 
         return makeViewOutputs(inputs)
-    }
-
-    static func makeViewList(
-        _ modifier: Attribute<ViewPhaseViewModifier>,
-        makeViewListOutputs: @escaping MakeViewListOutputs
-    ) -> ViewListOutputs {
-        fatalError("Not implemented")
     }
 }
 

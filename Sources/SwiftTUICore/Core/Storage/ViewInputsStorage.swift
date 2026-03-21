@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ViewInputsStorage {
+public final class ViewInputsStorage {
     private var storage: [ObjectIdentifier: Any]
 
     public init() {
@@ -18,11 +18,11 @@ public struct ViewInputsStorage {
         storage[ObjectIdentifier(keyType)] as? Key.Value
     }
 
-    mutating func append<Key: ViewInputsStorageKey>(_ value: Key.Value, to keyType: Key.Type) {
+    func append<Key: ViewInputsStorageKey>(_ value: Key.Value, to keyType: Key.Type) {
         storage[ObjectIdentifier(keyType)] = value
     }
 
-    mutating func popLast<Key: ViewInputsStorageKey>(_ keyType: Key.Type) -> Key.Value? {
+    func popLast<Key: ViewInputsStorageKey>(_ keyType: Key.Type) -> Key.Value? {
         let id: ObjectIdentifier = .init(keyType)
         let value: Key.Value? = storage[id] as? Key.Value
         storage.removeValue(forKey: id)
