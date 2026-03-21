@@ -5,10 +5,12 @@
 //  Created by Benjamin Pisano on 27/01/2026.
 //
 
-import AttributeGraph
 import Foundation
-import SwiftTUICore
+import AttributeGraph
 import Terminal
+
+@_exported import SwiftTUICore
+@_exported import Geometry
 
 public protocol App: Sendable {
     associatedtype Body: View

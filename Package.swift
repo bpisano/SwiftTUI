@@ -5,12 +5,11 @@ import PackageDescription
 let package = Package(
     name: "SwiftTUI",
     platforms: [
-        .macOS(.v26),
-        .iOS(.v26)
+        .macOS(.v26)
     ],
     products: [
         .library(
-            name: "AttributeGraph",
+            name: "SwiftTUI",
             targets: ["SwiftTUI"]
         )
     ],

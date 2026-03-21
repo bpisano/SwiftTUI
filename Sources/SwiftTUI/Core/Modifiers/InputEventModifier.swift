@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Terminal
 import SwiftTUICore
 
 //struct InputEventViewModifier<I: Input>: ViewModifier {
