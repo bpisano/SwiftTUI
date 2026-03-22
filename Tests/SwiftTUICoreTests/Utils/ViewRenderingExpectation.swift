@@ -33,6 +33,14 @@ func expectView<V: View>(
     )
     let outputs: ViewOutputs = V.makeView($viewAttribute, inputs: inputs)
 
+    expectDisplayList(outputs.displayList, in: size, toRender: expected)
+}
+
+func expectDisplayList(
+    _ displayList: Attribute<DisplayList>,
+    in size: Size,
+    toRender expected: () -> String
+) {
     let configuration: RenderingConfiguration = .init(
         emptyChar: ".",
         lineJoinSeparator: "\n",
@@ -40,7 +48,7 @@ func expectView<V: View>(
     )
     let renderer: TerminalRenderer = .init(configuration: configuration)
     let frame: String = renderer.renderFrame(
-        displayList: outputs.displayList.wrappedValue,
+        displayList: displayList.wrappedValue,
         in: size
     )
 

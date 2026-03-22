@@ -17,12 +17,12 @@ public final class State<Value>: DynamicProperty {
             if let storage {
                 return storage.value
             }
-            print("Warning: Accessing a @State variable outside of a View context. Returning initial value.")
+            assertionFailure("Accessing a @State variable outside of a View context. Returning initial value.")
             return value
         }
         set {
             guard let storage else {
-                print("Warning: Attempting to set a @State variable outside of a View context. The value will not persist.")
+                assertionFailure("Attempting to set a @State variable outside of a View context. The value will not persist.")
                 return
             }
             storage.setValue(newValue)

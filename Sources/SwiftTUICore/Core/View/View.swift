@@ -43,6 +43,7 @@ extension View {
     ) -> ViewListOutputs {
         let body = view.map(\.body)
         body.label = "\(Body.self)"
+        view.updateDynamicProperties()
         return Body.makeViewList(body, inputs: inputs)
     }
 }

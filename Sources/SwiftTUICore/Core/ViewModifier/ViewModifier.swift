@@ -60,6 +60,8 @@ extension ViewModifier {
             return modifier.wrappedValue.body(content: modifierContent)
         }
 
+        modifier.updateDynamicProperties()
+
         return Body.makeViewList(modifiedBody, inputs: inputs)
     }
 }
