@@ -177,6 +177,56 @@ struct ForEachTests {
             """
         }
     }
+
+    @Test
+    func `Reorder`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 4)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        @Attribute var users: [User] = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Bob"),
+            User(id: 3, name: "Charlie")
+        ]
+        @Attribute var view = VStack(alignment: .leading) {
+            ForEach(users) { user in
+                Text(user.name)
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            Charlie..
+            .........
+            """
+        }
+
+        users = [
+            User(id: 1, name: "Alice"),
+            User(id: 3, name: "Charlie"),
+            User(id: 2, name: "Bob")
+        ]
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Charlie..
+            Bob......
+            .........
+            """
+        }
+    }
 }
 
 private struct User: Identifiable {

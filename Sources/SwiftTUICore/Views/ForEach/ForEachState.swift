@@ -5,8 +5,8 @@
 //  Created by Benjamin Pisano on 10/03/2026.
 //
 
-import Foundation
 import AttributeGraph
+import Foundation
 
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
     typealias ForEachType = ForEach<Data, ID, Content>
@@ -83,16 +83,12 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         view: Attribute<ForEachType>
     ) -> Attribute<Content> {
         Attribute("ForEach Child View \(id)") { [unowned self] in
-            guard let elementIndexOffset = self.orderedIds.firstIndex(of: id) else {
-                fatalError("Element with ID \(id) not found in orderedIds")
+            guard let item = self.itemsById[id] else {
+                fatalError("Element with ID \(id) not found in itemsById")
             }
-            let view: ForEach<Data, ID, Content> = view.wrappedValue
-            let elementIndex: Data.Index = view.data.index(
-                view.data.startIndex,
-                offsetBy: elementIndexOffset
-            )
-            let element: Data.Element = view.data[elementIndex]
-            return view.makeChildView(element)
+            let forEach: ForEach<Data, ID, Content> = view.wrappedValue
+            let element: Data.Element = forEach.data[item.index]
+            return forEach.makeChildView(element)
         }
     }
 }
