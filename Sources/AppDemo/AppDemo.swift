@@ -5,11 +5,7 @@
 //  Created by Benjamin Pisano on 29/01/2026.
 //
 
-import Foundation
 import SwiftTUI
-import SwiftTUICore
-import Terminal
-import Geometry
 
 @main
 struct MyApp: App {
