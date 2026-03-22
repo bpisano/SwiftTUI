@@ -8,45 +8,175 @@
 import Foundation
 import Testing
 import Geometry
+
 @testable import AttributeGraph
 @testable import SwiftTUICore
 
-@Test
-func `ForEach`() {
-    @Attribute("Screen position") var position: Point = .zero
-    @Attribute("Screen size") var size = Size(width: 20, height: 20)
-    @Attribute("View phase") var phase: ViewPhase = .active
-    let inputs = ViewInputs(
-        position: $position,
-        size: $size,
-        phase: $phase,
-        storage: .init()
-    )
-
-    @Attribute var users = [
-        User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob"),
-        User(id: 3, name: "Charlie")
-    ]
-    @Attribute var view = VStack {
-        ForEach(users, id: \.id) { user in
-            Text(user.name)
+@Suite("ForEach")
+struct ForEachTests {
+    @Test
+    func `Static content`() async throws {
+        expectView(in: Size(width: 9, height: 4)) {
+            let users: [User] = [
+                User(id: 1, name: "Alice"),
+                User(id: 2, name: "Bob"),
+                User(id: 3, name: "Charlie")
+            ]
+            VStack(alignment: .leading) {
+                ForEach(users) { user in
+                    Text(user.name)
+                }
+            }
+        } toRender: {
+            """
+            Alice....
+            Bob......
+            Charlie..
+            .........
+            """
         }
     }
-    $view.label = "\(type(of: view))"
 
-    let outputs = type(of: view).makeView($view, inputs: inputs)
+    @Test
+    func `Insertion`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 4)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
 
-    _ = outputs.displayList.wrappedValue
+        @Attribute var users: [User] = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Bob")
+        ]
+        @Attribute var view = VStack(alignment: .leading) {
+            ForEach(users) { user in
+                Text(user.name)
+            }
+        }
 
-    users = [
-        User(id: 1, name: "Alice"),
-        User(id: 2, name: "Bob"),
-    ]
+        let outputs = type(of: view).makeView($view, inputs: inputs)
 
-    _ = outputs.displayList.wrappedValue
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            .........
+            .........
+            """
+        }
 
-    copyToClipboard(Graph.current.digraph)
+        users.append(User(id: 3, name: "Charlie"))
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            Charlie..
+            .........
+            """
+        }
+    }
+
+    @Test
+    func `Removal`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 4)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        @Attribute var users: [User] = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Bob"),
+            User(id: 3, name: "Charlie")
+        ]
+        @Attribute var view = VStack(alignment: .leading) {
+            ForEach(users) { user in
+                Text(user.name)
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            Charlie..
+            .........
+            """
+        }
+
+        users.removeLast()
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            .........
+            .........
+            """
+        }
+    }
+
+    @Test
+    func `Update`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 4)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        @Attribute var users: [User] = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Bob"),
+            User(id: 3, name: "Charlie")
+        ]
+        @Attribute var view = VStack(alignment: .leading) {
+            ForEach(users) { user in
+                Text(user.name)
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            Charlie..
+            .........
+            """
+        }
+
+        users = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Ben"),
+            User(id: 3, name: "Charlie")
+        ]
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Ben......
+            Charlie..
+            .........
+            """
+        }
+    }
 }
 
 private struct User: Identifiable {
