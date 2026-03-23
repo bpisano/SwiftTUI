@@ -20,9 +20,7 @@ extension UnaryViewModifier {
             Self.makeView(modifier, inputs: inputs) { modifiedInputs in
                 let modifiedViewListInputs: ViewListInputs = .init(viewInputs: modifiedInputs)
                 let childViewListOutputs: ViewListOutputs = makeViewListOutputs(modifiedViewListInputs)
-                let childViewList: any ViewList = childViewListOutputs.viewList.wrappedValue
-                let viewOutputs: [ViewOutputs] = childViewList.makeViewOutputs(inputs: modifiedInputs)
-                return viewOutputs[0]
+                return childViewListOutputs.makeUnaryViewOutputs(inputs: modifiedInputs)
             }
         }
     }

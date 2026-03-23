@@ -73,7 +73,7 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
                 index: index,
                 viewSubgraph: viewSubgraph,
                 viewOutputsSubgraph: viewOutputsSubgraph,
-                viewList: childViewListOutputs.viewList
+                viewList: childViewListOutputs.makeViewListAttribute()
             )
         }
     }

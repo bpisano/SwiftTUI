@@ -36,12 +36,10 @@ extension ViewOutputs {
     ) -> ViewOutputs {
         let viewListInputs: ViewListInputs = .init(viewInputs: inputs)
         let viewListOutputs: ViewListOutputs = makeViewListOutputs(viewListInputs)
-        let viewList: Attribute<any ViewList> = viewListOutputs.viewList
-        let childOutputs: [ViewOutputs] = viewList.wrappedValue.makeViewOutputs(inputs: inputs)
-        return .combineViewOutputs(childOutputs)
+        return viewListOutputs.makeUnaryViewOutputs(inputs: inputs)
     }
 
-    private static func combineViewOutputs(_ viewOutputs: [ViewOutputs]) -> ViewOutputs {
+    static func combineViewOutputs(_ viewOutputs: [ViewOutputs]) -> ViewOutputs {
         guard !viewOutputs.isEmpty else {
             fatalError("Cannot combine an empty array of ViewOutputs")
         }

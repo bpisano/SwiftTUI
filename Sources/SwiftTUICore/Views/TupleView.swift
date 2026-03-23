@@ -47,13 +47,7 @@ extension TupleView {
             viewListOutputs.append(childViewOutputs)
         }
 
-        let viewLists: [Attribute<any ViewList>] = viewListOutputs.map(\.viewList)
-        let viewList: Attribute<any ViewList> = Attribute("TupleView ViewList") {
-            _ = view.wrappedValue
-            return MergedViewList(viewLists: viewLists)
-        }
-
-        return .init(viewList: viewList)
+        return .concat(viewListOutputs, label: "TupleView ViewList")
     }
 
     private static func makeChildViewListOutputs<T: View>(

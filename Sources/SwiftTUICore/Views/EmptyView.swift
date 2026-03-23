@@ -39,11 +39,7 @@ extension EmptyView {
         _ view: Attribute<EmptyView>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let emptyElement: EmptyViewElement = .init()
-        let baseViewList: Attribute<any ViewList> = Attribute("EmptyView ViewList") {
-            BaseViewList(elements: [emptyElement])
-        }
-        return .init(viewList: baseViewList)
+        .empty()
     }
 }
 

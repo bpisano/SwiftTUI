@@ -10,9 +10,30 @@ import SwiftTUI
 @main
 struct MyApp: App {
     var body: some View {
-        MyView()
+        MyView2()
     }
 }
+
+private struct User: Identifiable {
+    let id: Int
+    let name: String
+}
+
+struct MyView2: View {
+    @State var isOn: Bool = false
+
+    var body: some View {
+        Text("Is On: \(isOn ? "Yes" : "No")")
+            .onAppear {
+                Task {
+                    try await Task.sleep(for: .seconds(1))
+                    isOn.toggle()
+                }
+            }
+    }
+}
+
+// MARK: ------------------------------
 
 struct MyView: View {
     var body: some View {

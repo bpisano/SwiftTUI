@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-struct ViewPhaseEffect: @MainActor EffectRule {
+struct ViewPhaseEffect: Rule {
     private let modifier: Attribute<ViewPhaseViewModifier>
     private let phase: Attribute<ViewPhase>
     private let storage: Storage = .init()
@@ -21,7 +21,7 @@ struct ViewPhaseEffect: @MainActor EffectRule {
         self.phase = phase
     }
 
-    func update() {
+    func evaluate() {
         let modifier: ViewPhaseViewModifier = modifier.wrappedValue
         let isActive: Bool = phase.wrappedValue == .active
         let wasActive: Bool = storage.wasActive

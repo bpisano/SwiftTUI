@@ -53,6 +53,12 @@ extension ModifiedView {
     }
 }
 
+extension ModifiedView: AttributeValueRepresentable {
+    var attributeValueDescription: String {
+        "ModifiedView"
+    }
+}
+
 extension View {
     public func modifier<M: ViewModifier>(_ modifier: M) -> some View {
         ModifiedView(content: self, modifier: modifier)

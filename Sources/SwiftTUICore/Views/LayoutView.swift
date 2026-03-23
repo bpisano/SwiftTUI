@@ -29,46 +29,40 @@ extension LayoutView {
     ) -> ViewOutputs {
         var childGeometries: Attribute<[ViewGeometry]>!
 
-        let childOutputs = Attribute("\(Content.self) Child Outputs") {
-            let contentAttribute: Attribute<Content> = view.map(\.content)
-            let viewListInputs: ViewListInputs = .init(viewInputs: inputs)
-            let contentViewListOutputs: ViewListOutputs = Content.makeViewList(
-                contentAttribute,
-                inputs: viewListInputs
+        let contentAttribute: Attribute<Content> = view.map(\.content)
+        let viewListInputs: ViewListInputs = .init(viewInputs: inputs)
+        let contentViewListOutputs: ViewListOutputs = Content.makeViewList(
+            contentAttribute,
+            inputs: viewListInputs
+        )
+        let contentViewOutputs: Attribute<[ViewOutputs]> = contentViewListOutputs.makeViewOutputsAttribute(
+            "\(Content.self) Child Outputs",
+            inputs: inputs
+        ) { index, inputs, makeViewOutputs in
+            let currentIndex: Int = index
+            let modifiedInputs = ViewInputs(
+                position: Attribute {
+                    childGeometries.wrappedValue[currentIndex].origin
+                },
+                size: Attribute {
+                    childGeometries.wrappedValue[currentIndex].size
+                },
+                phase: inputs.phase,
+                storage: inputs.storage
             )
-            let contentViewList: any ViewList = contentViewListOutputs.viewList.wrappedValue
-
-            var index: Int = 0
-
-            return contentViewList.makeViewOutputs(
-                startIndex: &index,
-                inputs: inputs
-            ) { index, inputs, makeViewOutputs in
-                let currentIndex: Int = index
-                let modifiedInputs = ViewInputs(
-                    position: Attribute {
-                        childGeometries.wrappedValue[currentIndex].origin
-                    },
-                    size: Attribute {
-                        childGeometries.wrappedValue[currentIndex].size
-                    },
-                    phase: inputs.phase,
-                    storage: inputs.storage
-                )
-                return makeViewOutputs(modifiedInputs)
-            }
+            return makeViewOutputs(modifiedInputs)
         }
 
         let layoutComputer = Attribute("\(Content.self) LayoutComputer") {
             let layout: L = view.wrappedValue.layout
-            let childLayoutComputers: [LayoutComputer] = childOutputs.wrappedValue
+            let childLayoutComputers: [LayoutComputer] = contentViewOutputs.wrappedValue
                 .map(\.layoutComputer.wrappedValue)
             return layout.layoutComputer(for: childLayoutComputers)
         }
 
         let displayList = Attribute("\(Content.self) DisplayList") {
             DisplayList(
-                childOutputs.wrappedValue
+                contentViewOutputs.wrappedValue
                     .map { .childList($0.displayList.wrappedValue) }
             )
         }
@@ -97,5 +91,11 @@ extension LayoutView {
         .unaryViewListOutputs("\(Content.self) ViewList") { inputs in
             Self.makeView(view, inputs: inputs)
         }
+    }
+}
+
+extension LayoutView: AttributeValueRepresentable {
+    var attributeValueDescription: String {
+        "LayoutView"
     }
 }

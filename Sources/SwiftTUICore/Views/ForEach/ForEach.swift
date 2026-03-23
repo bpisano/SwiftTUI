@@ -56,7 +56,7 @@ extension ForEach {
             return ForEachViewList(view: view, state: state)
         }
 
-        return .init(viewList: viewList)
+        return .init(views: .dynamicList(viewList))
     }
 }
 
