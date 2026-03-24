@@ -26,21 +26,21 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         while index != forEach.data.endIndex {
             let element: Data.Element = forEach.data[index]
             let id: ID = element[keyPath: forEach.id]
+            let childValue: Content = forEach.makeChildView(element)
 
             if let existingItem = itemsById[id] {
-                existingItem.index = index
+                existingItem.update(index: index, childValue: childValue)
             } else {
                 let item: Item = makeCachedItem(
                     for: id,
                     at: index,
-                    view: view,
+                    childValue: childValue,
                     inputs: inputs
                 )
                 itemsById[id] = item
             }
 
             orderedIds.append(id)
-
             forEach.data.formIndex(after: &index)
         }
 
@@ -58,66 +58,74 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
     private func makeCachedItem(
         for id: ID,
         at index: Data.Index,
-        view: Attribute<ForEachType>,
+        childValue: Content,
         inputs: ViewListInputs
     ) -> Item {
         let viewSubgraph: Subgraph = .init()
         let viewOutputsSubgraph: Subgraph = .init()
+
         return viewSubgraph.withDependencyCapture {
-            let childView: Attribute<Content> = makeChildView(for: id, view: view)
+            let childView: Attribute<Content> = Attribute("ForEach Child View \(id)") {
+                childValue
+            }
+
             let childViewListOutputs: ViewListOutputs = Content.makeViewList(
                 childView,
                 inputs: inputs
             )
+
             return .init(
                 index: index,
+                childView: childView,
+                viewListOutputs: childViewListOutputs,
                 viewSubgraph: viewSubgraph,
-                viewOutputsSubgraph: viewOutputsSubgraph,
-                viewList: childViewListOutputs.makeViewListAttribute()
+                viewOutputsSubgraph: viewOutputsSubgraph
             )
-        }
-    }
-
-    private func makeChildView(
-        for id: ID,
-        view: Attribute<ForEachType>
-    ) -> Attribute<Content> {
-        Attribute("ForEach Child View \(id)") { [unowned self] in
-            guard let item = self.itemsById[id] else {
-                fatalError("Element with ID \(id) not found in itemsById")
-            }
-            let forEach: ForEach<Data, ID, Content> = view.wrappedValue
-            let element: Data.Element = forEach.data[item.index]
-            return forEach.makeChildView(element)
         }
     }
 }
 
 extension ForEachState {
     final class Item {
+        let childView: Attribute<Content>
+
+        let viewListOutputs: ViewListOutputs
+
         let viewSubgraph: Subgraph
         let viewOutputsSubgraph: Subgraph
-        let viewList: Attribute<any ViewList>
-        var viewOutputs: [ViewOutputs]?
 
-        var index: Data.Index {
-            willSet {
-                guard newValue != index else { return }
+        private(set) var index: Data.Index
+        private(set) var viewOutputs: [ViewOutputs]?
+
+        init(
+            index: Data.Index,
+            childView: Attribute<Content>,
+            viewListOutputs: ViewListOutputs,
+            viewSubgraph: Subgraph,
+            viewOutputsSubgraph: Subgraph
+        ) {
+            self.index = index
+            self.childView = childView
+            self.viewListOutputs = viewListOutputs
+            self.viewSubgraph = viewSubgraph
+            self.viewOutputsSubgraph = viewOutputsSubgraph
+        }
+
+        func update(
+            index newIndex: Data.Index,
+            childValue: Content,
+        ) {
+            childView.wrappedValue = childValue
+
+            if newIndex != index {
+                index = newIndex
                 viewOutputsSubgraph.clean()
                 viewOutputs = nil
             }
         }
 
-        init(
-            index: Data.Index,
-            viewSubgraph: Subgraph,
-            viewOutputsSubgraph: Subgraph,
-            viewList: Attribute<any ViewList>
-        ) {
-            self.index = index
-            self.viewSubgraph = viewSubgraph
-            self.viewOutputsSubgraph = viewOutputsSubgraph
-            self.viewList = viewList
+        func cacheViewOutputs(_ viewOutputs: [ViewOutputs]) {
+            self.viewOutputs = viewOutputs
         }
     }
 }

@@ -18,16 +18,18 @@ struct _User: Identifiable {
 }
 
 struct MyView: View {
-    @State var isOn: Bool = false
+    @State var users: [_User] = [
+        .init(id: 1, name: "Alice"),
+        .init(id: 2, name: "Bob"),
+        .init(id: 3, name: "Charlie")
+    ]
 
     var body: some View {
-        Text("Is On: \(isOn ? "Yes" : "No")")
-            .onAppear {
-                Task {
-                    try await Task.sleep(for: .seconds(1))
-                    isOn.toggle()
-                }
+        RootLayout {
+            ForEach(users) { user in
+                Text(user.name)
             }
+        }
     }
 }
 
@@ -43,9 +45,7 @@ func debugPlaygroundCode() {
         storage: .init()
     )
 
-    @Attribute var view = RootLayout {
-        MyView()
-    }
+    @Attribute var view = MyView()
 
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
@@ -53,6 +53,14 @@ func debugPlaygroundCode() {
     $screenSize.label = "Screen Size"
     $viewPhase.label = "View Phase"
     $view.label = "\(type(of: view))"
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
+
+    view.users = [
+        .init(id: 1, name: "Alice"),
+        .init(id: 2, name: "Bob")
+    ]
 
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()

@@ -29,20 +29,24 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         makeViewOutputs: @escaping MakeViewOutputsInterceptor
     ) -> [ViewOutputs] {
         var viewOutputs: [ViewOutputs] = []
+
         for elementId in state.orderedIds {
-            guard let stateItem = state.itemsById[elementId] else { continue }
-            if let cachedOutputs = stateItem.viewOutputs {
-                viewOutputs.append(contentsOf: cachedOutputs)
-            } else {
-                stateItem.viewOutputsSubgraph.withDependencyCapture {
-                    let outputs = stateItem.viewList.wrappedValue.makeViewOutputs(
-                        startIndex: &startIndex,
-                        inputs: inputs,
-                        makeViewOutputs: makeViewOutputs
-                    )
-                    stateItem.viewOutputs = outputs
-                    viewOutputs.append(contentsOf: outputs)
-                }
+            guard let item = state.itemsById[elementId] else { continue }
+
+            if let cachedViewOutputs = item.viewOutputs {
+                viewOutputs.append(contentsOf: cachedViewOutputs)
+                startIndex += cachedViewOutputs.count
+                continue
+            }
+
+            item.viewOutputsSubgraph.withDependencyCapture {
+                let outputs: [ViewOutputs] = item.viewListOutputs.makeViewOutputs(
+                    startIndex: &startIndex,
+                    inputs: inputs,
+                    makeViewOutputs: makeViewOutputs
+                )
+                item.cacheViewOutputs(outputs)
+                viewOutputs.append(contentsOf: outputs)
             }
         }
         return viewOutputs
