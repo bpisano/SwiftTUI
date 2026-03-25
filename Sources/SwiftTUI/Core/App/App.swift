@@ -15,17 +15,21 @@ import Terminal
 public protocol App: Sendable {
     associatedtype Body: View
 
+    @MainActor
+    @ViewBuilder
     var body: Body { get }
 
     init()
 }
 
 extension App {
+    @MainActor
     public static func main() {
         let app: Self = .init()
         let view: Body = app.body
 
         let terminal: Terminal = .current
+        let renderState: RenderState = .init()
         let engine: TerminalEngine = .init(
             configuration: .standard,
             terminal: terminal,
@@ -33,25 +37,25 @@ extension App {
                 view
             }
         )
-        let frameRate: Double = 1 / 60
-
-        var needsRender: Bool = true
 
         let graph: Graph = .init()
         graph.makeCurrent()
         graph.onInvalidate = {
-            needsRender = true
+            Task {
+                await renderState.setNeedsRender()
+            }
         }
 
         engine.setup()
 
+        let frameRate: Double = 1 / 60
         let timer = Timer.scheduledTimer(
             withTimeInterval: frameRate,
             repeats: true
         ) { _ in
             Task { @MainActor in
-                guard needsRender else { return }
-                needsRender = false
+                guard await renderState.needsRender else { return }
+                await renderState.clearNeedsRender()
                 engine.render()
             }
         }

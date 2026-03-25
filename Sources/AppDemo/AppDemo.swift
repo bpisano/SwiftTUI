@@ -20,16 +20,18 @@ private struct User: Identifiable {
 }
 
 struct MyView2: View {
-    @State var isOn: Bool = false
+    @State private var number: Int = 0
 
     var body: some View {
-        Text("Is On: \(isOn ? "Yes" : "No")")
-            .onAppear {
-                Task {
-                    try await Task.sleep(for: .seconds(1))
-                    isOn.toggle()
-                }
+        VStack {
+            Text("Random number: \(number)")
+        }
+        .onAppear {
+            Task {
+                try await Task.sleep(for: .seconds(1))
+                number = Int.random(in: 0...100)
             }
+        }
     }
 }
 
