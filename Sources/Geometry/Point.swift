@@ -9,11 +9,6 @@ public struct Point: Hashable, Equatable, Codable, Sendable {
         self.y = y
     }
 
-    public init(x: Int, y: Int) {
-        self.x = GeometryUnit(x)
-        self.y = GeometryUnit(y)
-    }
-
     public static func + (lhs: Point, rhs: Point) -> Point {
         return Point(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
     }
@@ -22,18 +17,18 @@ public struct Point: Hashable, Equatable, Codable, Sendable {
         return Point(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
     }
 
-    public static func * (lhs: Point, rhs: Double) -> Point {
+    public static func * (lhs: Point, rhs: GeometryUnit) -> Point {
         return Point(x: lhs.x * rhs, y: lhs.y * rhs)
     }
 
-    public static func / (lhs: Point, rhs: Double) -> Point {
+    public static func / (lhs: Point, rhs: GeometryUnit) -> Point {
         return Point(x: lhs.x / rhs, y: lhs.y / rhs)
     }
 
     public func distance(to point: Point) -> Double {
         let dx: GeometryUnit = point.x - x
         let dy: GeometryUnit = point.y - y
-        return (dx * dx + dy * dy).squareRoot()
+        return Double(dx * dx + dy * dy).squareRoot()
     }
 }
 

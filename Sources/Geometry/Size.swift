@@ -1,12 +1,12 @@
 public struct Size: Hashable, Equatable, Codable, Sendable {
     public static let zero = Size(width: 0, height: 0)
 
-    public var width: Double
-    public var height: Double
+    public var width: GeometryUnit
+    public var height: GeometryUnit
 
-    public var area: Double { width * height }
+    public var area: GeometryUnit { width * height }
 
-    public init(width: Double, height: Double) {
+    public init(width: GeometryUnit, height: GeometryUnit) {
         self.width = width
         self.height = height
     }
@@ -19,11 +19,11 @@ public struct Size: Hashable, Equatable, Codable, Sendable {
         return Size(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
     }
 
-    public static func * (lhs: Size, rhs: Double) -> Size {
+    public static func * (lhs: Size, rhs: GeometryUnit) -> Size {
         return Size(width: lhs.width * rhs, height: lhs.height * rhs)
     }
 
-    public static func / (lhs: Size, rhs: Double) -> Size {
+    public static func / (lhs: Size, rhs: GeometryUnit) -> Size {
         return Size(width: lhs.width / rhs, height: lhs.height / rhs)
     }
 }

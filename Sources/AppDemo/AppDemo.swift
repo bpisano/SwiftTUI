@@ -10,50 +10,27 @@ import SwiftTUI
 @main
 struct MyApp: App {
     var body: some View {
-        MyView2()
+        MyView()
     }
 }
-
-private struct User: Identifiable {
-    let id: Int
-    let name: String
-}
-
-struct MyView2: View {
-    @State private var number: Int = 0
-
-    var body: some View {
-        VStack {
-            Text("Random number: \(number)")
-        }
-        .onAppear {
-            Task {
-                try await Task.sleep(for: .seconds(1))
-                number = Int.random(in: 0...100)
-            }
-        }
-    }
-}
-
-// MARK: ------------------------------
 
 struct MyView: View {
+    private let tileSize: GeometryUnit = 4
+
     var body: some View {
-        ChessBoardLayout(cellSize: 4) {
-            ForEach(0..<8, id: \.self) { row in
-                ForEach(0..<8, id: \.self) { column in
-                    ZStack {
-                        let isBlack = (row + column) % 2 != 0
-                        Color(isBlack ? .brightBlack : .white)
-                        Text("\(row),\(column)")
-                    }
+        ZStack {
+            Color(.white)
+                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
+            BlackTilesLayout(cellSize: tileSize) {
+                ForEach(0..<32, id: \.self) { _ in
+                    Color(.brightBlack)
                 }
             }
         }
     }
 }
 
-struct ChessBoardLayout: Layout {
+struct BlackTilesLayout: Layout {
     let cellSize: GeometryUnit
 
     func sizeThatFits(
@@ -70,8 +47,10 @@ struct ChessBoardLayout: Layout {
         subviews: [Subview]
     ) {
         for (index, subview) in subviews.enumerated() {
-            let row = index / 8
-            let column = index % 8
+            let row = index / 4
+            let positionInRow = index % 4
+            // Even rows have black tiles on odd columns; odd rows on even columns.
+            let column = row % 2 == 0 ? positionInRow * 2 + 1 : positionInRow * 2
             let x = bounds.origin.x + GeometryUnit(column) * cellSize
             let y = bounds.origin.y + GeometryUnit(row) * cellSize / 2
             let rect: Rect = .init(

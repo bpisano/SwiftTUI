@@ -1,27 +1,31 @@
 public struct Rect: Hashable, Equatable, Codable, Sendable {
     public static let zero: Rect = .init(x: 0, y: 0, width: 0, height: 0)
-    public static let null: Rect = .init(x: .infinity, y: .infinity, width: -.infinity, height: -.infinity)
 
     public var origin: Point
     public var size: Size
 
-    public var x: Double { origin.x }
-    public var y: Double { origin.y }
-    public var width: Double { size.width }
-    public var height: Double { size.height }
-    public var minX: Double { origin.x }
-    public var minY: Double { origin.y }
-    public var maxX: Double { origin.x + size.width }
-    public var maxY: Double { origin.y + size.height }
-    public var midX: Double { origin.x + size.width / 2 }
-    public var midY: Double { origin.y + size.height / 2 }
+    public var x: GeometryUnit { origin.x }
+    public var y: GeometryUnit { origin.y }
+    public var width: GeometryUnit { size.width }
+    public var height: GeometryUnit { size.height }
+    public var minX: GeometryUnit { origin.x }
+    public var minY: GeometryUnit { origin.y }
+    public var maxX: GeometryUnit { origin.x + size.width }
+    public var maxY: GeometryUnit { origin.y + size.height }
+    public var midX: GeometryUnit { origin.x + size.width / 2 }
+    public var midY: GeometryUnit { origin.y + size.height / 2 }
 
     public init(origin: Point, size: Size) {
         self.origin = origin
         self.size = size
     }
 
-    public init(x: Double, y: Double, width: Double, height: Double) {
+    public init(
+        x: GeometryUnit,
+        y: GeometryUnit,
+        width: GeometryUnit,
+        height: GeometryUnit
+    ) {
         self.origin = Point(x: x, y: y)
         self.size = Size(width: width, height: height)
     }
@@ -39,10 +43,10 @@ public struct Rect: Hashable, Equatable, Codable, Sendable {
             return nil
         }
 
-        let intersectionMinX: Double = max(minX, other.minX)
-        let intersectionMinY: Double = max(minY, other.minY)
-        let intersectionMaxX: Double = min(maxX, other.maxX)
-        let intersectionMaxY: Double = min(maxY, other.maxY)
+        let intersectionMinX: GeometryUnit = max(minX, other.minX)
+        let intersectionMinY: GeometryUnit = max(minY, other.minY)
+        let intersectionMaxX: GeometryUnit = min(maxX, other.maxX)
+        let intersectionMaxY: GeometryUnit = min(maxY, other.maxY)
 
         return Rect(
             x: intersectionMinX,
@@ -53,10 +57,10 @@ public struct Rect: Hashable, Equatable, Codable, Sendable {
     }
 
     public func union(_ other: Rect) -> Rect {
-        let unionMinX: Double = min(minX, other.minX)
-        let unionMinY: Double = min(minY, other.minY)
-        let unionMaxX: Double = max(maxX, other.maxX)
-        let unionMaxY: Double = max(maxY, other.maxY)
+        let unionMinX: GeometryUnit = min(minX, other.minX)
+        let unionMinY: GeometryUnit = min(minY, other.minY)
+        let unionMaxX: GeometryUnit = max(maxX, other.maxX)
+        let unionMaxY: GeometryUnit = max(maxY, other.maxY)
 
         return Rect(
             x: unionMinX,
@@ -66,7 +70,10 @@ public struct Rect: Hashable, Equatable, Codable, Sendable {
         )
     }
 
-    public func offsetBy(dx: Double, dy: Double) -> Rect {
+    public func offsetBy(
+        dx: GeometryUnit,
+        dy: GeometryUnit
+    ) -> Rect {
         Rect(
             x: origin.x + dx,
             y: origin.y + dy,

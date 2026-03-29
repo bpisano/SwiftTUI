@@ -9,7 +9,7 @@ import Foundation
 import AttributeGraph
 
 public struct ViewListOutputs {
-    private let views: Views
+    let views: Views
 
     init(views: Views) {
         self.views = views

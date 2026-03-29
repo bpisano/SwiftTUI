@@ -33,6 +33,6 @@ public final class Screen {
     private func getScreenSize() -> Size? {
         var w: winsize = winsize()
         guard ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0 else { return nil }
-        return Size(width: Double(w.ws_col), height: Double(w.ws_row))
+        return Size(width: GeometryUnit(w.ws_col), height: GeometryUnit(w.ws_row))
     }
 }

@@ -42,10 +42,18 @@ extension LayoutView {
             let currentIndex: Int = index
             let modifiedInputs = ViewInputs(
                 position: Attribute {
-                    childGeometries.wrappedValue[currentIndex].origin
+                    let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
+                    guard currentIndex < childGeometries.count else {
+                        return .zero
+                    }
+                    return childGeometries[currentIndex].origin
                 },
                 size: Attribute {
-                    childGeometries.wrappedValue[currentIndex].size
+                    let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
+                    guard currentIndex < childGeometries.count else {
+                        return .zero
+                    }
+                    return childGeometries[currentIndex].size
                 },
                 phase: inputs.phase,
                 storage: inputs.storage
