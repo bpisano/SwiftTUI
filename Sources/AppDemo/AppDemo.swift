@@ -18,14 +18,19 @@ struct MyView: View {
     private let tileSize: GeometryUnit = 4
 
     var body: some View {
-        ZStack {
-            Color(.white)
-                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
-            BlackTilesLayout(cellSize: tileSize) {
-                ForEach(0..<32, id: \.self) { _ in
-                    Color(.brightBlack)
-                }
-            }
+        ZStack(alignment: .bottomTrailing) {
+            Color(.red)
+                .frame(width: 2, height: 2)
+            Text("A")
+                .padding([.bottom, .trailing], 1)
+            Text("B")
+//            Color(.white)
+//                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
+//            BlackTilesLayout(cellSize: tileSize) {
+//                ForEach(0..<32, id: \.self) { _ in
+//                    Color(.brightBlack)
+//                }
+//            }
         }
     }
 }

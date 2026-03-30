@@ -47,6 +47,7 @@ struct TerminalBuffer: Sendable {
         let rowIndex: Int = Int(origin.y)
         let columnIndex: Int = Int(origin.x)
         frame[rowIndex][columnIndex].setBackgroundColor(color)
+        frame[rowIndex][columnIndex].setCharacter(" ")
     }
 
     func makeStringFrame() -> String {
