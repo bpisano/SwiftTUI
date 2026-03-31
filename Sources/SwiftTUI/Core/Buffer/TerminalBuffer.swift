@@ -38,6 +38,8 @@ struct TerminalBuffer: Sendable {
         for (i, character) in line.enumerated() {
             let columnIndex: Int = Int(origin.x) + i
             guard columnIndex >= 0 && columnIndex < Int(size.width) else { continue }
+            guard GeometryUnit(rowIndex) < size.height else { continue }
+            guard GeometryUnit(columnIndex) < size.width else { continue }
             frame[rowIndex][columnIndex].setCharacter(character)
         }
     }
@@ -46,6 +48,8 @@ struct TerminalBuffer: Sendable {
         guard origin.y >= 0 && origin.y < size.height else { return }
         let rowIndex: Int = Int(origin.y)
         let columnIndex: Int = Int(origin.x)
+        guard GeometryUnit(rowIndex) < size.height else { return }
+        guard GeometryUnit(columnIndex) < size.width else { return }
         frame[rowIndex][columnIndex].setBackgroundColor(color)
         frame[rowIndex][columnIndex].setCharacter(" ")
     }
