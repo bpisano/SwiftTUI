@@ -20,4 +20,14 @@ public final class Cursor {
         write(clearCommand)
         move(to: .zero)
     }
+
+    public func show() {
+        let command: String = Terminal.make(command: .showCursor)
+        write(command)
+    }
+
+    public func hide() {
+        let command: String = Terminal.make(command: .hideCursor)
+        write(command)
+    }
 }
