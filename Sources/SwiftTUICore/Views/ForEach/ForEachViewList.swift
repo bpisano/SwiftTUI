@@ -33,21 +33,12 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         for elementId in state.orderedIds {
             guard let item = state.itemsById[elementId] else { continue }
 
-            if let cachedViewOutputs = item.viewOutputs {
-                viewOutputs.append(contentsOf: cachedViewOutputs)
-                startIndex += cachedViewOutputs.count
-                continue
-            }
-
-            item.viewOutputsSubgraph.withDependencyCapture {
-                let outputs: [ViewOutputs] = item.viewListOutputs.makeViewOutputs(
-                    startIndex: &startIndex,
-                    inputs: inputs,
-                    makeViewOutputs: makeViewOutputs
-                )
-                item.cacheViewOutputs(outputs)
-                viewOutputs.append(contentsOf: outputs)
-            }
+            let outputs: [ViewOutputs] = item.makeViewOutputs(
+                startIndex: &startIndex,
+                inputs: inputs,
+                makeViewOutputs: makeViewOutputs
+            )
+            viewOutputs.append(contentsOf: outputs)
         }
         return viewOutputs
     }

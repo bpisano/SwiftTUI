@@ -29,7 +29,20 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
             let childValue: Content = forEach.makeChildView(element)
 
             if let existingItem = itemsById[id] {
-                existingItem.update(index: index, childValue: childValue)
+                if existingItem.index == index {
+                    existingItem.update(childValue: childValue)
+                } else {
+                    // Until the layout path stops capturing list positions,
+                    // a reused item that moved to a different slot needs a
+                    // fresh set of outputs bound to its new index.
+                    existingItem.clean()
+                    itemsById[id] = makeCachedItem(
+                        for: id,
+                        at: index,
+                        childValue: childValue,
+                        inputs: inputs
+                    )
+                }
             } else {
                 let item: Item = makeCachedItem(
                     for: id,
@@ -49,8 +62,7 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         let idsToRemove: Set<ID> = existingIds.subtracting(currentIds)
         for idToRemove in idsToRemove {
             guard let itemToRemove: Item = itemsById[idToRemove] else { continue }
-            itemToRemove.viewSubgraph.clean()
-            itemToRemove.viewOutputsSubgraph.clean()
+            itemToRemove.clean()
             itemsById.removeValue(forKey: idToRemove)
         }
     }
@@ -61,10 +73,9 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         childValue: Content,
         inputs: ViewListInputs
     ) -> Item {
-        let viewSubgraph: Subgraph = .init()
-        let viewOutputsSubgraph: Subgraph = .init()
+        let subgraph: Subgraph = .init()
 
-        return viewSubgraph.withDependencyCapture {
+        return subgraph.withDependencyCapture {
             let childView: Attribute<Content> = Attribute("ForEach Child View \(id)") {
                 childValue
             }
@@ -77,9 +88,8 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
             return .init(
                 index: index,
                 childView: childView,
-                viewListOutputs: childViewListOutputs,
-                viewSubgraph: viewSubgraph,
-                viewOutputsSubgraph: viewOutputsSubgraph
+                views: childViewListOutputs.views,
+                subgraph: subgraph
             )
         }
     }
@@ -88,11 +98,8 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
 extension ForEachState {
     final class Item {
         let childView: Attribute<Content>
-
-        let viewListOutputs: ViewListOutputs
-
-        let viewSubgraph: Subgraph
-        let viewOutputsSubgraph: Subgraph
+        let views: ViewListOutputs.Views
+        let subgraph: Subgraph
 
         private(set) var index: Data.Index
         private(set) var viewOutputs: [ViewOutputs]?
@@ -100,32 +107,43 @@ extension ForEachState {
         init(
             index: Data.Index,
             childView: Attribute<Content>,
-            viewListOutputs: ViewListOutputs,
-            viewSubgraph: Subgraph,
-            viewOutputsSubgraph: Subgraph
+            views: ViewListOutputs.Views,
+            subgraph: Subgraph
         ) {
             self.index = index
             self.childView = childView
-            self.viewListOutputs = viewListOutputs
-            self.viewSubgraph = viewSubgraph
-            self.viewOutputsSubgraph = viewOutputsSubgraph
+            self.views = views
+            self.subgraph = subgraph
         }
 
-        func update(
-            index newIndex: Data.Index,
-            childValue: Content,
-        ) {
+        func update(childValue: Content) {
             childView.wrappedValue = childValue
-
-            if newIndex != index {
-                index = newIndex
-                viewOutputsSubgraph.clean()
-                viewOutputs = nil
-            }
         }
 
-        func cacheViewOutputs(_ viewOutputs: [ViewOutputs]) {
-            self.viewOutputs = viewOutputs
+        func makeViewOutputs(
+            startIndex: inout Int,
+            inputs: ViewInputs,
+            makeViewOutputs interceptor: @escaping ViewList.MakeViewOutputsInterceptor
+        ) -> [ViewOutputs] {
+            if let viewOutputs {
+                startIndex += viewOutputs.count
+                return viewOutputs
+            }
+
+            let outputs: [ViewOutputs] = subgraph.withDependencyCapture {
+                ViewListOutputs(views: views).makeViewOutputs(
+                    startIndex: &startIndex,
+                    inputs: inputs,
+                    makeViewOutputs: interceptor
+                )
+            }
+            viewOutputs = outputs
+            return outputs
+        }
+
+        func clean() {
+            viewOutputs = nil
+            subgraph.clean()
         }
     }
 }
