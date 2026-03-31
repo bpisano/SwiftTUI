@@ -45,7 +45,10 @@ func debugPlaygroundCode() {
         storage: .init()
     )
 
-    @Attribute var view = MyView()
+    @Attribute var view = VStack {
+        Text("Hello")
+        Text("world")
+    }
 
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
@@ -57,13 +60,13 @@ func debugPlaygroundCode() {
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()
 
-    view.users = [
-        .init(id: 1, name: "Alice"),
-        .init(id: 2, name: "Bob")
-    ]
-
-    let _ = outputs.displayList.wrappedValue
-    CallbackQueue.shared.executeAll()
+//    view.users = [
+//        .init(id: 1, name: "Alice"),
+//        .init(id: 2, name: "Bob")
+//    ]
+//
+//    let _ = outputs.displayList.wrappedValue
+//    CallbackQueue.shared.executeAll()
 
     copyToClipboard(Graph.current.digraph)
 }

@@ -20,4 +20,18 @@ public enum ViewBuilder {
     public static func buildBlock<each V: View>(_ components: repeat each V) -> some View {
         TupleView(repeat each components)
     }
+
+    // MARK: - Conditional Views
+
+    public static func buildEither<TrueContent: View, FalseContent: View>(
+        first component: TrueContent
+    ) -> ConditionalView<TrueContent, FalseContent> {
+        .init(.trueContent(component))
+    }
+
+    public static func buildEither<TrueContent: View, FalseContent: View>(
+        second component: FalseContent
+    ) -> ConditionalView<TrueContent, FalseContent> {
+        .init(.falseContent(component))
+    }
 }

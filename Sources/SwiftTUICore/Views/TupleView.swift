@@ -63,6 +63,7 @@ extension TupleView {
             as: tupleChildViewType
         )
         view.label = "\(Self.self)"
+        childView.label = "\(T.self)"
         return T.makeViewList(childView, inputs: inputs)
     }
 }

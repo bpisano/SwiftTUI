@@ -1,0 +1,91 @@
+//
+//  File.swift
+//  SwiftTUI
+//
+//  Created by Benjamin Pisano on 31/03/2026.
+//
+
+import Foundation
+import Testing
+import Geometry
+
+@testable import AttributeGraph
+@testable import SwiftTUICore
+
+@Suite("ConditionalView")
+struct ConditionalViewTests {
+    @Test
+    func `Static condition`() async throws {
+        expectView(in: Size(width: 9, height: 2)) {
+            if true {
+                Text("Alice")
+            } else {
+                Text("Bob")
+            }
+        } toRender: {
+            """
+            Alice....
+            .........
+            """
+        }
+    }
+
+    @Test
+    func `Dynamic condition`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 2)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        @Attribute var showAlice = true
+        @Attribute var view = VStack {
+            if showAlice {
+                Text("Alice")
+            } else {
+                Text("Bob")
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            .........
+            """
+        }
+
+        showAlice = false
+
+        expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Bob......
+            .........
+            """
+        }
+    }
+
+    @Test
+    func `Inside view list`() async throws {
+        expectView(in: Size(width: 9, height: 2)) {
+            VStack(alignment: .leading) {
+                if true {
+                    Text("Alice")
+                } else {
+                    Text("Bob")
+                }
+                Text("Charlie")
+            }
+        } toRender: {
+            """
+            Alice....
+            Charlie..
+            """
+        }
+    }
+}
