@@ -19,8 +19,8 @@ public struct Attribute<T>: AnyAttribute {
             return storage.value!
         }
         nonmutating set {
-            // Equality short-circuit: if the new value is equal to the current one,
-            // skip all dirty propagation entirely.
+            // Check if the value is already cached and clean
+            // if so, we can compare directly without triggering evaluating
             if let check = storage.equalityCheck,
                let old = storage.value,
                check.isEqual(old, newValue) {
@@ -29,11 +29,12 @@ public struct Attribute<T>: AnyAttribute {
 
             storage.value = newValue
 
-            // Direct dependents become .dirty (their direct dependency confirmed changed).
-            // Their transitive descendants are marked .pending inside markDirty.
+            // Direct dependents become .dirty
+            // Their descendants are marked .pending
             for edge in outgoingEdges {
                 Graph.current.markDirty(edge.toRef)
             }
+
             // Notify even when there are no outgoing edges: the value itself changed.
             Graph.current.onInvalidate?()
         }
@@ -113,13 +114,8 @@ public struct Attribute<T>: AnyAttribute {
 
     // MARK: - Evaluation
 
-    /// Iterative post-order evaluation.
-    ///
-    /// Builds a post-order list of dirty/pending nodes starting from `self` (dependencies
-    /// before dependents), then evaluates each node with the `.pending` optimization:
-    /// a `.pending` node is skipped if none of its direct dependencies changed their value.
     public func evaluateIfNeeded() {
-        // Initial evaluation: no edges registered yet, evaluate self directly.
+        // Check if it has not been evaluated yet
         if storage.value == nil {
             _ = evaluateSelf()
             return
@@ -127,12 +123,11 @@ public struct Attribute<T>: AnyAttribute {
 
         guard state != .clean else { return }
 
-        let postOrder = collectPostOrder()
+        let postOrder: [AttributeRef] = collectPostOrder()
         var changedRefs: Set<AttributeRef> = []
 
         for ref in postOrder {
-            // .pending optimization: skip if no direct dependency actually changed.
-            // Access through ref.attribute to ensure mutations write back to the stored existential.
+            // Skip if no direct dependency actually changed.
             if ref.attribute.state == .pending {
                 let anyDirectDepChanged = ref.attribute.incomingEdges.contains {
                     changedRefs.contains($0.fromRef)
@@ -143,6 +138,8 @@ public struct Attribute<T>: AnyAttribute {
                 }
             }
 
+            // Evaluate and check if the value changed
+            // If so, add to changedRefs for downstream checks
             if ref.attribute.evaluateSelf() {
                 changedRefs.insert(ref)
             }
@@ -150,9 +147,6 @@ public struct Attribute<T>: AnyAttribute {
     }
 
     /// Builds a post-order list of nodes that need evaluation, starting from `self`.
-    ///
-    /// Uses iterative DFS with an "expanded" flag to produce a valid topological order
-    /// (dependencies before their dependents). Only includes `.dirty` and `.pending` nodes.
     private func collectPostOrder() -> [AttributeRef] {
         var result: [AttributeRef] = []
         var visited: Set<AttributeRef> = []
@@ -171,7 +165,7 @@ public struct Attribute<T>: AnyAttribute {
 
             if visited.contains(ref) || ref.attribute.state == .clean { continue }
 
-            // Push self again to finalize after all deps are processed.
+            // Push self again to finalize after all dependencies are processed
             stack.append((ref, true))
 
             for edge in ref.attribute.incomingEdges {
@@ -186,10 +180,8 @@ public struct Attribute<T>: AnyAttribute {
     }
 
     /// Evaluates the underlying rule for this node and returns whether the value changed.
-    ///
-    /// Before evaluation, all stale incoming edges are cleared and re-registered fresh
-    /// during rule execution (stale edge pruning). After evaluation, an optional equality
-    /// check determines whether to report a change, enabling the change-cut optimization.
+    /// 
+    /// - Returns: `true` if the value changed compared to the previous cached value, `false` otherwise.
     public func evaluateSelf() -> Bool {
         let oldValue = storage.value
 
