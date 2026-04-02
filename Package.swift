@@ -20,6 +20,12 @@ let package = Package(
                 .defaultIsolation(MainActor.self)
             ]
         ),
+        .target(
+            name: "AttributeGraph2",
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
+        ),
         .target(name: "Geometry"),
         .target(
             name: "Terminal",
@@ -55,7 +61,17 @@ let package = Package(
         ),
         .testTarget(
             name: "AttributeGraphTests",
-            dependencies: ["AttributeGraph"]
+            dependencies: ["AttributeGraph"],
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
+        ),
+        .testTarget(
+            name: "AttributeGraph2Tests",
+            dependencies: ["AttributeGraph2"],
+            swiftSettings: [
+                .defaultIsolation(MainActor.self)
+            ]
         ),
         .testTarget(
             name: "GeometryTests",
