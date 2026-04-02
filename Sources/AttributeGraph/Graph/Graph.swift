@@ -17,6 +17,10 @@ public final class Graph {
     private var attributesRefs: Set<AttributeRef> = []
     private var transactionalAttributeRefs: [AttributeRef] = []
     private var currentComputationRef: AttributeRef?
+    /// Tracks which source refs have already been registered as dependencies
+    /// during the current `withDependencyCapture` session.
+    /// Replaces the O(n) linear scan of `outgoingEdges` with an O(1) hash lookup.
+    private var capturedDependencies: Set<AttributeRef> = []
 
     private var tracksTransaction: Bool = false
     private(set) var transaction: Transaction = .init()
@@ -52,11 +56,10 @@ public final class Graph {
     func registerDependency(_ attributeRef: AttributeRef) {
         guard let currentComputationRef else { return }
 
-        let existingEdge: Edge? = attributeRef.attribute.outgoingEdges
-            .first { edge in
-                edge.toRef === currentComputationRef
-            }
-        guard existingEdge == nil else { return }
+        // O(1) dedup: the set tracks every source already registered in this capture session.
+        // This replaces the previous O(n) linear scan over `outgoingEdges` which caused
+        // O(n²) behaviour when one source had thousands of dependents.
+        guard capturedDependencies.insert(attributeRef).inserted else { return }
 
         let edge: Edge = .init(from: attributeRef, to: currentComputationRef)
         attributeRef.attribute.addOutgoing(edge: edge)
@@ -68,35 +71,61 @@ public final class Graph {
         perform: () throws -> Void
     ) rethrows {
         let previousComputationRef: AttributeRef? = currentComputationRef
+        let previousDeps = capturedDependencies
         currentComputationRef = attribute
+        capturedDependencies = []
         try perform()
         currentComputationRef = previousComputationRef
+        capturedDependencies = previousDeps
     }
 
-    func invalidate(_ attribute: AttributeRef) {
-        var attributesToVisit: [AttributeRef] = [attribute]
-        var visitedAttributes: Set<AttributeRef> = []
+    /// Marks `attributeRef` as `.dirty` and BFS-propagates `.pending` to all transitive descendants.
+    ///
+    /// - `.dirty`: direct dependent — must re-evaluate unconditionally.
+    /// - `.pending`: transitive descendant — skip if no direct dep actually changed its value.
+    ///
+    /// Nodes already `.dirty` or `.pending` are not re-traversed, keeping total BFS work O(nodes).
+    func markDirty(_ attributeRef: AttributeRef) {
+        guard attributeRef.attribute.state != .dirty else { return }
+        attributeRef.attribute.state = .dirty
 
-        while !attributesToVisit.isEmpty {
-            let currentAttribute: AttributeRef = attributesToVisit.removeFirst()
+        if tracksTransaction {
+            transaction.invalidations.append(attributeRef)
+        }
 
-            guard !visitedAttributes.contains(currentAttribute) else { continue }
-            visitedAttributes.insert(currentAttribute)
+        // Fast path: leaf node has no descendants to propagate .pending to.
+        // Avoids allocating a queue array + visited Set for the common fan-out case
+        // where all direct dependents are leaves.
+        let outgoing = attributeRef.attribute.outgoingEdges
+        guard !outgoing.isEmpty else { return }
 
-            currentAttribute.attribute.state = .potentiallyDirty
+        var queue: [AttributeRef] = []
+        var visited: Set<AttributeRef> = [attributeRef]
 
-            for outgoingEdge in currentAttribute.attribute.outgoingEdges {
-                let dependentAttribute: AttributeRef = outgoingEdge.toRef
-                guard dependentAttribute.attribute.state != .potentiallyDirty else { continue }
-                
-                attributesToVisit.append(dependentAttribute)
+        for edge in outgoing {
+            let dep = edge.toRef
+            if visited.insert(dep).inserted {
+                queue.append(dep)
             }
         }
 
-        if tracksTransaction {
-            transaction.invalidations.append(attribute)
-        }
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            guard current.attribute.state == .clean else { continue }
+            current.attribute.state = .pending
 
+            for edge in current.attribute.outgoingEdges {
+                let dep = edge.toRef
+                if visited.insert(dep).inserted {
+                    queue.append(dep)
+                }
+            }
+        }
+    }
+
+    /// Kept for Subgraph.clean(): marks a node and all descendants as invalidated.
+    func invalidate(_ attributeRef: AttributeRef) {
+        markDirty(attributeRef)
         onInvalidate?()
     }
 

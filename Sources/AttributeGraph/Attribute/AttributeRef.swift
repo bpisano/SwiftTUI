@@ -17,10 +17,10 @@ final class AttributeRef {
 
 extension AttributeRef: Hashable, Equatable {
     func hash(into hasher: inout Hasher) {
-        hasher.combine(attribute.id)
+        hasher.combine(ObjectIdentifier(self))
     }
 
     static func == (lhs: AttributeRef, rhs: AttributeRef) -> Bool {
-        lhs.attribute.id == rhs.attribute.id
+        lhs === rhs
     }
 }

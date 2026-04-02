@@ -16,6 +16,7 @@ public protocol AnyAttribute: DigraphRepresentable {
     var state: AttributeState { get set }
 
     func evaluateIfNeeded()
+    @discardableResult func evaluateSelf() -> Bool
 
     func addIncoming(edge: Edge)
     func addOutgoing(edge: Edge)

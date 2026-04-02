@@ -112,15 +112,15 @@ struct AG1PerformanceBenchmarkTests {
         _ = tracked.wrappedValue
         let initCount = evalCount
 
-        // AG1 has no equality short-circuit: writing source = 0 (same value)
-        // still marks the entire chain as potentiallyDirty and re-evaluates.
+        // AG1 now has equality short-circuit: writing source = 0 (same value)
+        // skips all dirty propagation, so the chain is never re-evaluated.
         _ = measure(label: "Deep chain \(depth) – no-op (no short-circuit, full re-eval)", iterations: 5) {
             source = 0
             _ = tracked.wrappedValue
         }
 
-        // In AG1 the chain re-evaluated on every iteration despite the same value
-        #expect(evalCount > initCount, "AG1 re-evaluates even when value is unchanged")
+        // With the equality short-circuit, no re-evaluation should occur.
+        #expect(evalCount == initCount, "AG1 should short-circuit when value is unchanged")
     }
 
     // MARK: - Wide fan-out
@@ -279,9 +279,10 @@ struct AG1PerformanceBenchmarkTests {
             _ = tracked.wrappedValue
         }
 
-        // AG1 re-evaluates the full chain: no change-cut possible
-        #expect(evalCount == initCount + iterations,
-                "AG1 re-evaluates all downstream nodes even when clamped value is unchanged")
+        // AG1 now has the three-state system + change-cut: the clamped value
+        // doesn't change (stays at 10), so the downstream chain is skipped.
+        #expect(evalCount == initCount,
+                "AG1 now skips downstream nodes when the clamped value is unchanged")
     }
 
     // MARK: - Multi-diamond lattice

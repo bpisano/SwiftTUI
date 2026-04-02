@@ -13,7 +13,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         get {
             Graph.current.registerDependency(storage.ref)
 
-            if let cachedValue = storage.value, storage.state != .potentiallyDirty {
+            if let cachedValue = storage.value, storage.state == .clean {
                 return cachedValue
             }
 
@@ -24,16 +24,31 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             return storage.value!
         }
         nonmutating set {
-            storage.value = newValue
-            for edge in outgoingEdges {
-                edge.state = .dirty
+            // Equality short-circuit: if the new value equals the current one,
+            // skip all dirty propagation entirely.
+            if let check = storage.equalityCheck,
+               let old = storage.value,
+               check(old, newValue) {
+                return
+            }
 
+            storage.value = newValue
+
+            // Collect transactional refs before the BFS loop to avoid interleaving
+            // evaluateIfNeeded calls with the markDirty propagation.
+            var transactionalRefs: [AttributeRef] = []
+            for edge in outgoingEdges {
+                // markDirty sets the dependent .dirty and BFS-marks its descendants .pending.
+                Graph.current.markDirty(edge.toRef)
                 if edge.toRef.attribute.flags.contains(.transactional) {
-                    edge.toRef.attribute.evaluateIfNeeded()
-                } else {
-                    Graph.current.invalidate(edge.toRef)
+                    transactionalRefs.append(edge.toRef)
                 }
             }
+            // Transactional attributes must be evaluated eagerly, right now.
+            for ref in transactionalRefs {
+                ref.attribute.evaluateIfNeeded()
+            }
+            Graph.current.onInvalidate?()
         }
     }
 
@@ -137,56 +152,126 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     }
 
     public func addIncoming(edge: Edge) {
-        incomingEdges.insert(edge)
+        storage.incomingEdges.insert(edge)
     }
 
     public func addOutgoing(edge: Edge) {
-        outgoingEdges.insert(edge)
+        storage.outgoingEdges.insert(edge)
     }
 
     public func removeIncoming(edge: Edge) {
-        incomingEdges.remove(edge)
+        storage.incomingEdges.remove(edge)
     }
 
     public func removeOutgoing(edge: Edge) {
-        outgoingEdges.remove(edge)
+        storage.outgoingEdges.remove(edge)
     }
 
     public func evaluateIfNeeded() {
-        // Check if any incoming edge is still pending
-        // Or if is initial evaluation
-        let isInitialEvaluation: Bool = storage.value == nil
-        let isTransactional: Bool = flags.contains(.transactional)
-        guard storage.state == .potentiallyDirty || isInitialEvaluation || isTransactional else {
+        // Initial evaluation: no edges registered yet, evaluate self directly.
+        if storage.value == nil {
+            _ = evaluateSelf()
             return
         }
 
-        // Ensure all dependencies are up to date
-        if state == .potentiallyDirty {
-            for edge in incomingEdges {
-                edge.fromRef.attribute.evaluateIfNeeded()
+        guard state != .clean else { return }
+
+        // Fast path: a .dirty leaf (no outgoing edges) can be evaluated directly
+        // without allocating a post-order list, a changedRefs Set, or a DFS stack.
+        // This is the common case for all terminal nodes in a fan-out graph.
+        if state == .dirty && storage.outgoingEdges.isEmpty {
+            _ = evaluateSelf()
+            return
+        }
+
+        let postOrder = collectPostOrder()
+        var changedRefs: Set<AttributeRef> = []
+
+        for ref in postOrder {
+            // .pending optimization: skip if no direct dependency actually changed.
+            if ref.attribute.state == .pending {
+                let anyDirectDepChanged = ref.attribute.incomingEdges.contains {
+                    changedRefs.contains($0.fromRef)
+                }
+                if !anyDirectDepChanged {
+                    ref.attribute.state = .clean
+                    continue
+                }
+            }
+
+            if ref.attribute.evaluateSelf() {
+                changedRefs.insert(ref)
+            }
+        }
+    }
+
+    /// Builds a post-order list of nodes that need evaluation, starting from `self`.
+    ///
+    /// Uses iterative DFS with an "expanded" flag to produce a valid topological order
+    /// (dependencies before their dependents). Only includes `.dirty` and `.pending` nodes.
+    private func collectPostOrder() -> [AttributeRef] {
+        var result: [AttributeRef] = []
+        var visited: Set<AttributeRef> = []
+        var stack: [(ref: AttributeRef, expanded: Bool)] = [(storage.ref, false)]
+
+        while !stack.isEmpty {
+            let (ref, expanded) = stack.removeLast()
+
+            if expanded {
+                if !visited.contains(ref) {
+                    visited.insert(ref)
+                    result.append(ref)
+                }
+                continue
+            }
+
+            if visited.contains(ref) || ref.attribute.state == .clean { continue }
+
+            stack.append((ref, true))
+
+            for edge in ref.attribute.incomingEdges {
+                let dep = edge.fromRef
+                if !visited.contains(dep) && dep.attribute.state != .clean {
+                    stack.append((dep, false))
+                }
             }
         }
 
-        storage.state = .clean
+        return result
+    }
 
-        // Evaluate the rule within dependency capture context
+    /// Evaluates the underlying rule and returns whether the value changed.
+    ///
+    /// Prunes stale incoming edges before re-running so that conditional dependencies
+    /// are re-registered correctly. Returns `true` if the value changed (enabling change-cut).
+    public func evaluateSelf() -> Bool {
+        let oldValue = storage.value
+
+        // Stale edge pruning: clear incoming edges so re-evaluation registers only
+        // the deps the rule actually reads this time.
+        for edge in storage.incomingEdges {
+            edge.fromRef.attribute.removeOutgoing(edge: edge)
+        }
+        storage.incomingEdges.removeAll()
+
         Graph.current.reevaluate(storage.ref)
         Graph.current.withDependencyCapture(of: storage.ref) {
             storage.value = rule.evaluate()
         }
 
-        // Mark incoming edges as clean
-        for edge in incomingEdges {
+        storage.state = .clean
+
+        for edge in storage.incomingEdges {
             edge.state = .clean
         }
 
-        if !isInitialEvaluation {
-            // Mark outgoing edges as dirty
-            for edge in outgoingEdges {
-                edge.state = .dirty
-            }
+        guard let oldValue else { return true }
+
+        if let check = storage.equalityCheck {
+            return !check(oldValue, storage.value!)
         }
+
+        return true
     }
 }
 
@@ -200,6 +285,8 @@ extension Attribute {
         var incomingEdges: Set<Edge> = []
         var outgoingEdges: Set<Edge> = []
         var state: AttributeState = .clean
+        /// Type-erased equality check. Set automatically for `T: Equatable` types.
+        var equalityCheck: ((T, T) -> Bool)?
     }
 }
 
@@ -233,7 +320,7 @@ extension Attribute {
         labelHTML += ">"
         properties.append("label=\(labelHTML)")
 
-        if storage.state == .potentiallyDirty {
+        if storage.state == .pending || storage.state == .dirty {
             properties.append("style=dashed")
         }
         let formattedProperties: String = properties.joined(separator: ", ")
@@ -248,5 +335,47 @@ extension String {
             .replacing("<", with: "&lt;")
             .replacing(">", with: "&gt;")
             .replacing("\n", with: "<br />")
+    }
+}
+
+// MARK: - Equatable-constrained inits
+
+extension Attribute where T: Equatable {
+    public init(
+        wrappedValue: @autoclosure @escaping () -> T,
+        _ label: String? = nil
+    ) {
+        self.rule = AnyRule(ValueRule(wrappedValue))
+        self.storage.ref = AttributeRef(self)
+        self.storage.label = label ?? ""
+        self.storage.equalityCheck = (==)
+        Graph.current.register(attributeRef: storage.ref)
+    }
+
+    public init(wrappedValue: @autoclosure @escaping () -> T) {
+        self.rule = AnyRule(ValueRule(wrappedValue))
+        self.storage.ref = AttributeRef(self)
+        self.storage.equalityCheck = (==)
+        Graph.current.register(attributeRef: storage.ref)
+    }
+
+    public init<R: Rule>(
+        _ label: String? = nil,
+        rule: R
+    ) where R.Value == T {
+        self.rule = AnyRule(rule)
+        self.storage.ref = AttributeRef(self)
+        self.storage.label = label ?? ""
+        self.storage.equalityCheck = (==)
+        Graph.current.register(attributeRef: storage.ref)
+    }
+
+    /// Equatable-constrained closure init: sets the equality check so that
+    /// `evaluateSelf()` can return `false` (no change) when value is unchanged.
+    public init(
+        _ label: String? = nil,
+        _ compute: @escaping () -> T
+    ) {
+        self.init(label, rule: ComputedRule(compute))
     }
 }

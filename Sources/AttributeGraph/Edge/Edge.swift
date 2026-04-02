@@ -13,7 +13,6 @@ public final class Edge {
         case dirty
     }
 
-    let id: UUID = .init()
     let fromRef: AttributeRef
     let toRef: AttributeRef
     var state: State = .clean
@@ -29,11 +28,11 @@ public final class Edge {
 
 extension Edge: Hashable, Equatable {
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(ObjectIdentifier(self))
     }
 
     public static func == (lhs: Edge, rhs: Edge) -> Bool {
-        lhs.id == rhs.id
+        lhs === rhs
     }
 }
 
