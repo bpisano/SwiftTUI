@@ -1,47 +1,15 @@
+
+#if canImport(XCTest)
 import Foundation
-import Testing
 import AttributeGraph
+import XCTest
 
-// MARK: - Measurement helper
-
-private func measure(
-    label: String,
-    iterations: Int = 1,
-    operation: () -> Void
-) -> Duration {
-    let clock = ContinuousClock()
-    let start = clock.now
-    for _ in 0..<iterations { operation() }
-    let elapsed = clock.now - start
-    let avg = elapsed / iterations
-    let ms = Double(avg.components.seconds) * 1_000
-        + Double(avg.components.attoseconds) / 1_000_000_000_000_000
-    let suffix = iterations > 1 ? " (avg over \(iterations) iterations)" : ""
-    print("  ⏱  AG1 \(label)\(suffix): \(String(format: "%.3f", ms)) ms")
-    return avg
-}
-
-// MARK: - Tests
-//
-// These tests mirror AttributeGraph2/PerformanceBenchmarkTests.swift exactly,
-// so the printed ⏱ lines can be compared side-by-side.
-//
-// Known AG1 limitations vs AG2:
-//   - No equality short-circuit: same-value writes still propagate dirty
-//   - Recursive evaluation: deep chains overflow the stack above ~1000 nodes
-//   - O(n²) registerDependency: linear scan of outgoingEdges on each dep access
-
-@Suite("AG1 – Performance benchmarks")
 @MainActor
-struct AG1PerformanceBenchmarkTests {
+final class PerformanceBenchmarkTests: XCTestCase {
 
     // MARK: - Deep linear chain
-    //
-    // AG1 evaluation is RECURSIVE. Depth is capped at 1000 to stay below the
-    // macOS default thread stack limit (~8 MB). AG2 handles 5000+ iteratively.
 
-    @Test
-    func `Deep chain 1000 – initial evaluation`() {
+    func testDeepChain1000InitialEvaluation() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -55,15 +23,16 @@ struct AG1PerformanceBenchmarkTests {
         }
         let leaf = chain.last!
 
-        _ = measure(label: "Deep chain \(depth) – initial eval (iterative priming)") {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             for node in chain { _ = node.wrappedValue }
         }
 
-        #expect(leaf.wrappedValue == depth)
+        XCTAssertEqual(leaf.wrappedValue, depth)
     }
 
-    @Test
-    func `Deep chain 1000 – re-evaluation after source change`() {
+    func testDeepChain1000ReEvaluationAfterSourceChange() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -76,20 +45,20 @@ struct AG1PerformanceBenchmarkTests {
             chain.append(Attribute { prev.wrappedValue + 1 })
         }
         let leaf = chain.last!
-        for node in chain { _ = node.wrappedValue }  // prime iteratively
+        for node in chain { _ = node.wrappedValue }
 
-        // Re-eval is RECURSIVE in AG1: reading leaf triggers a depth-1000 call stack.
-        let iterations = 5
-        _ = measure(label: "Deep chain \(depth) – re-eval after change (recursive)", iterations: iterations) {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             source += 1
             _ = leaf.wrappedValue
         }
 
-        #expect(leaf.wrappedValue == iterations + depth)
+        // Derive expected from actual final state: leaf always equals source + depth
+        XCTAssertEqual(leaf.wrappedValue, source + depth)
     }
 
-    @Test
-    func `Deep chain 1000 – no-op write (no short-circuit in AG1)`() {
+    func testDeepChain1000NoOpWrite() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -112,24 +81,19 @@ struct AG1PerformanceBenchmarkTests {
         _ = tracked.wrappedValue
         let initCount = evalCount
 
-        // AG1 now has equality short-circuit: writing source = 0 (same value)
-        // skips all dirty propagation, so the chain is never re-evaluated.
-        _ = measure(label: "Deep chain \(depth) – no-op (no short-circuit, full re-eval)", iterations: 5) {
-            source = 0
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
+            source = 0  // same value every time → equality short-circuit fires immediately
             _ = tracked.wrappedValue
         }
 
-        // With the equality short-circuit, no re-evaluation should occur.
-        #expect(evalCount == initCount, "AG1 should short-circuit when value is unchanged")
+        XCTAssertEqual(evalCount, initCount, "No node should re-evaluate when source value is unchanged")
     }
 
     // MARK: - Wide fan-out
-    //
-    // Fan-out avoids deep recursion (each leaf is only 1 hop from source),
-    // but AG1 suffers from O(n²) registerDependency due to linear outgoingEdges scan.
 
-    @Test
-    func `Wide fan-out 5000 – initial evaluation`() {
+    func testWideFanOut5000InitialEvaluation() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -141,16 +105,18 @@ struct AG1PerformanceBenchmarkTests {
         }
 
         var sum = 0
-        _ = measure(label: "Fan-out \(width) – initial eval") {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             sum = leaves.reduce(0) { $0 + $1.wrappedValue }
         }
 
+        // sum = 1×1 + 1×2 + … + 1×5000 = 5000×5001/2
         let expected = width * (width + 1) / 2
-        #expect(sum == expected)
+        XCTAssertEqual(sum, expected)
     }
 
-    @Test
-    func `Wide fan-out 5000 – re-evaluation after source change`() {
+    func testWideFanOut5000ReEvaluationAfterSourceChange() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -162,23 +128,21 @@ struct AG1PerformanceBenchmarkTests {
         }
         _ = leaves.reduce(0) { $0 + $1.wrappedValue }  // prime
 
-        let iterations = 5
-        _ = measure(label: "Fan-out \(width) – re-eval after change", iterations: iterations) {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             source += 1
             _ = leaves.reduce(0) { $0 + $1.wrappedValue }
         }
 
-        let finalSource = 1 + iterations
-        let expected = (1...width).reduce(0) { $0 + $1 * finalSource }
-        #expect(leaves.reduce(0) { $0 + $1.wrappedValue } == expected)
+        // Derive expected from actual final source value — correct regardless of iteration count
+        let expected = (1...width).reduce(0) { $0 + $1 * source }
+        XCTAssertEqual(leaves.reduce(0) { $0 + $1.wrappedValue }, expected)
     }
 
     // MARK: - Binary tree
-    //
-    // Tree height = log₂(leafCount) = 10, so recursive re-eval depth = 10. Safe.
 
-    @Test
-    func `Binary tree 1024 leaves – initial evaluation`() {
+    func testBinaryTree1024LeavesInitialEvaluation() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -191,23 +155,23 @@ struct AG1PerformanceBenchmarkTests {
         while level.count > 1 {
             var next: [Attribute<Int>] = []
             for i in stride(from: 0, to: level.count, by: 2) {
-                let l = level[i]
-                let r = level[i + 1]
+                let l = level[i]; let r = level[i + 1]
                 next.append(Attribute { l.wrappedValue + r.wrappedValue })
             }
             level = next
         }
         let root = level[0]
 
-        _ = measure(label: "Binary tree \(leafCount) leaves – initial eval") {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             _ = root.wrappedValue
         }
 
-        #expect(root.wrappedValue == leafCount)
+        XCTAssertEqual(root.wrappedValue, leafCount)
     }
 
-    @Test
-    func `Binary tree 1024 leaves – re-evaluation after source change`() {
+    func testBinaryTree1024LeavesReEvaluationAfterSourceChange() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -220,8 +184,7 @@ struct AG1PerformanceBenchmarkTests {
         while level.count > 1 {
             var next: [Attribute<Int>] = []
             for i in stride(from: 0, to: level.count, by: 2) {
-                let l = level[i]
-                let r = level[i + 1]
+                let l = level[i]; let r = level[i + 1]
                 next.append(Attribute { l.wrappedValue + r.wrappedValue })
             }
             level = next
@@ -229,41 +192,35 @@ struct AG1PerformanceBenchmarkTests {
         let root = level[0]
         _ = root.wrappedValue  // prime
 
-        let iterations = 3
-        _ = measure(label: "Binary tree \(leafCount) leaves – re-eval after change", iterations: iterations) {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             source += 1
             _ = root.wrappedValue
         }
 
-        let expectedLeafValue = iterations + 1
-        #expect(root.wrappedValue == leafCount * expectedLeafValue)
+        // Derive expected from actual final source value — correct regardless of iteration count
+        XCTAssertEqual(root.wrappedValue, leafCount * (source + 1))
     }
 
     // MARK: - Pending cut (no-op clamp)
-    //
-    // AG1 has no three-state system: there is no .pending state.
-    // All potentiallyDirty nodes re-evaluate unconditionally.
-    // The downstream chain after the clamp WILL re-evaluate in AG1.
 
-    @Test
-    func `Pending cut – 1000 downstream nodes always re-evaluate in AG1`() {
+    func testPendingCut1000DownstreamNodesSkippedAfterNoOpClamp() {
         let graph = Graph()
         graph.makeCurrent()
 
         let depth = 1_000
-        @Attribute var source: Int = 10
+        @Attribute var source: Int = 10  // already at clamp boundary
 
         let clamped = Attribute { min(max(source, 0), 10) }
 
-        var chain: [Attribute<Int>] = [clamped]
+        var previous = clamped
         for _ in 0..<depth {
-            let prev = chain.last!
-            chain.append(Attribute { prev.wrappedValue + 1 })
+            let prev = previous
+            previous = Attribute { prev.wrappedValue + 1 }
         }
-        let leaf = chain.last!
-        // Prime iteratively (chain after clamp can be primed directly)
-        for node in chain { _ = node.wrappedValue }
-        _ = source  // ensure source is primed too
+        let leaf = previous
+        _ = leaf.wrappedValue  // prime
 
         var evalCount = 0
         let tracked = Attribute {
@@ -273,22 +230,20 @@ struct AG1PerformanceBenchmarkTests {
         _ = tracked.wrappedValue
         let initCount = evalCount
 
-        let iterations = 5
-        _ = measure(label: "Pending cut \(depth) nodes – clamped source write (no pending opt.)", iterations: iterations) {
-            source += 1
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
+            source += 1  // clamp(11+, 0…10) == 10 → downstream unchanged
             _ = tracked.wrappedValue
         }
 
-        // AG1 now has the three-state system + change-cut: the clamped value
-        // doesn't change (stays at 10), so the downstream chain is skipped.
-        #expect(evalCount == initCount,
-                "AG1 now skips downstream nodes when the clamped value is unchanged")
+        XCTAssertEqual(evalCount, initCount, "No downstream node should re-evaluate: clamped value is unchanged")
+        XCTAssertEqual(tracked.wrappedValue, 10 + depth)
     }
 
     // MARK: - Multi-diamond lattice
 
-    @Test
-    func `Multi-diamond lattice 64×8 – initial evaluation`() {
+    func testMultiDiamond64x8InitialEvaluation() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -296,29 +251,27 @@ struct AG1PerformanceBenchmarkTests {
         let layers = 8
         @Attribute var source: Int = 1
 
-        var layer: [Attribute<Int>] = (0..<width).map { i in
-            Attribute { source + i }
-        }
+        var layer: [Attribute<Int>] = (0..<width).map { i in Attribute { source + i } }
         for _ in 1..<layers {
             var next: [Attribute<Int>] = []
             for i in 0..<layer.count {
-                let left = layer[i]
-                let right = layer[(i + 1) % layer.count]
+                let left = layer[i]; let right = layer[(i + 1) % layer.count]
                 next.append(Attribute { left.wrappedValue + right.wrappedValue })
             }
             layer = next
         }
         let root = Attribute { layer.reduce(0) { $0 + $1.wrappedValue } }
 
-        _ = measure(label: "Multi-diamond \(width)×\(layers) – initial eval") {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             _ = root.wrappedValue
         }
 
-        #expect(root.wrappedValue > 0)
+        XCTAssertGreaterThan(root.wrappedValue, 0)
     }
 
-    @Test
-    func `Multi-diamond lattice 64×8 – re-evaluation after source change`() {
+    func testMultiDiamond64x8ReEvaluationAfterSourceChange() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -326,14 +279,11 @@ struct AG1PerformanceBenchmarkTests {
         let layers = 8
         @Attribute var source: Int = 1
 
-        var layer: [Attribute<Int>] = (0..<width).map { i in
-            Attribute { source + i }
-        }
+        var layer: [Attribute<Int>] = (0..<width).map { i in Attribute { source + i } }
         for _ in 1..<layers {
             var next: [Attribute<Int>] = []
             for i in 0..<layer.count {
-                let left = layer[i]
-                let right = layer[(i + 1) % layer.count]
+                let left = layer[i]; let right = layer[(i + 1) % layer.count]
                 next.append(Attribute { left.wrappedValue + right.wrappedValue })
             }
             layer = next
@@ -342,19 +292,19 @@ struct AG1PerformanceBenchmarkTests {
         _ = root.wrappedValue
         let initialValue = root.wrappedValue
 
-        let iterations = 5
-        _ = measure(label: "Multi-diamond \(width)×\(layers) – re-eval after change", iterations: iterations) {
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             source += 1
             _ = root.wrappedValue
         }
 
-        #expect(root.wrappedValue != initialValue)
+        XCTAssertNotEqual(root.wrappedValue, initialValue)
     }
 
     // MARK: - Shared dependency deduplication
 
-    @Test
-    func `Shared node evaluated once across 500 dependents`() {
+    func testSharedNodeEvaluatedOnceAcross500Dependents() {
         let graph = Graph()
         graph.makeCurrent()
 
@@ -374,16 +324,23 @@ struct AG1PerformanceBenchmarkTests {
         _ = root.wrappedValue
         let countAfterInit = sharedEvalCount
 
-        _ = measure(label: "500-diamond – re-eval after source change", iterations: 5) {
+        var iterationsDone = 0
+        let options = XCTMeasureOptions()
+        options.iterationCount = 10
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
+            iterationsDone += 1
             source += 1
             _ = root.wrappedValue
         }
 
-        #expect(sharedEvalCount == countAfterInit + 5,
-                "shared should be re-evaluated exactly once per source change")
+        // shared must be re-evaluated exactly once per iteration, regardless of iteration count
+        XCTAssertEqual(sharedEvalCount, countAfterInit + iterationsDone,
+                       "shared should be re-evaluated exactly once per source change, not once per dependent")
 
-        let finalShared = 5 * 10
+        // Derive expected from actual final source value
+        let finalShared = source * 10
         let expectedRoot = (0..<width).reduce(0) { $0 + finalShared + $1 }
-        #expect(root.wrappedValue == expectedRoot)
+        XCTAssertEqual(root.wrappedValue, expectedRoot)
     }
 }
+#endif

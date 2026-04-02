@@ -61,10 +61,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AttributeGraphTests",
-            dependencies: ["AttributeGraph"],
-            swiftSettings: [
-                .defaultIsolation(MainActor.self)
-            ]
+            dependencies: ["AttributeGraph"]
         ),
         .testTarget(
             name: "AttributeGraph2Tests",
