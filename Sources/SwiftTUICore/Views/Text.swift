@@ -80,3 +80,8 @@ extension Text {
         }
     }
 }
+
+extension Text: Equatable {}
+extension Text: Hashable {}
+extension Text: Codable {}
+extension Text: Sendable {}

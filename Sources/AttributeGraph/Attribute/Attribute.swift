@@ -28,7 +28,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
             // skip all dirty propagation entirely.
             if let check = storage.equalityCheck,
                let old = storage.value,
-               check(old, newValue) {
+               check.isEqual(old, newValue) {
                 return
             }
 
@@ -268,7 +268,7 @@ public struct Attribute<T>: @MainActor AnyAttribute {
         guard let oldValue else { return true }
 
         if let check = storage.equalityCheck {
-            return !check(oldValue, storage.value!)
+            return !check.isEqual(oldValue, storage.value!)
         }
 
         return true
@@ -286,7 +286,7 @@ extension Attribute {
         var outgoingEdges: Set<Edge> = []
         var state: AttributeState = .clean
         /// Type-erased equality check. Set automatically for `T: Equatable` types.
-        var equalityCheck: ((T, T) -> Bool)?
+        var equalityCheck: (any EqualityComparator<T>)?
     }
 }
 
@@ -348,14 +348,14 @@ extension Attribute where T: Equatable {
         self.rule = AnyRule(ValueRule(wrappedValue))
         self.storage.ref = AttributeRef(self)
         self.storage.label = label ?? ""
-        self.storage.equalityCheck = (==)
+        self.storage.equalityCheck = EquatableComparator<T>()
         Graph.current.register(attributeRef: storage.ref)
     }
 
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
         self.storage.ref = AttributeRef(self)
-        self.storage.equalityCheck = (==)
+        self.storage.equalityCheck = EquatableComparator<T>()
         Graph.current.register(attributeRef: storage.ref)
     }
 
@@ -366,7 +366,7 @@ extension Attribute where T: Equatable {
         self.rule = AnyRule(rule)
         self.storage.ref = AttributeRef(self)
         self.storage.label = label ?? ""
-        self.storage.equalityCheck = (==)
+        self.storage.equalityCheck = EquatableComparator<T>()
         Graph.current.register(attributeRef: storage.ref)
     }
 

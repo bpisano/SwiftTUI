@@ -75,3 +75,8 @@ extension Color {
         }
     }
 }
+
+extension Color: Equatable {}
+extension Color: Hashable {}
+extension Color: Codable {}
+extension Color: Sendable {}
