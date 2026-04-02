@@ -69,57 +69,33 @@ public struct Attribute<T>: @MainActor AnyAttribute {
     }
 
     public var id: UUID {
-        get {
-            storage.id
-        }
-        nonmutating set {
-            storage.id = newValue
-        }
+        get { storage.id }
+        nonmutating set { storage.id = newValue }
     }
 
-    public var flags: Set<AttributeFlag> {
-        get {
-            storage.flags
-        }
-        nonmutating set {
-            storage.flags = newValue
-        }
+    public var flags: AttributeFlags {
+        get { storage.flags }
+        nonmutating set { storage.flags = newValue }
     }
 
     public var label: String {
-        get {
-            storage.label
-        }
-        nonmutating set {
-            storage.label = newValue
-        }
+        get { storage.label }
+        nonmutating set { storage.label = newValue }
     }
 
     public var incomingEdges: Set<Edge> {
-        get {
-            storage.incomingEdges
-        }
-        nonmutating set {
-            storage.incomingEdges = newValue
-        }
+        get { storage.incomingEdges }
+        nonmutating set { storage.incomingEdges = newValue }
     }
 
     public var outgoingEdges: Set<Edge> {
-        get {
-            storage.outgoingEdges
-        }
-        nonmutating set {
-            storage.outgoingEdges = newValue
-        }
+        get { storage.outgoingEdges }
+        nonmutating set { storage.outgoingEdges = newValue }
     }
 
     public var state: AttributeState {
-        get {
-            storage.state
-        }
-        nonmutating set {
-            storage.state = newValue
-        }
+        get { storage.state }
+        nonmutating set { storage.state = newValue }
     }
 
     private let rule: AnyRule<T>
@@ -279,7 +255,7 @@ extension Attribute {
     final class Storage {
         var id: UUID = .init()
         var ref: AttributeRef!
-        var flags: Set<AttributeFlag> = []
+        var flags: AttributeFlags = []
         var label: String = ""
         var value: T?
         var incomingEdges: Set<Edge> = []

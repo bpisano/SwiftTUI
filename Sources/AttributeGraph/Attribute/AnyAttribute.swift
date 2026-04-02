@@ -9,7 +9,7 @@ import Foundation
 
 public protocol AnyAttribute: DigraphRepresentable {
     var id: UUID { get }
-    var flags: Set<AttributeFlag> { get }
+    var flags: AttributeFlags { get }
     var label: String { get }
     var incomingEdges: Set<Edge> { get }
     var outgoingEdges: Set<Edge> { get }
