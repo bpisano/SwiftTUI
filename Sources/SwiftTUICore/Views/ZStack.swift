@@ -19,7 +19,8 @@ public struct ZStack: Layout {
 extension ZStack {
     public func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) -> Size {
         guard !subviews.isEmpty else {
             return .zero
@@ -39,7 +40,8 @@ extension ZStack {
 
     public func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) {
         guard !subviews.isEmpty else { return }
 

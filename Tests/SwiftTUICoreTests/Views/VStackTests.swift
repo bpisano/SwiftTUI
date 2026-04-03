@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite("VStack")
+@MainActor
 struct VStackTests {
     // MARK: - Basic Layout Tests
 

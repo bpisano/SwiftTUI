@@ -9,16 +9,27 @@ import Foundation
 import Geometry
 
 public protocol Layout {
+    associatedtype Cache = Void
+
     typealias Subview = LayoutProxy
+
+    func makeCache(subviews: [Subview]) -> Cache
+
+    func updateCache(
+        _ cache: inout Cache,
+        subviews: [Subview]
+    )
 
     func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     ) -> Size
 
     func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     )
 }
 
@@ -28,18 +39,12 @@ extension Layout {
     }
 
     func layoutComputer(for subviews: [LayoutComputer]) -> LayoutComputer {
-        var geometries: [ViewGeometry] = Array(repeating: .zero, count: subviews.count)
-        let proxies: [LayoutProxy] = subviews.enumerated().map { index, computer in
-            LayoutProxy(layoutComputer: computer) { rect in
-                geometries[index] = rect
-            }
-        }
-
-        return LayoutComputer { proposal in
-            sizeThatFits(proposal: proposal, subviews: proxies)
-        } viewGeometries: { rect in
-            placeSubviews(in: rect, subviews: proxies)
-            return geometries
-        }
+        LayoutEngine(layout: self, subviews: subviews).makeLayoutComputer()
     }
+}
+
+extension Layout where Cache == Void {
+    public func makeCache(subviews: [Subview]) -> Void { () }
+
+    public func updateCache(_ cache: inout Void, subviews: [Subview]) {}
 }

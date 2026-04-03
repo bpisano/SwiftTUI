@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite("RootLayout")
+@MainActor
 struct RootLayoutTests {
     @Test
     func `Single Child`() async throws {

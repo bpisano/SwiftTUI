@@ -29,7 +29,7 @@ extension FrameViewModifier {
     static func makeLayout(
         _ modifier: Attribute<Self>,
         inputs: ViewInputs
-    ) -> Layout {
+    ) -> any Layout {
         let modifier: Self = modifier.wrappedValue
         return FrameLayout(
             width: modifier.width,

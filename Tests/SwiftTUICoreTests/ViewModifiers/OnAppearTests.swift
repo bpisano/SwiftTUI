@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite(".onAppear")
+@MainActor
 struct OnAppearTests {
     @Test
     func `onAppear is called when the view appears`() async throws {

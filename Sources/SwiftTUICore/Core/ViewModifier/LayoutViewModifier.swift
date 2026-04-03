@@ -13,7 +13,7 @@ protocol LayoutViewModifier: ViewModifier {
     static func makeLayout(
         _ modifier: Attribute<Self>,
         inputs: ViewInputs,
-    ) -> Layout
+    ) -> any Layout
 }
 
 extension LayoutViewModifier {
@@ -25,7 +25,7 @@ extension LayoutViewModifier {
         var childViewOutputs: [ViewOutputs] = []
 
         let layoutComputer = Attribute("\(Self.self) LayoutComputer") {
-            let layout: Layout = makeLayout(modifier, inputs: inputs)
+            let layout: any Layout = makeLayout(modifier, inputs: inputs)
             return layout.layoutComputer(for: childViewOutputs.map(\.layoutComputer.wrappedValue))
         }
 

@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite(".onDisappear")
+@MainActor
 struct OnDisappearTests {
     @Test
     func `onDisappear is called when the view disappears`() async throws {

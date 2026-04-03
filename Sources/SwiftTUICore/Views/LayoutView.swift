@@ -61,11 +61,23 @@ extension LayoutView {
             return makeViewOutputs(modifiedInputs)
         }
 
+        // The engine is created once and captured by the attribute closure.
+        // Subsequent re-evaluations call update() instead of makeCache(),
+        // so the cache survives graph invalidations.
+        var engine: LayoutEngine<L>?
+
         let layoutComputer = Attribute("\(Content.self) LayoutComputer") {
             let layout: L = view.wrappedValue.layout
-            let childLayoutComputers: [LayoutComputer] = contentViewOutputs.wrappedValue
+            let children: [LayoutComputer] = contentViewOutputs.wrappedValue
                 .map(\.layoutComputer.wrappedValue)
-            return layout.layoutComputer(for: childLayoutComputers)
+
+            if let existing = engine {
+                existing.update(layout: layout, subviews: children)
+            } else {
+                engine = LayoutEngine(layout: layout, subviews: children)
+            }
+
+            return engine!.makeLayoutComputer()
         }
 
         let displayList = Attribute("\(Content.self) DisplayList") {

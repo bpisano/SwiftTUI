@@ -14,6 +14,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite("@State")
+@MainActor
 struct StateTests {
     @Test
     func `Within a view`() {

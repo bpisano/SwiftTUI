@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUI
 @testable import SwiftTUICore
 
+@MainActor
 func expectView<V: View>(
     in size: Size,
     @ViewBuilder _ makeView: () -> V,
@@ -36,6 +37,7 @@ func expectView<V: View>(
     expectDisplayList(outputs.displayList, in: size, toRender: expected)
 }
 
+@MainActor
 func expectDisplayList(
     _ displayList: Attribute<DisplayList>,
     in size: Size,

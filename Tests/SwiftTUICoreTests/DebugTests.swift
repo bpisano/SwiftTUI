@@ -33,7 +33,7 @@ struct MyView: View {
     }
 }
 
-@Test
+@Test @MainActor
 func debugPlaygroundCode() {
     @Attribute var screenPosition: Point = .zero
     @Attribute var screenSize: Size = .init(width: 100, height: 100)

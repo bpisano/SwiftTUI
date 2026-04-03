@@ -22,15 +22,29 @@ public struct VStack: Layout {
 }
 
 extension VStack {
+    public struct Cache {
+        fileprivate var layout: StackLayout?
+    }
+
+    public func makeCache(subviews: [Subview]) -> Cache {
+        Cache()
+    }
+
+    public func updateCache(_ cache: inout Cache, subviews: [Subview]) {
+        cache.layout = nil
+    }
+
     public func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     ) -> Size {
         guard !subviews.isEmpty else { return .zero }
 
         let containerWidth = proposal.width ?? 10
         let layout = calculateLayout(
             subviews: subviews, width: containerWidth, availableHeight: proposal.height)
+        cache.layout = layout
 
         return Size(
             width: layout.maxWidth,
@@ -40,18 +54,18 @@ extension VStack {
 
     public func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     ) {
         guard !subviews.isEmpty else { return }
 
-        let layout = calculateLayout(
+        let layout = cache.layout ?? calculateLayout(
             subviews: subviews, width: bounds.width, availableHeight: bounds.height)
 
         var y = bounds.minY
         for (index, subview) in subviews.enumerated() {
             let itemLayout = layout.items[index]
 
-            // Calculate x position based on horizontal alignment
             let x =
                 bounds.minX
                 + alignmentOffset(

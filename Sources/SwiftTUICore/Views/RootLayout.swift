@@ -13,7 +13,8 @@ public struct RootLayout: Layout {
 
     public func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) -> Size {
         // RootLayout takes all available space
         proposal.replacingUnspecifiedDimensions()
@@ -21,7 +22,8 @@ public struct RootLayout: Layout {
 
     public func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) {
         guard !subviews.isEmpty else { return }
 

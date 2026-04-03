@@ -13,6 +13,7 @@ import Geometry
 @testable import SwiftTUICore
 
 @Suite("ForEach")
+@MainActor
 struct ForEachTests {
     @Test
     func `Static content`() async throws {

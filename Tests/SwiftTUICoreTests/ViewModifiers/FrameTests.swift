@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite(".frame")
+@MainActor
 struct FrameTests {
     // MARK: - Basic Frame Tests
 

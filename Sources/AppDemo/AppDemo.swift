@@ -40,7 +40,8 @@ struct BlackTilesLayout: Layout {
 
     func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) -> Size {
         let width: GeometryUnit = cellSize * 8
         let height: GeometryUnit = cellSize / 2 * 8
@@ -49,7 +50,8 @@ struct BlackTilesLayout: Layout {
 
     func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) {
         for (index, subview) in subviews.enumerated() {
             let row = index / 4

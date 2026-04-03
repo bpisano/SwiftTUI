@@ -13,6 +13,7 @@ import Geometry
 @testable import SwiftTUICore
 
 @Suite("ConditionalView")
+@MainActor
 struct ConditionalViewTests {
     @Test
     func `Static condition`() async throws {

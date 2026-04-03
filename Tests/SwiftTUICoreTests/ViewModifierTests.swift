@@ -12,7 +12,7 @@ import AttributeGraph
 import SwiftTUICore
 import AppKit
 
-@Test
+@Test @MainActor
 func `ViewModifier`() {
     @Attribute("Screen position") var position: Point = .zero
     @Attribute("Screen size") var size = Size(width: 20, height: 20)

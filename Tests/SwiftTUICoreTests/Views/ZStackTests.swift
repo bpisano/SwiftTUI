@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite("ZStack")
+@MainActor
 struct ZStackTests {
     @Test
     func `2 views on top of each other`() {

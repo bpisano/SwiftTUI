@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite(".padding")
+@MainActor
 struct PaddingTests {
     @Test
     func `Leading padding`() async throws {

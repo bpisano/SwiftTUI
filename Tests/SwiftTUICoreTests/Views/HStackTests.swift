@@ -13,6 +13,7 @@ import Testing
 @testable import SwiftTUICore
 
 @Suite("HStack")
+@MainActor
 struct HStackTests {
     // MARK: - Basic Layout Tests
 

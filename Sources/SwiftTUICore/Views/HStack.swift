@@ -24,9 +24,22 @@ public struct HStack: Layout {
 extension HStack {
     private static let flexibleWidthProbe: GeometryUnit = 10_000
 
+    public struct Cache {
+        fileprivate var layout: StackLayout?
+    }
+
+    public func makeCache(subviews: [Subview]) -> Cache {
+        Cache()
+    }
+
+    public func updateCache(_ cache: inout Cache, subviews: [Subview]) {
+        cache.layout = nil
+    }
+
     public func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     ) -> Size {
         guard !subviews.isEmpty else { return .zero }
 
@@ -36,6 +49,7 @@ extension HStack {
             height: containerHeight,
             availableWidth: proposal.width
         )
+        cache.layout = layout
 
         return Size(
             width: layout.totalWidth,
@@ -45,11 +59,12 @@ extension HStack {
 
     public func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Cache
     ) {
         guard !subviews.isEmpty else { return }
 
-        let layout = calculateLayout(
+        let layout = cache.layout ?? calculateLayout(
             subviews: subviews,
             height: bounds.height,
             availableWidth: bounds.width

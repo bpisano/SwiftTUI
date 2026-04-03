@@ -15,7 +15,8 @@ struct FrameLayout: Layout {
 
     func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) -> Size {
         guard let subview = subviews.first else { return .zero }
 
@@ -31,7 +32,8 @@ struct FrameLayout: Layout {
 
     func placeSubviews(
         in bounds: Rect,
-        subviews: [Subview]
+        subviews: [Subview],
+        cache: inout Void
     ) {
         guard let subview = subviews.first else { return }
 
