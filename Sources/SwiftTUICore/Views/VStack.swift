@@ -23,7 +23,13 @@ public struct VStack: Layout {
 
 extension VStack {
     public struct Cache {
-        fileprivate var layout: StackLayout?
+        // Most recently computed layout — consumed by placeSubviews.
+        fileprivate var activeLayout: StackLayout?
+        // Two-slot LRU: avoids recomputing sizeThatFits for proposals already seen
+        // this pass (e.g. natural probe + allocated-height pass from a parent stack).
+        // Cuts exponential blowup in nested flexible stacks to O(unique proposals × n).
+        fileprivate var slot0: (proposal: ProposedViewSize, layout: StackLayout)?
+        fileprivate var slot1: (proposal: ProposedViewSize, layout: StackLayout)?
     }
 
     public func makeCache(subviews: [Subview]) -> Cache {
@@ -31,7 +37,9 @@ extension VStack {
     }
 
     public func updateCache(_ cache: inout Cache, subviews: [Subview]) {
-        cache.layout = nil
+        cache.activeLayout = nil
+        cache.slot0 = nil
+        cache.slot1 = nil
     }
 
     public func sizeThatFits(
@@ -41,15 +49,28 @@ extension VStack {
     ) -> Size {
         guard !subviews.isEmpty else { return .zero }
 
+        // Slot 0 hit (most-recent proposal)
+        if let s = cache.slot0, s.proposal == proposal {
+            cache.activeLayout = s.layout
+            return Size(width: s.layout.maxWidth, height: s.layout.totalHeight)
+        }
+        // Slot 1 hit — promote to slot 0 (LRU eviction)
+        if let s = cache.slot1, s.proposal == proposal {
+            cache.slot1 = cache.slot0
+            cache.slot0 = s
+            cache.activeLayout = s.layout
+            return Size(width: s.layout.maxWidth, height: s.layout.totalHeight)
+        }
+
+        // Miss: compute, store in slot 0, evict slot 0 → slot 1
         let containerWidth = proposal.width ?? 10
         let layout = calculateLayout(
             subviews: subviews, width: containerWidth, availableHeight: proposal.height)
-        cache.layout = layout
+        cache.slot1 = cache.slot0
+        cache.slot0 = (proposal, layout)
+        cache.activeLayout = layout
 
-        return Size(
-            width: layout.maxWidth,
-            height: layout.totalHeight
-        )
+        return Size(width: layout.maxWidth, height: layout.totalHeight)
     }
 
     public func placeSubviews(
@@ -59,7 +80,7 @@ extension VStack {
     ) {
         guard !subviews.isEmpty else { return }
 
-        let layout = cache.layout ?? calculateLayout(
+        let layout = cache.activeLayout ?? calculateLayout(
             subviews: subviews, width: bounds.width, availableHeight: bounds.height)
 
         var y = bounds.minY
@@ -173,12 +194,14 @@ extension VStack {
 
 // MARK: - Helper Types
 
-private struct ItemLayout {
-    let size: Size
-}
-
-private struct StackLayout {
-    let items: [ItemLayout]
-    let totalHeight: GeometryUnit
-    let maxWidth: GeometryUnit
+private extension VStack {
+    struct ItemLayout {
+        let size: Size
+    }
+    
+    struct StackLayout {
+        let items: [ItemLayout]
+        let totalHeight: GeometryUnit
+        let maxWidth: GeometryUnit
+    }
 }

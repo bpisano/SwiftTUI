@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-public struct ProposedViewSize {
+public struct ProposedViewSize: Equatable {
     static let zero: Self = .init(width: nil, height: nil)
     static let infinity: Self = .init(width: .infinity, height: .infinity)
     static let unspecified: Self = .init(width: nil, height: nil)
