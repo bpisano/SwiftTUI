@@ -8,7 +8,7 @@
 import Foundation
 
 public final class Graph {
-    public static private(set) var current: Graph = .init()
+    public static nonisolated(unsafe) private(set) var current: Graph = .init()
 
     public var onInvalidate: (() -> Void)?
 

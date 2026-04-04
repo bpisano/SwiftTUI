@@ -16,17 +16,11 @@ let package = Package(
     targets: [
         .target(
             name: "AttributeGraph",
-            swiftSettings: [
-                .defaultIsolation(MainActor.self)
-            ]
         ),
         .target(name: "Geometry"),
         .target(
             name: "Terminal",
-            dependencies: ["Geometry"],
-            swiftSettings: [
-                .defaultIsolation(MainActor.self)
-            ]
+            dependencies: ["Geometry"]
         ),
         .target(
             name: "SwiftTUICore",
@@ -45,9 +39,6 @@ let package = Package(
                 "Terminal",
                 "SwiftTUICore",
             ],
-            swiftSettings: [
-                .defaultIsolation(MainActor.self)
-            ]
         ),
         .executableTarget(
             name: "AppDemo",

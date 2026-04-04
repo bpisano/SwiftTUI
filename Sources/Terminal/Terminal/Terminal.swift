@@ -6,6 +6,7 @@ import Foundation
     import Glibc
 #endif
 
+@MainActor
 public final class Terminal {
     public static let current: Terminal = .init()
 
@@ -23,7 +24,7 @@ public final class Terminal {
         }
     }
 
-    public static func make(command: some Command) -> String {
+    public static nonisolated func make(command: some Command) -> String {
         command.makeCommand()
     }
 

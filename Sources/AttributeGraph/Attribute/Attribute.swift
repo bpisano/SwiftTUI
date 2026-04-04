@@ -8,7 +8,7 @@
 import Foundation
 
 @propertyWrapper
-public struct Attribute<T>: @MainActor AnyAttribute {
+public struct Attribute<T>: AnyAttribute {
     public var wrappedValue: T {
         get {
             Graph.current.registerDependency(storage.ref)

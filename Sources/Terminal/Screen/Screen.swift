@@ -7,6 +7,7 @@ import Geometry
     import Glibc
 #endif
 
+@MainActor
 public final class Screen {
     public static let current: Screen = .init()
 

@@ -1,3 +1,3 @@
-public protocol Command {
+public nonisolated protocol Command {
     func makeCommand() -> String
 }
