@@ -34,18 +34,13 @@ struct TerminalRenderer {
         buffer: inout TerminalBuffer,
         with displayList: DisplayList
     ) {
-        for item in displayList.items {
+        var stack: [DisplayList.Item] = displayList.items.reversed()
+        while let item = stack.popLast() {
             switch item {
-            case let .childList(wrappedDisplayList):
-                fill(
-                    buffer: &buffer,
-                    with: wrappedDisplayList
-                )
+            case let .childList(child):
+                stack.append(contentsOf: child.items.reversed())
             case let .command(command):
-                fillCell(
-                    buffer: &buffer,
-                    with: command
-                )
+                fillCell(buffer: &buffer, with: command)
             }
         }
     }
@@ -58,7 +53,7 @@ struct TerminalRenderer {
         case let .putLine(line):
             buffer.putLine(line, at: command.frame.origin)
         case let .backgroundColor(color):
-            buffer.setBackgroundColor(color, at: command.frame.origin)
+            buffer.setBackgroundColor(color, in: command.frame)
         }
     }
 }

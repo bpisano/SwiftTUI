@@ -31,7 +31,7 @@ extension Text {
                     } else {
                         [text]
                     }
-                let maxWidth = lines.map { $0.count }.max() ?? 0
+                let maxWidth = lines.reduce(0) { max($0, $1.count) }
                 return Size(
                     width: Double(maxWidth),
                     height: Double(lines.count)

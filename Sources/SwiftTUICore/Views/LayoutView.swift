@@ -28,6 +28,7 @@ extension LayoutView {
         inputs: ViewInputs
     ) -> ViewOutputs {
         var childGeometries: Attribute<[ViewGeometry]>!
+        var engine: LayoutEngine<L>?
 
         let contentAttribute: Attribute<Content> = view.map(\.content)
         let viewListInputs: ViewListInputs = .init(viewInputs: inputs)
@@ -61,20 +62,15 @@ extension LayoutView {
             return makeViewOutputs(modifiedInputs)
         }
 
-        // The engine is created once and captured by the attribute closure.
-        // Subsequent re-evaluations call update() instead of makeCache(),
-        // so the cache survives graph invalidations.
-        var engine: LayoutEngine<L>?
-
         let layoutComputer = Attribute("\(Content.self) LayoutComputer") {
             let layout: L = view.wrappedValue.layout
-            let children: [LayoutComputer] = contentViewOutputs.wrappedValue
-                .map(\.layoutComputer.wrappedValue)
+            let childAttributes: [Attribute<LayoutComputer>] = contentViewOutputs.wrappedValue
+                .map(\.layoutComputer)
 
             if let existing = engine {
-                existing.update(layout: layout, subviews: children)
+                existing.update(layout: layout, subviewAttributes: childAttributes)
             } else {
-                engine = LayoutEngine(layout: layout, subviews: children)
+                engine = LayoutEngine(layout: layout, subviewAttributes: childAttributes)
             }
 
             return engine!.makeLayoutComputer()

@@ -44,32 +44,79 @@ extension ViewOutputs {
             fatalError("Cannot combine an empty array of ViewOutputs")
         }
 
+        // Shared cache: stores the child sizes from the last sizeThatFits call.
+        // `viewGeometries` reuses them when the proposal width matches, avoiding
+        // a redundant second round of sizeThatFits calls.
+        final class SizeCache {
+            var lastWidth: GeometryUnit = .nan
+            var childSizes: [Size] = []
+        }
+        let sizeCache = SizeCache()
+
         let combinedLayoutComputer = Attribute {
-            LayoutComputer { proposal in
-                let childSizes: [Size] = viewOutputs.map {
-                    $0.layoutComputer.wrappedValue.sizeThatFits(proposal)
+            // Resolve child LayoutComputers once per attribute invalidation,
+            // inside the Attribute rule body where dependency registration occurs.
+            // This avoids repeated graph traversal on every sizeThatFits / viewGeometries call.
+            let computers = viewOutputs.map { $0.layoutComputer.wrappedValue }
+
+            return LayoutComputer { [sizeCache] proposal in
+                var totalHeight: GeometryUnit = 0
+                var maxWidth: GeometryUnit = 0
+                var sizes = [Size](repeating: .zero, count: computers.count)
+
+                for i in 0..<computers.count {
+                    let size = computers[i].sizeThatFits(proposal)
+                    sizes[i] = size
+                    totalHeight += size.height
+                    if size.width > maxWidth { maxWidth = size.width }
                 }
-                let totalHeight: GeometryUnit = childSizes.reduce(0.0) { $0 + $1.height }
-                let maxWidth: GeometryUnit = childSizes.map(\.width).max() ?? 0
-                return .init(width: maxWidth, height: totalHeight)
-            } viewGeometries: { rect in
-                var currentY: Double = rect.origin.y
-                return viewOutputs.enumerated().flatMap { index, output in
-                    let childSize: Size = output.layoutComputer.wrappedValue.sizeThatFits(
-                        .init(width: rect.size.width, height: nil)
-                    )
-                    let childRect: Rect = .init(
+
+                // Cache for potential reuse in viewGeometries when
+                // the available width matches.
+                sizeCache.lastWidth = proposal.width ?? .nan
+                sizeCache.childSizes = sizes
+
+                return Size(width: maxWidth, height: totalHeight)
+            } viewGeometries: { [sizeCache] rect in
+                // Reuse sizes from the last sizeThatFits if the width matches —
+                // viewGeometries always proposes (width, nil) to children, so
+                // width is the only variable that matters for cache validity.
+                let childSizes: [Size]
+                if rect.width == sizeCache.lastWidth,
+                   sizeCache.childSizes.count == computers.count {
+                    childSizes = sizeCache.childSizes
+                } else {
+                    let proposal = ProposedViewSize(width: rect.width, height: nil)
+                    var sizes = [Size](repeating: .zero, count: computers.count)
+                    for i in 0..<computers.count {
+                        sizes[i] = computers[i].sizeThatFits(proposal)
+                    }
+                    childSizes = sizes
+                }
+
+                var currentY = rect.origin.y
+                var geometries = [ViewGeometry]()
+                geometries.reserveCapacity(computers.count)
+
+                for i in 0..<computers.count {
+                    let childRect = Rect(
                         origin: Point(x: rect.origin.x, y: currentY),
-                        size: childSize
+                        size: childSizes[i]
                     )
-                    currentY += childSize.height
-                    return output.layoutComputer.wrappedValue.viewGeometries(childRect)
+                    currentY += childSizes[i].height
+                    geometries.append(contentsOf: computers[i].viewGeometries(childRect))
                 }
+                return geometries
             }
         }
 
         let combinedDisplayList = Attribute {
-            DisplayList(viewOutputs.flatMap { $0.displayList.wrappedValue.items })
+            var items = [DisplayList.Item]()
+            items.reserveCapacity(viewOutputs.count)
+            for output in viewOutputs {
+                items.append(contentsOf: output.displayList.wrappedValue.items)
+            }
+            return DisplayList(items)
         }
 
         return ViewOutputs(

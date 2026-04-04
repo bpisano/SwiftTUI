@@ -10,12 +10,10 @@ import Geometry
 import Terminal
 
 struct TerminalBuffer: Sendable {
-    typealias Frame = [[TerminalBufferCell]]
-
     let configuration: RenderingConfiguration
     let size: Size
 
-    private var frame: Frame
+    private var cells: [TerminalBufferCell]
 
     init(
         configuration: RenderingConfiguration,
@@ -23,39 +21,82 @@ struct TerminalBuffer: Sendable {
     ) {
         self.configuration = configuration
         self.size = size
-        self.frame = Array(
-            repeating: Array(
-                repeating: TerminalBufferCell(configuration.emptyChar),
-                count: Int(size.width)
-            ),
-            count: Int(size.height)
+        self.cells = Array(
+            repeating: TerminalBufferCell(configuration.emptyChar),
+            count: Int(size.width) * Int(size.height)
         )
     }
 
     mutating func putLine(_ line: String, at origin: Point) {
         guard origin.y >= 0 && origin.y < size.height else { return }
-        let rowIndex: Int = Int(origin.y)
+        let row: Int = Int(origin.y)
+        let width: Int = Int(size.width)
         for (i, character) in line.enumerated() {
-            let columnIndex: Int = Int(origin.x) + i
-            guard columnIndex >= 0 && columnIndex < Int(size.width) else { continue }
-            frame[rowIndex][columnIndex].setCharacter(character)
+            let col: Int = Int(origin.x) + i
+            guard col >= 0 && col < width else { continue }
+            cells[row * width + col].setCharacter(character)
         }
     }
 
-    mutating func setBackgroundColor(_ color: ANSIColor, at origin: Point) {
-        guard origin.y >= 0 && origin.y < size.height else { return }
-        guard origin.x >= 0 && origin.x < size.width else { return }
-        let rowIndex: Int = Int(origin.y)
-        let columnIndex: Int = Int(origin.x)
-        frame[rowIndex][columnIndex].setBackgroundColor(color)
-        frame[rowIndex][columnIndex].setCharacter(" ")
+    mutating func setBackgroundColor(_ color: ANSIColor, in rect: Rect) {
+        let startRow: Int = max(0, Int(rect.origin.y))
+        let endRow: Int = min(Int(size.height), Int(rect.origin.y + rect.size.height))
+        let startCol: Int = max(0, Int(rect.origin.x))
+        let endCol: Int = min(Int(size.width), Int(rect.origin.x + rect.size.width))
+
+        for row in startRow..<endRow {
+            let base: Int = row * Int(size.width)
+            for col in startCol..<endCol {
+                cells[base + col].setBackgroundColor(color)
+            }
+        }
     }
 
     func makeStringFrame() -> String {
-        frame.map { row in
-            row.map { cell in
-                cell.stringValue(includeColors: configuration.renderColor)
-            }.joined()
-        }.joined(separator: configuration.lineJoinSeparator)
+        let width: Int = Int(size.width)
+        let height: Int = Int(size.height)
+        let includeColors: Bool = configuration.renderColor
+
+        var result: String = ""
+        result.reserveCapacity(width * height + height * configuration.lineJoinSeparator.count)
+
+        if includeColors {
+            var activeForeground: ANSIColor = .default
+            var activeBackground: ANSIColor = .default
+
+            for row in 0..<height {
+                let base = row * width
+                for col in 0..<width {
+                    let cell = cells[base + col]
+                    if cell.foregroundColor != activeForeground {
+                        result += cell.foregroundColor.foregroundCode
+                        activeForeground = cell.foregroundColor
+                    }
+                    if cell.backgroundColor != activeBackground {
+                        result += cell.backgroundColor.backgroundCode
+                        activeBackground = cell.backgroundColor
+                    }
+                    result.append(cell.character)
+                }
+                if row < height - 1 {
+                    result += configuration.lineJoinSeparator
+                }
+            }
+
+            if activeForeground != .default { result += ANSIColor.default.foregroundCode }
+            if activeBackground != .default { result += ANSIColor.default.backgroundCode }
+        } else {
+            for row in 0..<height {
+                let base = row * width
+                for col in 0..<width {
+                    result.append(cells[base + col].character)
+                }
+                if row < height - 1 {
+                    result += configuration.lineJoinSeparator
+                }
+            }
+        }
+
+        return result
     }
 }

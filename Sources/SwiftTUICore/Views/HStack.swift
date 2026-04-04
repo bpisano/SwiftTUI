@@ -110,58 +110,76 @@ extension HStack {
         height: GeometryUnit,
         availableWidth: GeometryUnit?
     ) -> StackLayout {
-        let viewInfo = subviews.map { subview -> ViewInfo in
-            let naturalSize = subview.size(in: ProposedViewSize(width: nil, height: height))
-            let expandedSize = subview.size(
-                in: ProposedViewSize(width: Self.flexibleWidthProbe, height: height)
-            )
-            let isFlexible =
-                expandedSize.width.isInfinite || expandedSize.width > naturalSize.width + 0.001
+        let count = subviews.count
 
-            return ViewInfo(
-                isFlexible: isFlexible,
-                naturalSize: naturalSize,
-                minimumWidth: isFlexible ? 0 : naturalSize.width
-            )
+        // Pre-allocate both output arrays up front — one allocation each
+        // instead of building intermediate arrays with chained .map calls.
+        struct MeasuredView {
+            var naturalSize: Size
+            var isFlexible: Bool
+        }
+        var measured = [MeasuredView](
+            repeating: MeasuredView(naturalSize: .zero, isFlexible: false),
+            count: count
+        )
+        var items = [ItemLayout](repeating: ItemLayout(size: .zero), count: count)
+
+        // --- Pass 1: natural + expanded measurement, inline accumulation ---
+        // Accumulate flexibleCount and minimumWidth in-loop — no separate
+        // filter { }.count or reduce passes, and no temporary arrays.
+        var minimumWidth: GeometryUnit = spacing * GeometryUnit(max(0, count - 1))
+        var flexibleCount: Int = 0
+
+        for i in 0..<count {
+            let natural = subviews[i].size(in: ProposedViewSize(width: nil, height: height))
+            let expandedWidth = subviews[i].size(
+                in: ProposedViewSize(width: Self.flexibleWidthProbe, height: height)
+            ).width
+            let isFlexible = expandedWidth.isInfinite || expandedWidth > natural.width + 0.001
+
+            measured[i] = MeasuredView(naturalSize: natural, isFlexible: isFlexible)
+
+            if isFlexible {
+                flexibleCount += 1
+            } else {
+                minimumWidth += natural.width
+            }
         }
 
-        let totalSpacing = spacing * GeometryUnit(max(0, subviews.count - 1))
-        let minimumWidth = viewInfo.reduce(0) { $0 + $1.minimumWidth } + totalSpacing
-        let flexibleCount = viewInfo.filter { $0.isFlexible }.count
-
+        // --- Width distribution ---
         let finalWidth: GeometryUnit
-        if flexibleCount > 0, let availableWidth, availableWidth.isFinite {
-            finalWidth = max(minimumWidth, availableWidth)
+        if flexibleCount > 0, let w = availableWidth, w.isFinite {
+            finalWidth = max(minimumWidth, w)
         } else {
             finalWidth = minimumWidth
         }
+        let extraPerFlexible: GeometryUnit =
+            flexibleCount > 0
+            ? max(0, finalWidth - minimumWidth) / GeometryUnit(flexibleCount)
+            : 0
 
-        let extraSpace = max(0, finalWidth - minimumWidth)
-        let extraPerFlexible = flexibleCount > 0 ? extraSpace / GeometryUnit(flexibleCount) : 0
-
-        let items = zip(subviews, viewInfo).map { subview, info -> ItemLayout in
-            let width = info.minimumWidth + (info.isFlexible ? extraPerFlexible : 0)
-            let size = subview.size(in: ProposedViewSize(width: width, height: height))
-            return ItemLayout(size: size)
+        // --- Pass 2: final sizes + inline maxHeight tracking ---
+        // Non-flexible children reuse naturalSize — their size doesn't change
+        // with the proposed width, so the 3rd size() call is unnecessary.
+        // This reduces total size() calls from 3n → 2n (all-fixed) or 2n+k (mixed).
+        var maxHeight: GeometryUnit = 0
+        for i in 0..<count {
+            let m = measured[i]
+            let size: Size
+            if m.isFlexible {
+                size = subviews[i].size(in: ProposedViewSize(width: extraPerFlexible, height: height))
+            } else {
+                size = m.naturalSize
+            }
+            items[i] = ItemLayout(size: size)
+            if size.height > maxHeight { maxHeight = size.height }
         }
 
-        let maxHeight = items.map { $0.size.height }.max() ?? 0
-
-        return StackLayout(
-            items: items,
-            totalWidth: finalWidth,
-            maxHeight: maxHeight
-        )
+        return StackLayout(items: items, totalWidth: finalWidth, maxHeight: maxHeight)
     }
 }
 
 // MARK: - Helper Types
-
-private struct ViewInfo {
-    let isFlexible: Bool
-    let naturalSize: Size
-    let minimumWidth: GeometryUnit
-}
 
 private struct ItemLayout {
     let size: Size

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  PaddingLayout.swift
 //  SwiftTUI
 //
 //  Created by Benjamin Pisano on 29/03/2026.
@@ -11,46 +11,54 @@ import Geometry
 struct PaddingLayout: Layout {
     let edges: Edge.Set
     let length: GeometryUnit
+}
+
+extension PaddingLayout {
+    struct Cache {
+        let insets: Insets
+        var childSize: Size?
+    }
+
+    func makeCache(subviews: [Subview]) -> Cache {
+        Cache(insets: resolvedInsets, childSize: nil)
+    }
+
+    func updateCache(_ cache: inout Cache, subviews: [Subview]) {
+        cache.childSize = nil
+    }
 
     func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: [Subview],
-        cache: inout Void
+        cache: inout Cache
     ) -> Size {
         guard let subview = subviews.first else { return .zero }
 
-        let insets = resolvedInsets
-        let childProposal = reducedProposal(from: proposal, by: insets)
+        let childProposal = reducedProposal(from: proposal, by: cache.insets)
         let childSize = subview.size(in: childProposal)
+        cache.childSize = childSize
 
         return Size(
-            width: childSize.width + insets.horizontal,
-            height: childSize.height + insets.vertical
+            width: childSize.width + cache.insets.horizontal,
+            height: childSize.height + cache.insets.vertical
         )
     }
 
     func placeSubviews(
         in bounds: Rect,
         subviews: [Subview],
-        cache: inout Void
+        cache: inout Cache
     ) {
         guard let subview = subviews.first else { return }
 
-        let insets = resolvedInsets
-        let childBounds = inset(bounds, by: insets)
-        let childSize = subview.size(in: ProposedViewSize(childBounds.size))
+        let childBounds = inset(bounds, by: cache.insets)
+        let childSize = cache.childSize ?? subview.size(in: ProposedViewSize(childBounds.size))
 
-        subview.place(
-            in: Rect(
-                origin: childBounds.origin,
-                size: childSize
-            )
-        )
+        subview.place(in: Rect(origin: childBounds.origin, size: childSize))
     }
 }
 
 extension PaddingLayout {
-    /// Convert the selected edges into the concrete inset values used by the layout.
     private var resolvedInsets: Insets {
         Insets(
             top: edges.contains(.top) ? length : 0,
@@ -60,8 +68,6 @@ extension PaddingLayout {
         )
     }
 
-    /// Reduce the parent proposal before measuring the child so the reserved padding stays
-    /// outside of the child’s measured content size.
     private func reducedProposal(
         from proposal: ProposedViewSize,
         by insets: Insets
@@ -72,16 +78,9 @@ extension PaddingLayout {
         )
     }
 
-    /// Expose the remaining drawable area once the padding has been removed from the bounds.
-    private func inset(
-        _ rect: Rect,
-        by insets: Insets
-    ) -> Rect {
+    private func inset(_ rect: Rect, by insets: Insets) -> Rect {
         Rect(
-            origin: Point(
-                x: rect.minX + insets.leading,
-                y: rect.minY + insets.top
-            ),
+            origin: Point(x: rect.minX + insets.leading, y: rect.minY + insets.top),
             size: Size(
                 width: max(0, rect.width - insets.horizontal),
                 height: max(0, rect.height - insets.vertical)
@@ -90,17 +89,12 @@ extension PaddingLayout {
     }
 }
 
-private struct Insets {
+struct Insets {
     let top: GeometryUnit
     let leading: GeometryUnit
     let bottom: GeometryUnit
     let trailing: GeometryUnit
 
-    var horizontal: GeometryUnit {
-        leading + trailing
-    }
-
-    var vertical: GeometryUnit {
-        top + bottom
-    }
+    var horizontal: GeometryUnit { leading + trailing }
+    var vertical: GeometryUnit { top + bottom }
 }

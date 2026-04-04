@@ -10,9 +10,9 @@ import Geometry
 import Terminal
 
 struct TerminalBufferCell: Sendable {
-    private var character: Character
-    private var foregroundColor: ANSIColor = .default
-    private var backgroundColor: ANSIColor = .default
+    var character: Character
+    var foregroundColor: ANSIColor = .default
+    var backgroundColor: ANSIColor = .default
 
     init(_ character: Character) {
         self.character = character

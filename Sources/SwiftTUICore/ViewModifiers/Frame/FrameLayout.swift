@@ -12,18 +12,31 @@ struct FrameLayout: Layout {
     let width: GeometryUnit?
     let height: GeometryUnit?
     let alignment: Alignment
+}
+
+extension FrameLayout {
+    struct Cache {
+        var childSize: Size?
+    }
+
+    func makeCache(subviews: [Subview]) -> Cache {
+        Cache()
+    }
+
+    func updateCache(_ cache: inout Cache, subviews: [Subview]) {
+        cache.childSize = nil
+    }
 
     func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: [Subview],
-        cache: inout Void
+        cache: inout Cache
     ) -> Size {
         guard let subview = subviews.first else { return .zero }
 
-        // Propose frame constraints to child
         let childSize = subview.size(in: ProposedViewSize(width: width, height: height))
+        cache.childSize = childSize
 
-        // Frame size is specified dimensions, or child size if unspecified
         return Size(
             width: width ?? childSize.width,
             height: height ?? childSize.height
@@ -33,40 +46,31 @@ struct FrameLayout: Layout {
     func placeSubviews(
         in bounds: Rect,
         subviews: [Subview],
-        cache: inout Void
+        cache: inout Cache
     ) {
         guard let subview = subviews.first else { return }
 
-        // Get child size with frame constraints
-        let childSize = subview.size(in: ProposedViewSize(width: width, height: height))
+        let childSize = cache.childSize ?? subview.size(in: ProposedViewSize(width: width, height: height))
 
-        // Frame dimensions (specified or fill bounds)
         let frameWidth = width ?? bounds.width
         let frameHeight = height ?? bounds.height
 
-        // Calculate position based on alignment within the frame
-        let x =
-            bounds.minX
-            + alignmentOffset(
-                childValue: childSize.width,
-                containerValue: frameWidth,
-                alignment: alignment.horizontal,
-                hasConstraint: width != nil
-            )
-
-        let y =
-            bounds.minY
-            + alignmentOffset(
-                childValue: childSize.height,
-                containerValue: frameHeight,
-                alignment: alignment.vertical,
-                hasConstraint: height != nil
-            )
+        let x = bounds.minX + alignmentOffset(
+            childValue: childSize.width,
+            containerValue: frameWidth,
+            alignment: alignment.horizontal,
+            hasConstraint: width != nil
+        )
+        let y = bounds.minY + alignmentOffset(
+            childValue: childSize.height,
+            containerValue: frameHeight,
+            alignment: alignment.vertical,
+            hasConstraint: height != nil
+        )
 
         subview.place(in: Rect(origin: Point(x: x, y: y), size: childSize))
     }
 
-    /// Calculate alignment offset for horizontal axis
     private func alignmentOffset(
         childValue: GeometryUnit,
         containerValue: GeometryUnit,
@@ -74,15 +78,11 @@ struct FrameLayout: Layout {
         hasConstraint: Bool
     ) -> GeometryUnit {
         guard hasConstraint else { return 0 }
-
         let childDimensions = ViewDimensions(size: Size(width: childValue, height: 0))
         let containerDimensions = ViewDimensions(size: Size(width: containerValue, height: 0))
-
-        return alignment.key.id.defaultValue(in: containerDimensions)
-            - alignment.key.id.defaultValue(in: childDimensions)
+        return alignment.key.id.defaultValue(in: containerDimensions) - alignment.key.id.defaultValue(in: childDimensions)
     }
 
-    /// Calculate alignment offset for vertical axis
     private func alignmentOffset(
         childValue: GeometryUnit,
         containerValue: GeometryUnit,
@@ -90,11 +90,8 @@ struct FrameLayout: Layout {
         hasConstraint: Bool
     ) -> GeometryUnit {
         guard hasConstraint else { return 0 }
-
         let childDimensions = ViewDimensions(size: Size(width: 0, height: childValue))
         let containerDimensions = ViewDimensions(size: Size(width: 0, height: containerValue))
-
-        return alignment.key.id.defaultValue(in: containerDimensions)
-            - alignment.key.id.defaultValue(in: childDimensions)
+        return alignment.key.id.defaultValue(in: containerDimensions) - alignment.key.id.defaultValue(in: childDimensions)
     }
 }

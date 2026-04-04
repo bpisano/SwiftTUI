@@ -6,35 +6,66 @@
 //
 
 import Foundation
+import AttributeGraph
 import Geometry
 
 /// Stateful wrapper around a `Layout` that owns the cache for its lifetime.
 ///
-/// `LayoutEngine` is created once per layout node in the attribute graph and
-/// reused across re-evaluations. `makeCache` is called once on init;
-/// `updateCache` is called on every subsequent re-evaluation, so the cache
-/// survives graph invalidations without being discarded.
+/// Mirrors OpenSwiftUI's `ViewLayoutEngine<L>` stored inside `StaticLayoutComputer`.
+/// The engine is created once per layout node and reused across re-evaluations.
+/// `makeCache` is called **exactly once** at init; `updateCache` is called on
+/// subsequent updates.
+///
+/// Child subviews are stored as **lazy providers** (`() -> LayoutComputer`), matching
+/// OpenSwiftUI's `LayoutProxyAttributes` model where child `layoutComputer` attributes
+/// are stored by reference and resolved only when `sizeThatFits`/`placeSubviews` runs.
+/// This prevents eager recursion through the entire view tree when the parent's
+/// `layoutComputer` attribute is first evaluated.
 final class LayoutEngine<L: Layout> {
     private var layout: L
     private var cache: L.Cache
     private var proxies: [LayoutProxy] = []
-    private var geometries: [ViewGeometry] = []
+    private var geometryStore = GeometryStore()
 
+    /// Attribute-backed init used by `LayoutView.makeView`.
+    ///
+    /// Child layout computers are resolved lazily via `attribute.wrappedValue`
+    /// when layout actually runs, so evaluating the parent attribute does not
+    /// recursively evaluate the entire subtree.
+    init(layout: L, subviewAttributes: [Attribute<LayoutComputer>]) {
+        self.layout = layout
+        let (proxies, store) = Self.buildSubviews(subviewAttributes.map { attr in { attr.wrappedValue } })
+        self.proxies = proxies
+        self.geometryStore = store
+        self.cache = layout.makeCache(subviews: proxies)
+    }
+
+    /// Direct-value init used by the existential `layoutComputer(for:)` path.
+    ///
+    /// Values are already resolved at the call site, so no recursion risk.
     init(layout: L, subviews: [LayoutComputer]) {
         self.layout = layout
-        // Initialise cache with a placeholder so all stored properties are set
-        // before calling instance methods (Swift two-phase init requirement).
-        self.cache = layout.makeCache(subviews: [])
-        setSubviews(subviews)
-        // Real makeCache now that proxies are built.
+        let (proxies, store) = Self.buildSubviews(subviews.map { comp in { comp } })
+        self.proxies = proxies
+        self.geometryStore = store
         self.cache = layout.makeCache(subviews: proxies)
     }
 
     /// Called on every re-evaluation of the `layoutComputer` attribute node.
-    /// Updates internal state without reallocating the cache from scratch.
+    func update(layout: L, subviewAttributes: [Attribute<LayoutComputer>]) {
+        self.layout = layout
+        let (proxies, store) = Self.buildSubviews(subviewAttributes.map { attr in { attr.wrappedValue } })
+        self.proxies = proxies
+        self.geometryStore = store
+        layout.updateCache(&cache, subviews: proxies)
+    }
+
+    /// Direct-value update used by the existential path and performance tests.
     func update(layout: L, subviews: [LayoutComputer]) {
         self.layout = layout
-        setSubviews(subviews)
+        let (proxies, store) = Self.buildSubviews(subviews.map { comp in { comp } })
+        self.proxies = proxies
+        self.geometryStore = store
         layout.updateCache(&cache, subviews: proxies)
     }
 
@@ -44,22 +75,42 @@ final class LayoutEngine<L: Layout> {
         LayoutComputer { [self] proposal in
             layout.sizeThatFits(proposal: proposal, subviews: proxies, cache: &cache)
         } viewGeometries: { [self] rect in
-            // Uncomment the next line to disable within-pass cache sharing
-            // (forces `placeSubviews` to recalculate instead of reading from cache):
-            // var freshCache = layout.makeCache(subviews: proxies)
             layout.placeSubviews(in: rect, subviews: proxies, cache: &cache)
-            return geometries
+            return geometryStore.items
         }
     }
 
     // MARK: - Private
 
-    private func setSubviews(_ subviews: [LayoutComputer]) {
-        geometries = Array(repeating: .zero, count: subviews.count)
-        proxies = subviews.enumerated().map { index, computer in
-            LayoutProxy(layoutComputer: computer) { [weak self] rect in
-                self?.geometries[index] = rect
+    /// Builds proxies from lazy providers without requiring `self` to exist yet.
+    ///
+    /// Each proxy captures a `GeometryStore` — a reference type — so that
+    /// `place(in:)` can safely write geometry results without a `[weak self]`
+    /// back-reference. This lets `makeCache` be called **once** with the real
+    /// proxy array rather than needing a placeholder empty-array call first.
+    private static func buildSubviews(
+        _ providers: [() -> LayoutComputer]
+    ) -> ([LayoutProxy], GeometryStore) {
+        let store = GeometryStore(count: providers.count)
+        let proxies = providers.enumerated().map { index, provider in
+            LayoutProxy(computerProvider: provider) { rect in
+                store.items[index] = rect
             }
         }
+        return (proxies, store)
+    }
+}
+
+// MARK: - GeometryStore
+
+/// Reference-type container for per-child geometry results.
+///
+/// Captured by proxy `place` closures so that writes survive after `buildSubviews`
+/// returns — without requiring a `[weak self]` back-reference to `LayoutEngine`.
+private final class GeometryStore {
+    var items: [ViewGeometry]
+
+    init(count: Int = 0) {
+        items = Array(repeating: .zero, count: count)
     }
 }

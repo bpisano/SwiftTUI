@@ -36,28 +36,11 @@ extension Color {
             let layoutComputer: LayoutComputer = layoutComputer.wrappedValue
             let colorGeometries: [ViewGeometry] = layoutComputer.viewGeometries(inputs.frame)
             let colorGeometry: ViewGeometry = colorGeometries[0]
-
-            var x: GeometryUnit = colorGeometry.origin.x
-            var y: GeometryUnit = colorGeometry.origin.y
-            var commands: [DisplayList.Command] = []
-
-            for _ in 0..<Int(colorGeometry.size.height) {
-                for _ in 0..<Int(colorGeometry.size.width) {
-                    let origin: Point = .init(x: x, y: y)
-                    let size: Size = .init(width: 1, height: 1)
-                    let commandFrame: Rect = .init(origin: origin, size: size)
-                    let command: DisplayList.Command = .init(
-                        .backgroundColor(ansiColor),
-                        in: commandFrame
-                    )
-                    commands.append(command)
-                    x += 1
-                }
-                x = colorGeometry.origin.x
-                y += 1
-            }
-
-            return DisplayList(commands: commands)
+            let command: DisplayList.Command = .init(
+                .backgroundColor(ansiColor),
+                in: colorGeometry
+            )
+            return DisplayList(commands: [command])
         }
 
         return .init(

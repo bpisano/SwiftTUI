@@ -97,67 +97,81 @@ extension VStack {
             - alignment.key.id.defaultValue(in: childDimensions)
     }
 
-    /// Calculate the layout for all children
     private func calculateLayout(
         subviews: [Subview],
         width: GeometryUnit,
         availableHeight: GeometryUnit?
     ) -> StackLayout {
-        // Determine which views are flexible
-        let viewInfo = subviews.map { subview -> ViewInfo in
-            let naturalSize = subview.size(in: ProposedViewSize(width: width, height: nil))
-            let expandedSize = subview.size(in: ProposedViewSize(width: width, height: .infinity))
-            let isFlexible =
-                expandedSize.height.isInfinite || expandedSize.height > naturalSize.height + 0.001
+        let count = subviews.count
 
-            return ViewInfo(
-                isFlexible: isFlexible,
-                naturalSize: naturalSize,
-                minimumHeight: isFlexible ? 0 : naturalSize.height
-            )
+        // Pre-allocate both output arrays up front — one allocation each
+        // instead of building intermediate arrays with chained .map calls.
+        struct MeasuredView {
+            var naturalSize: Size
+            var isFlexible: Bool
+        }
+        var measured = [MeasuredView](
+            repeating: MeasuredView(naturalSize: .zero, isFlexible: false),
+            count: count
+        )
+        var items = [ItemLayout](repeating: ItemLayout(size: .zero), count: count)
+
+        // --- Pass 1: natural + expanded measurement, inline accumulation ---
+        // Accumulate flexibleCount and minimumHeight in-loop — no separate
+        // filter { }.count or reduce passes, and no temporary arrays.
+        var minimumHeight: GeometryUnit = spacing * GeometryUnit(max(0, count - 1))
+        var flexibleCount: Int = 0
+
+        for i in 0..<count {
+            let natural = subviews[i].size(in: ProposedViewSize(width: width, height: nil))
+            let expandedHeight = subviews[i].size(
+                in: ProposedViewSize(width: width, height: .infinity)
+            ).height
+            let isFlexible = expandedHeight.isInfinite || expandedHeight > natural.height + 0.001
+
+            measured[i] = MeasuredView(naturalSize: natural, isFlexible: isFlexible)
+
+            if isFlexible {
+                flexibleCount += 1
+            } else {
+                minimumHeight += natural.height
+            }
         }
 
-        // Calculate space distribution
-        let totalSpacing = spacing * GeometryUnit(max(0, subviews.count - 1))
-        let minimumHeight = viewInfo.reduce(0) { $0 + $1.minimumHeight } + totalSpacing
-        let flexibleCount = viewInfo.filter { $0.isFlexible }.count
-
-        // Determine final height
+        // --- Height distribution ---
         let finalHeight: GeometryUnit
-        if flexibleCount > 0, let availableHeight, availableHeight.isFinite {
-            finalHeight = max(minimumHeight, availableHeight)
+        if flexibleCount > 0, let h = availableHeight, h.isFinite {
+            finalHeight = max(minimumHeight, h)
         } else {
             finalHeight = minimumHeight
         }
+        let extraPerFlexible: GeometryUnit =
+            flexibleCount > 0
+            ? max(0, finalHeight - minimumHeight) / GeometryUnit(flexibleCount)
+            : 0
 
-        // Distribute extra space to flexible views
-        let extraSpace = max(0, finalHeight - minimumHeight)
-        let extraPerFlexible = flexibleCount > 0 ? extraSpace / GeometryUnit(flexibleCount) : 0
-
-        // Calculate final sizes
-        let items = zip(subviews, viewInfo).map { subview, info -> ItemLayout in
-            let height = info.minimumHeight + (info.isFlexible ? extraPerFlexible : 0)
-            let size = subview.size(in: ProposedViewSize(width: width, height: height))
-            return ItemLayout(size: size)
+        // --- Pass 2: final sizes + inline maxWidth tracking ---
+        // Non-flexible children reuse naturalSize — their size doesn't change
+        // with the proposed height, so the 3rd size() call is unnecessary.
+        // This reduces total size() calls from 3n → 2n (all-fixed) or 2n+k (mixed).
+        var maxWidth: GeometryUnit = 0
+        for i in 0..<count {
+            let m = measured[i]
+            let size: Size
+            if m.isFlexible {
+                size = subviews[i].size(in: ProposedViewSize(width: width, height: extraPerFlexible))
+            } else {
+                size = m.naturalSize
+            }
+            items[i] = ItemLayout(size: size)
+            if size.width > maxWidth { maxWidth = size.width }
         }
 
-        let maxWidth = items.map { $0.size.width }.max() ?? 0
-
-        return StackLayout(
-            items: items,
-            totalHeight: finalHeight,
-            maxWidth: maxWidth
-        )
+        return StackLayout(items: items, totalHeight: finalHeight, maxWidth: maxWidth)
     }
 }
 
 // MARK: - Helper Types
-
-private struct ViewInfo {
-    let isFlexible: Bool
-    let naturalSize: Size
-    let minimumHeight: GeometryUnit
-}
 
 private struct ItemLayout {
     let size: Size
