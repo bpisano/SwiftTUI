@@ -34,10 +34,12 @@ public protocol Layout {
 }
 
 extension Layout {
+    @MainActor
     public func callAsFunction<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         LayoutView(layout: self, content: content())
     }
 
+    @MainActor
     func layoutComputer(for subviews: [LayoutComputer]) -> LayoutComputer {
         LayoutEngine(layout: self, subviews: subviews).makeLayoutComputer()
     }

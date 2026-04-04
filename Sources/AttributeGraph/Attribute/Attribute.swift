@@ -252,7 +252,7 @@ public struct Attribute<T>: AnyAttribute {
 }
 
 extension Attribute {
-    final class Storage {
+    final class Storage: @unchecked Sendable {
         var id: UUID = .init()
         var ref: AttributeRef!
         var flags: AttributeFlags = []
@@ -314,8 +314,6 @@ extension String {
     }
 }
 
-// MARK: - Equatable-constrained inits
-
 extension Attribute where T: Equatable {
     public init(
         wrappedValue: @autoclosure @escaping () -> T,
@@ -355,3 +353,5 @@ extension Attribute where T: Equatable {
         self.init(label, rule: ComputedRule(compute))
     }
 }
+
+extension Attribute: Sendable where T: Sendable {}

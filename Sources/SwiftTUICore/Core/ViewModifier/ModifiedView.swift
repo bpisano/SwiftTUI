@@ -53,7 +53,7 @@ extension ModifiedView {
     }
 }
 
-extension ModifiedView: AttributeValueRepresentable {
+extension ModifiedView: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
         "ModifiedView"
     }

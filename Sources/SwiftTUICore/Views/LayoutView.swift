@@ -110,7 +110,7 @@ extension LayoutView {
     }
 }
 
-extension LayoutView: AttributeValueRepresentable {
+extension LayoutView: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
         "LayoutView"
     }

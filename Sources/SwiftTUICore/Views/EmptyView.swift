@@ -43,7 +43,7 @@ extension EmptyView {
     }
 }
 
-extension EmptyView: AttributeValueRepresentable {
+extension EmptyView: @MainActor AttributeValueRepresentable {
     public var attributeValueDescription: String {
         "EmptyView"
     }

@@ -7,8 +7,9 @@
 
 import Foundation
 
+@MainActor
 @propertyWrapper
-public final class State<Value>: DynamicProperty {
+public final class State<Value>: @MainActor DynamicProperty {
     private nonisolated var value: Value
     private var storage: StateStorage<Value>?
 

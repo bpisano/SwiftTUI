@@ -8,7 +8,8 @@
 import Foundation
 import AttributeGraph
 
-final class ConditionalViewListRule<TrueContent: View, FalseContent: View>: Rule {
+@MainActor
+final class ConditionalViewListRule<TrueContent: View, FalseContent: View>: @MainActor Rule {
     @Attribute private var view: ConditionalView<TrueContent, FalseContent>
 
     private let inputs: ViewListInputs

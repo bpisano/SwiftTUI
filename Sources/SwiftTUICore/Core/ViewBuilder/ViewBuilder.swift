@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 @resultBuilder
 public enum ViewBuilder {
     public static func buildBlock() -> some View {

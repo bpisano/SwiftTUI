@@ -44,8 +44,8 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
     }
 }
 
-extension ForEachViewList: AttributeValueRepresentable {
+extension ForEachViewList: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
-        "ForEachViewList with \(state.orderedIds.count) items"
+        "ForEachViewList"
     }
 }

@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@MainActor
 final class StateStorage<Value> {
     var value: Value {
         _value.wrappedValue

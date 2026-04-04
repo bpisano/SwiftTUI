@@ -8,6 +8,7 @@
 import AttributeGraph
 import Foundation
 
+@MainActor
 final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: View> {
     typealias ForEachType = ForEach<Data, ID, Content>
 
@@ -120,6 +121,7 @@ extension ForEachState {
             childView.wrappedValue = childValue
         }
 
+        @MainActor
         func makeViewOutputs(
             startIndex: inout Int,
             inputs: ViewInputs,

@@ -8,6 +8,7 @@
 import AttributeGraph
 import Foundation
 
+@MainActor
 public protocol ViewModifier {
     associatedtype Body: View
 

@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-public struct ViewDimensions {
+public struct ViewDimensions: Sendable {
     public let size: Size
 
     public init(size: Size) {

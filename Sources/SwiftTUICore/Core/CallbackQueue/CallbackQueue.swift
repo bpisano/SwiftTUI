@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public final class CallbackQueue {
     public static let shared: CallbackQueue = .init()
 

@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-public struct ViewListOutputs {
+public struct ViewListOutputs: @unchecked Sendable {
     let views: Views
 
     init(views: Views) {
@@ -212,6 +212,7 @@ extension ViewListOutputs {
     ///   - inputs: The `ViewInputs` to use for generating the view outputs.
     ///   - interceptor: A closure that can be used to intercept the view outputs generation process, allowing for custom behavior or modifications to the generated view outputs.
     /// - Returns: An array of `ViewOutputs` generated from the `ViewListOutputs` instance.
+    @MainActor
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,
@@ -237,6 +238,7 @@ extension ViewListOutputs {
         }
     }
 
+    @MainActor
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs
@@ -246,6 +248,7 @@ extension ViewListOutputs {
         }
     }
 
+    @MainActor
     func makeUnaryViewOutputs(inputs: ViewInputs) -> ViewOutputs {
         var index: Int = 0
         let childOutputs: [ViewOutputs] = makeViewOutputs(
@@ -259,6 +262,7 @@ extension ViewListOutputs {
 // MARK: - ViewListOutputs -> Attribute<[ViewOutputs]>
 
 extension ViewListOutputs {
+    @MainActor
     func makeViewOutputsAttribute(
         _ label: String = "ViewOutputs",
         inputs: ViewInputs,

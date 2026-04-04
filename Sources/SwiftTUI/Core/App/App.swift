@@ -12,7 +12,8 @@ import Terminal
 @_exported import SwiftTUICore
 @_exported import Geometry
 
-public protocol App: Sendable {
+@MainActor
+public protocol App {
     associatedtype Body: View
 
     @MainActor
@@ -23,10 +24,9 @@ public protocol App: Sendable {
 }
 
 extension App {
-    @MainActor
     public static func main() {
         let app: Self = .init()
-        let view: Body = app.body
+        nonisolated(unsafe) let view: Body = app.body
 
         let terminal: Terminal = .current
         let renderState: RenderState = .init()

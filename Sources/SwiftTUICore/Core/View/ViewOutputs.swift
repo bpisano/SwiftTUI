@@ -9,7 +9,7 @@ import Foundation
 import Geometry
 import AttributeGraph
 
-public struct ViewOutputs {
+public struct ViewOutputs: Sendable {
     public let displayList: Attribute<DisplayList>
 
     let layoutComputer: Attribute<LayoutComputer>
@@ -30,6 +30,7 @@ extension ViewOutputs {
     ///   - inputs: The `ViewInputs` for the parent view.
     ///   - makeViewListOutputs: A closure that takes `ViewListInputs` and returns `ViewListOutputs` for the child views.
     ///   - Returns: A `ViewOutputs` instance that combines the outputs of the child views.
+    @MainActor
     static func unaryViewOutputs(
         inputs: ViewInputs,
         makeViewListOutputs: (ViewListInputs) -> ViewListOutputs,

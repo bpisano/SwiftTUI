@@ -7,6 +7,6 @@
 
 import Foundation
 
-public protocol AlignmentID {
+public protocol AlignmentID: Sendable {
     static func defaultValue(in context: ViewDimensions) -> Double
 }

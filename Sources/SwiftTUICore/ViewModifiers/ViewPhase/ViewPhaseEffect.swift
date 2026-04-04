@@ -8,7 +8,8 @@
 import Foundation
 import AttributeGraph
 
-struct ViewPhaseEffect: Rule {
+@MainActor
+struct ViewPhaseEffect: @MainActor Rule {
     private let modifier: Attribute<ViewPhaseViewModifier>
     private let phase: Attribute<ViewPhase>
     private let storage: Storage = .init()

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct AlignmentKey: Hashable {
+public struct AlignmentKey: Hashable, Sendable {
     let id: AlignmentID.Type
     let axis: Axis
 

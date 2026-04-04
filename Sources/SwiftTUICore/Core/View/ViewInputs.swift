@@ -9,7 +9,7 @@ import Foundation
 import Geometry
 import AttributeGraph
 
-public struct ViewInputs: InputStorage {
+public struct ViewInputs: InputStorage, Sendable {
     let position: Attribute<Point>
     let size: Attribute<Size>
     let phase: Attribute<ViewPhase>

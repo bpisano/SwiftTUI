@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct HorizontalAlignment: @MainActor AlignmentGuide {
+public struct HorizontalAlignment: AlignmentGuide, Sendable {
     public let key: AlignmentKey
 
     public init(_ id: AlignmentID.Type) {

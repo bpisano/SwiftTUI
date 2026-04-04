@@ -15,6 +15,7 @@ protocol ViewList {
         _ makeViewOutputs: MakeViewOutputs
     ) -> ViewOutputs?
 
+    @MainActor
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,
@@ -23,6 +24,7 @@ protocol ViewList {
 }
 
 extension ViewList {
+    @MainActor
     func makeViewOutputs(inputs: ViewInputs) -> [ViewOutputs] {
         var index: Int = 0
         return makeViewOutputs(startIndex: &index, inputs: inputs) { index, inputs, makeViewOutputs in

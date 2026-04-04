@@ -11,6 +11,7 @@ import AttributeGraph
 import Terminal
 import SwiftTUICore
 
+@MainActor
 final class TerminalEngine<V: View> {
     private let terminal: Terminal
     private let renderer: TerminalRenderer

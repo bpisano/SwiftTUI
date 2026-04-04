@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Alignment {
+public struct Alignment: Sendable {
     let horizontal: HorizontalAlignment
     let vertical: VerticalAlignment
 }

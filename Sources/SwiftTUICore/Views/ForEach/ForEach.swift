@@ -60,7 +60,7 @@ extension ForEach {
     }
 }
 
-extension ForEach: AttributeValueRepresentable {
+extension ForEach: @MainActor AttributeValueRepresentable {
     public var attributeValueDescription: String {
         "ForEach with \(data.count) elements"
     }

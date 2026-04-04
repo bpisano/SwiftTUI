@@ -10,7 +10,7 @@ import Terminal
 import Geometry
 import AttributeGraph
 
-public struct DisplayList {
+public struct DisplayList: Sendable {
     public let items: [Item]
 
     init(_ items: [Item]) {
@@ -23,17 +23,17 @@ public struct DisplayList {
 }
 
 extension DisplayList {
-    public enum Item {
+    public enum Item: Sendable {
         case command(Command)
         case childList(DisplayList)
     }
 
-    public enum CommandAction {
+    public enum CommandAction: Sendable {
         case putLine(_ line: String)
         case backgroundColor(_ color: ANSIColor)
     }
 
-    public struct Command {
+    public struct Command: Sendable {
         public let action: CommandAction
         public let frame: Rect
 

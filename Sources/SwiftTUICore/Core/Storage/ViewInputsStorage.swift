@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public final class ViewInputsStorage {
     private var storage: [ObjectIdentifier: Any]
 
