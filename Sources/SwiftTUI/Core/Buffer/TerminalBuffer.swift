@@ -44,6 +44,9 @@ struct TerminalBuffer: Sendable {
         let startCol: Int = max(0, Int(rect.origin.x))
         let endCol: Int = min(Int(size.width), Int(rect.origin.x + rect.size.width))
 
+        guard endRow >= startRow else { return }
+        guard endCol >= startCol else { return }
+
         for row in startRow..<endRow {
             let base: Int = row * Int(size.width)
             for col in startCol..<endCol {

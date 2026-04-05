@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RenderingConfiguration {
+struct RenderingConfiguration: Sendable {
     let emptyChar: Character
     let lineJoinSeparator: String
     let renderColor: Bool

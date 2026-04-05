@@ -16,7 +16,6 @@ import Terminal
 public protocol App {
     associatedtype Body: View
 
-    @MainActor
     @ViewBuilder
     var body: Body { get }
 
@@ -41,9 +40,7 @@ extension App {
         let graph: Graph = .init()
         graph.makeCurrent()
         graph.onInvalidate = {
-            Task {
-                await renderState.setNeedsRender()
-            }
+            renderState.setNeedsRender()
         }
 
         engine.setup()
@@ -54,9 +51,9 @@ extension App {
             repeats: true
         ) { _ in
             Task { @MainActor in
-                guard await renderState.needsRender else { return }
-                await renderState.clearNeedsRender()
-                engine.render()
+                guard renderState.needsRender else { return }
+                renderState.clearNeedsRender()
+                await engine.render()
             }
         }
 

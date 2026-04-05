@@ -57,19 +57,24 @@ final class TerminalEngine<V: View> {
         outputs = V.makeView($view, inputs: inputs)
     }
 
-    func render() {
+    func render() async {
         guard let outputs else {
             assertionFailure("Outputs not set up. Call setup() before rendering.")
             return
         }
 
-        let stringFrame: String = renderer.renderFrame(
-            displayList: outputs.displayList.wrappedValue,
-            in: screenSize
-        )
+        // Snapshot Sendable values on MainActor before crossing the actor boundary.
+        // wrappedValue reads must happen here — this is where the graph lives.
+        let displayList = outputs.displayList.wrappedValue
+        let size = screenSize
 
+        // Buffer fill and string construction run on the renderer actor's executor,
+        // freeing MainActor to process input events and state updates in the meantime.
+        let frame = await renderer.renderFrame(displayList: displayList, in: size)
+
+        // Back on MainActor: write to the terminal (fast syscall) and flush callbacks.
         terminal.cursor.move(to: .zero)
-        terminal.cursor.write(stringFrame)
+        terminal.cursor.write(frame)
 
         CallbackQueue.shared.executeAll()
     }

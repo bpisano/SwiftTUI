@@ -17,8 +17,8 @@ import Testing
 @MainActor
 struct StateTests {
     @Test
-    func `Within a view`() {
-        expectView(in: Size(width: 3, height: 3)) {
+    func `Within a view`() async {
+        await expectView(in: Size(width: 3, height: 3)) {
             BaseView()
         } toRender: {
             """
@@ -30,8 +30,8 @@ struct StateTests {
     }
 
     @Test
-    func `Within view list`() {
-        expectView(in: Size(width: 3, height: 3)) {
+    func `Within view list`() async {
+        await expectView(in: Size(width: 3, height: 3)) {
             RootLayout {
                 BaseView()
             }
@@ -45,8 +45,8 @@ struct StateTests {
     }
 
     @Test
-    func `Within a view modifier`() {
-        expectView(in: Size(width: 3, height: 3)) {
+    func `Within a view modifier`() async {
+        await expectView(in: Size(width: 3, height: 3)) {
             Text("A")
                 .modifier(BaseViewModifier())
         } toRender: {
@@ -59,7 +59,7 @@ struct StateTests {
     }
 
     @Test
-    func `Update within a view`() {
+    func `Update within a view`() async {
         @Attribute var screenPosition: Point = .zero
         @Attribute var screenSize: Size = .init(width: 3, height: 3)
         @Attribute var viewPhase: ViewPhase = .active
@@ -74,7 +74,7 @@ struct StateTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             0..
             ...
@@ -84,7 +84,7 @@ struct StateTests {
 
         view.count = 1
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             1..
             ...
@@ -94,7 +94,7 @@ struct StateTests {
     }
 
     @Test
-    func `Update within a view modifier`() {
+    func `Update within a view modifier`() async {
         @Attribute var screenPosition: Point = .zero
         @Attribute var screenSize: Size = .init(width: 3, height: 3)
         @Attribute var viewPhase: ViewPhase = .active
@@ -111,7 +111,7 @@ struct StateTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             A..
             ...
@@ -121,7 +121,7 @@ struct StateTests {
 
         modifier.width = 3
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             ..A
             ...

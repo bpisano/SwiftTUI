@@ -17,7 +17,7 @@ import Testing
 struct RootLayoutTests {
     @Test
     func `Single Child`() async throws {
-        expectView(in: Size(width: 9, height: 3)) {
+        await expectView(in: Size(width: 9, height: 3)) {
             RootLayout {
                 Text("Alice")
             }
@@ -32,7 +32,7 @@ struct RootLayoutTests {
 
     @Test
     func `Multiple Childs`() async throws {
-        expectView(in: Size(width: 9, height: 4)) {
+        await expectView(in: Size(width: 9, height: 4)) {
             RootLayout {
                 Text("Alice")
                 Text("Bob")
@@ -49,7 +49,7 @@ struct RootLayoutTests {
 
     @Test
     func `Bounds constraint`() async throws {
-        expectView(in: Size(width: 3, height: 4)) {
+        await expectView(in: Size(width: 3, height: 4)) {
             RootLayout {
                 Text("Alice")
             }
@@ -65,7 +65,7 @@ struct RootLayoutTests {
 
     @Test
     func `Nested views`() async throws {
-        expectView(in: Size(width: 9, height: 5)) {
+        await expectView(in: Size(width: 9, height: 5)) {
             RootLayout {
                 VStack(spacing: 1) {
                     Text("Alice")

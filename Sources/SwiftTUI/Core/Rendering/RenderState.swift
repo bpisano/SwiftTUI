@@ -7,7 +7,8 @@
 
 import Foundation
 
-actor RenderState {
+@MainActor
+final class RenderState {
     var needsRender: Bool = true
 
     func setNeedsRender() {

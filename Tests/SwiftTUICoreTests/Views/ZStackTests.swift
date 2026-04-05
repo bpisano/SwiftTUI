@@ -16,8 +16,8 @@ import Testing
 @MainActor
 struct ZStackTests {
     @Test
-    func `2 views on top of each other`() {
-        expectView(in: Size(width: 10, height: 2)) {
+    func `2 views on top of each other`() async {
+        await expectView(in: Size(width: 10, height: 2)) {
             ZStack {
                 Text("Alice")
                 Text("Bob")
@@ -31,8 +31,8 @@ struct ZStackTests {
     }
 
     @Test
-    func `Text on top of expanding`() {
-        expectView(in: Size(width: 9, height: 3)) {
+    func `Text on top of expanding`() async {
+        await expectView(in: Size(width: 9, height: 3)) {
             ZStack {
                 ExpandingView(char: "X")
                 Text("Alice")
@@ -47,8 +47,8 @@ struct ZStackTests {
     }
 
     @Test
-    func `Expanding on top of Text`() {
-        expectView(in: Size(width: 9, height: 3)) {
+    func `Expanding on top of Text`() async {
+        await expectView(in: Size(width: 9, height: 3)) {
             ZStack {
                 Text("Alice")
                 ExpandingView(char: "X")
@@ -63,8 +63,8 @@ struct ZStackTests {
     }
 
     @Test
-    func `Alignment topLeading`() {
-        expectView(in: Size(width: 9, height: 3)) {
+    func `Alignment topLeading`() async {
+        await expectView(in: Size(width: 9, height: 3)) {
             ZStack(alignment: .topLeading) {
                 ExpandingView(char: "X")
                 Text("Alice")
@@ -79,8 +79,8 @@ struct ZStackTests {
     }
 
     @Test
-    func `Alignment bottomTrailing`() {
-        expectView(in: Size(width: 9, height: 3)) {
+    func `Alignment bottomTrailing`() async {
+        await expectView(in: Size(width: 9, height: 3)) {
             ZStack(alignment: .bottomTrailing) {
                 ExpandingView(char: "X")
                 Text("Alice")

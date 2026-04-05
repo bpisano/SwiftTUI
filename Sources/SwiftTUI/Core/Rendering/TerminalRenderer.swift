@@ -11,7 +11,7 @@ import Geometry
 import Terminal
 import SwiftTUICore
 
-struct TerminalRenderer {
+actor TerminalRenderer {
     private let configuration: RenderingConfiguration
 
     init(configuration: RenderingConfiguration) {

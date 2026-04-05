@@ -17,7 +17,7 @@ import Geometry
 struct ForEachTests {
     @Test
     func `Static content`() async throws {
-        expectView(in: Size(width: 9, height: 4)) {
+        await expectView(in: Size(width: 9, height: 4)) {
             let users: [User] = [
                 User(id: 1, name: "Alice"),
                 User(id: 2, name: "Bob"),
@@ -62,7 +62,7 @@ struct ForEachTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -73,7 +73,7 @@ struct ForEachTests {
 
         users.append(User(id: 3, name: "Charlie"))
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -108,7 +108,7 @@ struct ForEachTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -119,7 +119,7 @@ struct ForEachTests {
 
         users.removeLast()
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -154,7 +154,7 @@ struct ForEachTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -169,7 +169,7 @@ struct ForEachTests {
             User(id: 3, name: "Charlie")
         ]
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Ben......
@@ -204,7 +204,7 @@ struct ForEachTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Bob......
@@ -219,7 +219,7 @@ struct ForEachTests {
             User(id: 2, name: "Bob")
         ]
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             Charlie..

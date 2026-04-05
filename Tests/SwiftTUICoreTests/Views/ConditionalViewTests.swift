@@ -17,7 +17,7 @@ import Geometry
 struct ConditionalViewTests {
     @Test
     func `Static condition`() async throws {
-        expectView(in: Size(width: 9, height: 2)) {
+        await expectView(in: Size(width: 9, height: 2)) {
             if true {
                 Text("Alice")
             } else {
@@ -54,7 +54,7 @@ struct ConditionalViewTests {
 
         let outputs = type(of: view).makeView($view, inputs: inputs)
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Alice....
             .........
@@ -63,7 +63,7 @@ struct ConditionalViewTests {
 
         showAlice = false
 
-        expectDisplayList(outputs.displayList, in: screenSize) {
+        await expectDisplayList(outputs.displayList, in: screenSize) {
             """
             Bob......
             .........
@@ -73,7 +73,7 @@ struct ConditionalViewTests {
 
     @Test
     func `Inside view list`() async throws {
-        expectView(in: Size(width: 9, height: 2)) {
+        await expectView(in: Size(width: 9, height: 2)) {
             VStack(alignment: .leading) {
                 if true {
                     Text("Alice")

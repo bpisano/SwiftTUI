@@ -18,7 +18,7 @@ func expectView<V: View>(
     in size: Size,
     @ViewBuilder _ makeView: () -> V,
     toRender expected: () -> String,
-) {
+) async {
     let view: V = makeView()
 
     @Attribute var screenOrigin: Point = .zero
@@ -34,7 +34,7 @@ func expectView<V: View>(
     )
     let outputs: ViewOutputs = V.makeView($viewAttribute, inputs: inputs)
 
-    expectDisplayList(outputs.displayList, in: size, toRender: expected)
+    await expectDisplayList(outputs.displayList, in: size, toRender: expected)
 }
 
 @MainActor
@@ -42,14 +42,14 @@ func expectDisplayList(
     _ displayList: Attribute<DisplayList>,
     in size: Size,
     toRender expected: () -> String
-) {
+) async {
     let configuration: RenderingConfiguration = .init(
         emptyChar: ".",
         lineJoinSeparator: "\n",
         renderColor: false
     )
     let renderer: TerminalRenderer = .init(configuration: configuration)
-    let frame: String = renderer.renderFrame(
+    let frame: String = await renderer.renderFrame(
         displayList: displayList.wrappedValue,
         in: size
     )

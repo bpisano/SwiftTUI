@@ -19,7 +19,7 @@ struct FrameTests {
 
     @Test
     func `Text with Fixed Width`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 7)
         } toRender: {
@@ -33,7 +33,7 @@ struct FrameTests {
 
     @Test
     func `Text with Fixed Height`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(height: 3)
         } toRender: {
@@ -47,7 +47,7 @@ struct FrameTests {
 
     @Test
     func `Text with Fixed Width and Height`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 7, height: 3)
         } toRender: {
@@ -63,7 +63,7 @@ struct FrameTests {
 
     @Test
     func `Top Leading Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .topLeading)
         } toRender: {
@@ -77,7 +77,7 @@ struct FrameTests {
 
     @Test
     func `Top Center Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 5, alignment: .top)
         } toRender: {
@@ -91,7 +91,7 @@ struct FrameTests {
 
     @Test
     func `Top Trailing Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .topTrailing)
         } toRender: {
@@ -105,7 +105,7 @@ struct FrameTests {
 
     @Test
     func `Center Leading Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .leading)
         } toRender: {
@@ -119,7 +119,7 @@ struct FrameTests {
 
     @Test
     func `Center Alignment (Default)`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3)
         } toRender: {
@@ -133,7 +133,7 @@ struct FrameTests {
 
     @Test
     func `Center Trailing Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .trailing)
         } toRender: {
@@ -147,7 +147,7 @@ struct FrameTests {
 
     @Test
     func `Bottom Leading Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .bottomLeading)
         } toRender: {
@@ -161,7 +161,7 @@ struct FrameTests {
 
     @Test
     func `Bottom Center Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .bottom)
         } toRender: {
@@ -175,7 +175,7 @@ struct FrameTests {
 
     @Test
     func `Bottom Trailing Alignment`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 10, height: 3, alignment: .bottomTrailing)
         } toRender: {
@@ -191,7 +191,7 @@ struct FrameTests {
 
     @Test
     func `Width Only - Leading`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 8, alignment: .leading)
         } toRender: {
@@ -205,7 +205,7 @@ struct FrameTests {
 
     @Test
     func `Width Only - Center (Default)`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 8)
         } toRender: {
@@ -219,7 +219,7 @@ struct FrameTests {
 
     @Test
     func `Width Only - Trailing`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             Text("Alice")
                 .frame(width: 8, alignment: .trailing)
         } toRender: {
@@ -235,7 +235,7 @@ struct FrameTests {
 
     @Test
     func `Height Only - Top`() async throws {
-        expectView(in: Size(width: 8, height: 3)) {
+        await expectView(in: Size(width: 8, height: 3)) {
             Text("Alice")
                 .frame(height: 3, alignment: .top)
         } toRender: {
@@ -249,7 +249,7 @@ struct FrameTests {
 
     @Test
     func `Height Only - Center (Default)`() async throws {
-        expectView(in: Size(width: 8, height: 3)) {
+        await expectView(in: Size(width: 8, height: 3)) {
             Text("Alice")
                 .frame(height: 3)
         } toRender: {
@@ -263,7 +263,7 @@ struct FrameTests {
 
     @Test
     func `Height Only - Bottom`() async throws {
-        expectView(in: Size(width: 8, height: 4)) {
+        await expectView(in: Size(width: 8, height: 4)) {
             Text("Alice")
                 .frame(height: 3, alignment: .bottom)
         } toRender: {
@@ -280,7 +280,7 @@ struct FrameTests {
 
     @Test
     func `Expanding View with Frame`() async throws {
-        expectView(in: Size(width: 10, height: 4)) {
+        await expectView(in: Size(width: 10, height: 4)) {
             ExpandingView(char: "X")
                 .frame(width: 6, height: 3)
         } toRender: {
@@ -295,7 +295,7 @@ struct FrameTests {
 
     @Test
     func `Expanding View with Frame - Top Leading`() async throws {
-        expectView(in: Size(width: 8, height: 4)) {
+        await expectView(in: Size(width: 8, height: 4)) {
             ExpandingView(char: "X")
                 .frame(width: 5, height: 3, alignment: .topLeading)
         } toRender: {
@@ -310,7 +310,7 @@ struct FrameTests {
 
     @Test
     func `Expanding View with Frame - Bottom Trailing`() async throws {
-        expectView(in: Size(width: 8, height: 4)) {
+        await expectView(in: Size(width: 8, height: 4)) {
             ExpandingView(char: "X")
                 .frame(width: 5, height: 3)
                 .frame(width: 8, height: 4, alignment: .bottomTrailing)
@@ -328,7 +328,7 @@ struct FrameTests {
 
     @Test
     func `VStack with Frame`() async throws {
-        expectView(in: Size(width: 10, height: 3)) {
+        await expectView(in: Size(width: 10, height: 3)) {
             VStack {
                 Text("A")
                 Text("B")
@@ -345,7 +345,7 @@ struct FrameTests {
 
     @Test
     func `VStack with Frame - Center`() async throws {
-        expectView(in: Size(width: 3, height: 4)) {
+        await expectView(in: Size(width: 3, height: 4)) {
             VStack {
                 Text("A")
                 Text("B")
@@ -363,7 +363,7 @@ struct FrameTests {
 
     @Test
     func `VStack with Frame - Bottom Trailing`() async throws {
-        expectView(in: Size(width: 5, height: 4)) {
+        await expectView(in: Size(width: 5, height: 4)) {
             VStack {
                 Text("A")
                 Text("B")
