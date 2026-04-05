@@ -36,8 +36,8 @@ extension ViewModifierContent {
         let outputsType = getOutputsType(inputs: &inputs)
         switch outputsType {
         case let .view(makeViewOutputs):
-            return .unaryViewListOutputs { inputs in
-                makeViewOutputs(inputs)
+            return .unaryViewListOutputs(implicitId: inputs.implicitId) { viewInputs in
+                makeViewOutputs(viewInputs)
             }
         case let .viewList(makeViewListOutputs):
             return makeViewListOutputs(inputs)

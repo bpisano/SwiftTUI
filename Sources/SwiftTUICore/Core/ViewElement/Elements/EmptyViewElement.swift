@@ -8,6 +8,8 @@
 import Foundation
 
 struct EmptyViewElement: ViewElement {
+    let viewId: ViewId = ViewId(implicitId: -1)
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,

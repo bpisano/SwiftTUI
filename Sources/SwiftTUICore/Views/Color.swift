@@ -53,7 +53,7 @@ extension Color {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        .unaryViewListOutputs("Color ViewList") { inputs in
+        .unaryViewListOutputs("Color ViewList", implicitId: inputs.implicitId) { inputs in
             Self.makeView(view, inputs: inputs)
         }
     }

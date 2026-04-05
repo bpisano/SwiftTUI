@@ -15,6 +15,15 @@ struct MergedViewList: ViewList {
         self.viewLists = viewLists
     }
 
+    var viewIds: [ViewId]? {
+        var ids: [ViewId] = []
+        for viewList in viewLists {
+            guard let subIds = viewList.wrappedValue.viewIds else { return nil }
+            ids.append(contentsOf: subIds)
+        }
+        return ids
+    }
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,

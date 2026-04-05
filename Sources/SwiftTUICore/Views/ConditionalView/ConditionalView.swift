@@ -61,6 +61,6 @@ extension ConditionalView {
             "ConditionalView ViewList",
             rule: viewListRule
         )
-        return ViewListOutputs(views: .dynamicList(viewList))
+        return ViewListOutputs(views: .dynamicList(viewList), nextImplicitId: inputs.implicitId + 1)
     }
 }

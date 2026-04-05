@@ -39,7 +39,7 @@ extension LayoutView {
         let contentViewOutputs: Attribute<[ViewOutputs]> = contentViewListOutputs.makeViewOutputsAttribute(
             "\(Content.self) Child Outputs",
             inputs: inputs
-        ) { index, inputs, makeViewOutputs in
+        ) { index, viewId, inputs, makeViewOutputs in
             let currentIndex: Int = index
             let modifiedInputs = ViewInputs(
                 position: Attribute {
@@ -104,7 +104,7 @@ extension LayoutView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        .unaryViewListOutputs("\(Content.self) ViewList") { inputs in
+        .unaryViewListOutputs("\(Content.self) ViewList", implicitId: inputs.implicitId) { inputs in
             Self.makeView(view, inputs: inputs)
         }
     }

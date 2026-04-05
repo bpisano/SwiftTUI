@@ -9,8 +9,16 @@ import Foundation
 
 public struct ViewListInputs: InputStorage {
     var storage: ViewInputsStorage
+    var implicitId: Int
 
-    init(viewInputs: ViewInputs) {
+    init(viewInputs: ViewInputs, implicitId: Int = 0) {
         self.storage = viewInputs.storage
+        self.implicitId = implicitId
+    }
+
+    @MainActor
+    init(implicitId: Int = 0) {
+        self.storage = .init()
+        self.implicitId = implicitId
     }
 }

@@ -31,6 +31,7 @@ extension TupleView {
         let viewTypes: (repeat each V).Type = (repeat each V).self
         let tupleType: TupleType = TupleType(viewTypes)
         var viewListOutputs: [ViewListOutputs] = []
+        var currentInputs = inputs
 
         for index in (0..<tupleType.count) {
             guard let childViewType = tupleType.type(at: index) as? any View.Type else {
@@ -39,11 +40,12 @@ extension TupleView {
 
             let childViewOutputs: ViewListOutputs = makeChildViewListOutputs(
                 view,
-                inputs: inputs,
+                inputs: currentInputs,
                 tupleType: tupleType,
                 tupleIndex: index,
                 tupleChildViewType: childViewType
             )
+            currentInputs.implicitId = childViewOutputs.nextImplicitId
             viewListOutputs.append(childViewOutputs)
         }
 

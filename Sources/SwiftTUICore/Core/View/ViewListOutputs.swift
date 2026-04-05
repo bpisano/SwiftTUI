@@ -10,9 +10,11 @@ import AttributeGraph
 
 public struct ViewListOutputs: @unchecked Sendable {
     let views: Views
+    let nextImplicitId: Int
 
-    init(views: Views) {
+    init(views: Views, nextImplicitId: Int) {
         self.views = views
+        self.nextImplicitId = nextImplicitId
     }
 
     func makeViewListAttribute(_ label: String = "ViewList") -> Attribute<any ViewList> {
@@ -42,7 +44,7 @@ extension ViewListOutputs {
     ///
     /// - Returns: An empty `ViewListOutputs` instance.
     static func empty() -> ViewListOutputs {
-        .init(views: .staticList([EmptyViewElement()]))
+        .init(views: .staticList([EmptyViewElement()]), nextImplicitId: 0)
     }
 
     /// Creates a `ViewListOutputs` containing a single view generated from the provided closure.
@@ -54,10 +56,14 @@ extension ViewListOutputs {
     /// - Returns: A `ViewListOutputs` instance containing a single view generated from the provided closure.
     static func unaryViewListOutputs(
         _ label: String = "ViewList",
+        implicitId: Int,
         makeViewOutputs: @escaping (ViewInputs) -> ViewOutputs
     ) -> ViewListOutputs {
-        let unaryViewElement: UnaryViewElement = .init(makeOutputs: makeViewOutputs)
-        return .init(views: .staticList([unaryViewElement]))
+        let unaryViewElement: UnaryViewElement = .init(
+            viewId: ViewId(implicitId: implicitId),
+            makeOutputs: makeViewOutputs
+        )
+        return .init(views: .staticList([unaryViewElement]), nextImplicitId: implicitId + 1)
     }
 
     /// Concatenates multiple `ViewListOutputs` into a single `ViewListOutputs` instance.
@@ -147,7 +153,8 @@ extension ViewListOutputs {
                 to: viewListOutputs.count
             )
             return .init(
-                views: .staticList(staticElements)
+                views: .staticList(staticElements),
+                nextImplicitId: viewListOutputs.last?.nextImplicitId ?? 0
             )
         }
 
@@ -188,14 +195,14 @@ extension ViewListOutputs {
 
         // If there is only one merged list, we can return it directly instead of wrapping it in another merged view list.
         if mergedLists.count == 1 {
-            return .init(views: .dynamicList(mergedLists[0]))
+            return .init(views: .dynamicList(mergedLists[0]), nextImplicitId: viewListOutputs.last?.nextImplicitId ?? 0)
         }
 
         // Else we return a merged view list that concatenates all the merged lists.
         let mergedViewList: Attribute<any ViewList> = Attribute(label) {
             MergedViewList(viewLists: mergedLists)
         }
-        return .init(views: .dynamicList(mergedViewList))
+        return .init(views: .dynamicList(mergedViewList), nextImplicitId: viewListOutputs.last?.nextImplicitId ?? 0)
     }
 }
 
@@ -243,7 +250,7 @@ extension ViewListOutputs {
         startIndex: inout Int,
         inputs: ViewInputs
     ) -> [ViewOutputs] {
-        makeViewOutputs(startIndex: &startIndex, inputs: inputs) { _, inputs, makeViewOutputs in
+        makeViewOutputs(startIndex: &startIndex, inputs: inputs) { _, viewId, inputs, makeViewOutputs in
             makeViewOutputs(inputs)
         }
     }

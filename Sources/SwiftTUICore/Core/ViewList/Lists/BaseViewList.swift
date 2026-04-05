@@ -15,6 +15,8 @@ struct BaseViewList: ViewList {
         self.elements = elements
     }
 
+    var viewIds: [ViewId]? { elements.map(\.viewId) }
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,
@@ -22,8 +24,8 @@ struct BaseViewList: ViewList {
     ) -> [ViewOutputs] {
         withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
             elements.compactMap { element in
-                element.makeViewOutputs(startIndex: &startIndex, inputs: inputs) { index, inputs, makeViewOutputs in
-                    escapingMakeViewOutputs(&index, inputs, makeViewOutputs)
+                element.makeViewOutputs(startIndex: &startIndex, inputs: inputs) { index, viewId, inputs, makeViewOutputs in
+                    escapingMakeViewOutputs(&index, viewId, inputs, makeViewOutputs)
                 }
             }
         }

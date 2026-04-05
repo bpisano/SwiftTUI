@@ -194,6 +194,22 @@ This is an important area of ongoing architectural work. Before changing it:
   - reorder
   - removal
 
+## Testing Conventions
+
+Always use **Swift Testing** (`import Testing`, `@Test`, `#expect`, `#require`) for all tests — except performance benchmarks, which must use **XCTest** (`import XCTest`, `measure { ... }`).
+
+Name test functions using backtick syntax to allow natural-language descriptions with spaces and special characters:
+
+```swift
+@Test
+func `Two siblings get consecutive implicit IDs`() throws { ... }
+
+@Test
+func `ForEach items shift position when preceding sibling grows`() async throws { ... }
+```
+
+See `Tests/SwiftTUICoreTests/Views/VStackTests.swift` for examples.
+
 ## Debugging and Validation
 
 Useful tests:

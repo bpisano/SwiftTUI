@@ -56,7 +56,7 @@ extension ForEach {
             return ForEachViewList(view: view, state: state)
         }
 
-        return .init(views: .dynamicList(viewList))
+        return .init(views: .dynamicList(viewList), nextImplicitId: inputs.implicitId + 1)
     }
 }
 

@@ -10,9 +10,11 @@ import Foundation
 struct UnaryViewElement: ViewElement {
     typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
 
+    let viewId: ViewId
     private let makeOutputs: MakeViewOutputs
 
-    init(makeOutputs: @escaping MakeViewOutputs) {
+    init(viewId: ViewId, makeOutputs: @escaping MakeViewOutputs) {
+        self.viewId = viewId
         self.makeOutputs = makeOutputs
     }
 
@@ -21,7 +23,7 @@ struct UnaryViewElement: ViewElement {
         inputs: ViewInputs,
         makeViewOutputs: MakeViewOutputsInterceptor
     ) -> ViewOutputs? {
-        let viewOutputs: ViewOutputs? = makeViewOutputs(&startIndex, inputs, makeOutputs)
+        let viewOutputs: ViewOutputs? = makeViewOutputs(&startIndex, viewId, inputs, makeOutputs)
         if viewOutputs != nil {
             startIndex += 1
         }

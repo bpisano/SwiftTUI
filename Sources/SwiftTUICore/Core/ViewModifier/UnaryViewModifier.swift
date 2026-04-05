@@ -16,7 +16,7 @@ extension UnaryViewModifier {
         inputs: ViewListInputs,
         makeViewListOutputs: @escaping MakeViewListOutputs
     ) -> ViewListOutputs {
-        .unaryViewListOutputs("\(Self.self) ViewList") { inputs in
+        .unaryViewListOutputs("\(Self.self) ViewList", implicitId: inputs.implicitId) { inputs in
             Self.makeView(modifier, inputs: inputs) { modifiedInputs in
                 let modifiedViewListInputs: ViewListInputs = .init(viewInputs: modifiedInputs)
                 let childViewListOutputs: ViewListOutputs = makeViewListOutputs(modifiedViewListInputs)

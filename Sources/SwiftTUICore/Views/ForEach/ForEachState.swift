@@ -133,7 +133,7 @@ extension ForEachState {
             }
 
             let outputs: [ViewOutputs] = subgraph.withDependencyCapture {
-                ViewListOutputs(views: views).makeViewOutputs(
+                ViewListOutputs(views: views, nextImplicitId: 0).makeViewOutputs(
                     startIndex: &startIndex,
                     inputs: inputs,
                     makeViewOutputs: interceptor

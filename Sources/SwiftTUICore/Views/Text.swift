@@ -75,7 +75,7 @@ extension Text {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        .unaryViewListOutputs("Text ViewList") { inputs in
+        .unaryViewListOutputs("Text ViewList", implicitId: inputs.implicitId) { inputs in
             Self.makeView(view, inputs: inputs)
         }
     }

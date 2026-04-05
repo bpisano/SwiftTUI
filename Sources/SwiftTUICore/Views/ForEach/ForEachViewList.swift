@@ -23,6 +23,8 @@ struct ForEachViewList<Data: RandomAccessCollection, ID: Hashable, Content: View
         self.state = state
     }
 
+    var viewIds: [ViewId]? { nil }
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,

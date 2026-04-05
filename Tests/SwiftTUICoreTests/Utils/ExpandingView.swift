@@ -61,7 +61,7 @@ extension ExpandingView {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        .unaryViewListOutputs("ExpandingView ViewList") { inputs in
+        .unaryViewListOutputs("ExpandingView ViewList", implicitId: inputs.implicitId) { inputs in
             Self.makeView(view, inputs: inputs)
         }
     }

@@ -11,9 +11,12 @@ protocol ViewList {
     typealias MakeViewOutputs = (_ inputs: ViewInputs) -> ViewOutputs
     typealias MakeViewOutputsInterceptor = (
         _ index: inout Int,
+        _ viewId: ViewId,
         _ inputs: ViewInputs,
         _ makeViewOutputs: MakeViewOutputs
     ) -> ViewOutputs?
+
+    var viewIds: [ViewId]? { get }
 
     @MainActor
     func makeViewOutputs(
@@ -27,7 +30,7 @@ extension ViewList {
     @MainActor
     func makeViewOutputs(inputs: ViewInputs) -> [ViewOutputs] {
         var index: Int = 0
-        return makeViewOutputs(startIndex: &index, inputs: inputs) { index, inputs, makeViewOutputs in
+        return makeViewOutputs(startIndex: &index, inputs: inputs) { index, viewId, inputs, makeViewOutputs in
             makeViewOutputs(inputs)
         }
     }
