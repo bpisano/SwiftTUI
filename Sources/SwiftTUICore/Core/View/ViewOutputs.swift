@@ -12,12 +12,15 @@ import AttributeGraph
 public struct ViewOutputs: Sendable {
     public let displayList: Attribute<DisplayList>
 
+    let viewId: ViewId
     let layoutComputer: Attribute<LayoutComputer>
 
     init(
+        viewId: ViewId = ViewId(implicitId: -1),
         layoutComputer: Attribute<LayoutComputer>,
         displayList: Attribute<DisplayList>
     ) {
+        self.viewId = viewId
         self.layoutComputer = layoutComputer
         self.displayList = displayList
     }

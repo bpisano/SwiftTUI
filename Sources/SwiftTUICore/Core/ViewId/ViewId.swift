@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-struct ViewId: Hashable, Equatable {
+struct ViewId: Hashable, Equatable, Sendable {
     /// The index of the view in the view hierarchy, starting from 0 for the root view.
     /// Example:
     /// ```
@@ -37,14 +37,16 @@ struct ViewId: Hashable, Equatable {
     init(
         implicitId: Int,
         index: Int = 0,
+        explicit: [Explicit] = []
     ) {
         self.implicitId = implicitId
         self.index = index
+        self.explicit = explicit
     }
 }
 
 extension ViewId {
-    struct Explicit: Hashable, Equatable {
+    struct Explicit: Hashable, Equatable, @unchecked Sendable {
         let id: AnyHashable
     }
 }

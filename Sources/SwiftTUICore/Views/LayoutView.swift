@@ -28,6 +28,7 @@ extension LayoutView {
         inputs: ViewInputs
     ) -> ViewOutputs {
         var childGeometries: Attribute<[ViewGeometry]>!
+        var containerInfo: Attribute<[ViewId: Int]>!
         var engine: LayoutEngine<L>?
 
         let contentAttribute: Attribute<Content> = view.map(\.content)
@@ -40,26 +41,26 @@ extension LayoutView {
             "\(Content.self) Child Outputs",
             inputs: inputs
         ) { index, viewId, inputs, makeViewOutputs in
-            let currentIndex: Int = index
+            let stableId: ViewId = viewId
             let modifiedInputs = ViewInputs(
                 position: Attribute {
+                    guard let index = containerInfo.wrappedValue[stableId] else { return .zero }
                     let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
-                    guard currentIndex < childGeometries.count else {
-                        return .zero
-                    }
-                    return childGeometries[currentIndex].origin
+                    guard index < childGeometries.count else { return .zero }
+                    return childGeometries[index].origin
                 },
                 size: Attribute {
+                    guard let index = containerInfo.wrappedValue[stableId] else { return .zero }
                     let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
-                    guard currentIndex < childGeometries.count else {
-                        return .zero
-                    }
-                    return childGeometries[currentIndex].size
+                    guard index < childGeometries.count else { return .zero }
+                    return childGeometries[index].size
                 },
                 phase: inputs.phase,
                 storage: inputs.storage
             )
-            return makeViewOutputs(modifiedInputs)
+            let rawOutputs = makeViewOutputs(modifiedInputs)
+            // Re-wrap with the stable id so ContainerInfo can find it in the flat array.
+            return ViewOutputs(viewId: stableId, layoutComputer: rawOutputs.layoutComputer, displayList: rawOutputs.displayList)
         }
 
         let layoutComputer = Attribute("\(Content.self) LayoutComputer") {
@@ -92,6 +93,14 @@ extension LayoutView {
                     size: containerSize
                 )
             )
+        }
+
+        containerInfo = Attribute("\(Content.self) ContainerInfo") {
+            var map: [ViewId: Int] = [:]
+            for (i, output) in contentViewOutputs.wrappedValue.enumerated() {
+                map[output.viewId] = i
+            }
+            return map
         }
 
         return .init(

@@ -228,6 +228,68 @@ struct ForEachTests {
             """
         }
     }
+
+    @Test
+    func `Element identifier stability`() async throws {
+        @Attribute var items1: [String] = []
+        @Attribute var items2: [String] = ["X"]
+
+        @Attribute var view = RootLayout {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Header")
+                ForEach(items1, id: \.self) { item in
+                    Text(item)
+                }
+                Text("Section 2")
+                ForEach(items2, id: \.self) { item in
+                    Text(item)
+                }
+            }
+        }
+
+        let size = Size(width: 20, height: 9)
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = size
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        await expectDisplayList(outputs.displayList, in: size) {
+            """
+            ....................
+            ....................
+            ....................
+            .....Header.........
+            .....Section 2......
+            .....X..............
+            ....................
+            ....................
+            ....................
+            """
+        }
+
+        items1 = ["A", "B"]
+
+        await expectDisplayList(outputs.displayList, in: size) {
+            """
+            ....................
+            ....................
+            .....Header.........
+            .....A..............
+            .....B..............
+            .....Section 2......
+            .....X..............
+            ....................
+            ....................
+            """
+        }
+    }
 }
 
 private struct User: Identifiable {

@@ -53,7 +53,11 @@ extension ForEach {
 
         let viewList: Attribute<any ViewList> = Attribute("ForEach ViewList") {
             state.update(with: view, inputs: inputs)
-            return ForEachViewList(view: view, state: state)
+            return ForEachViewList(
+                view: view,
+                state: state,
+                implicitId: inputs.implicitId
+            )
         }
 
         return .init(views: .dynamicList(viewList), nextImplicitId: inputs.implicitId + 1)
