@@ -261,7 +261,6 @@ extension Attribute {
         var incomingEdges: Set<Edge> = []
         var outgoingEdges: Set<Edge> = []
         var state: AttributeState = .clean
-        /// Type-erased equality check. Set automatically for `T: Equatable` types.
         var equalityCheck: (any EqualityComparator<T>)?
     }
 }
