@@ -13,8 +13,6 @@ final class ConditionalViewListRule<TrueContent: View, FalseContent: View>: @Mai
     @Attribute private var view: ConditionalView<TrueContent, FalseContent>
 
     private let inputs: ViewListInputs
-    private let subgraph: Subgraph = .init()
-
     private var cache: Cache?
 
     init(
@@ -35,61 +33,58 @@ final class ConditionalViewListRule<TrueContent: View, FalseContent: View>: @Mai
     }
 
     private func makeTrueContentViewList(_ trueContent: TrueContent) -> any ViewList {
-        if case let .trueContent(cachedChild, cachedViewList) = cache {
-            cachedChild.wrappedValue = trueContent
-            return cachedViewList.wrappedValue
+        if case let .trueContent(cachedItem) = cache {
+            cachedItem.update(childValue: trueContent)
+            return DynamicItemViewList(item: cachedItem)
         }
 
-        subgraph.clean()
+        cleanCache()
 
-        let (child, viewList) = subgraph.withDependencyCapture {
-            let child: Attribute<TrueContent> = .init("Conditional True Child") { trueContent }
-            let outputs: ViewListOutputs = TrueContent.makeViewList(child, inputs: inputs)
-            let viewList: Attribute<any ViewList> = outputs.makeViewListAttribute("Conditional True ViewList")
-            return (child, viewList)
-        }
-
-        cache = .trueContent(
-            child: child,
-            viewList: viewList
+        let item: DynamicViewListItem<TrueContent> = .make(
+            childLabel: "Conditional True Child",
+            childValue: trueContent,
+            inputs: inputs
         )
 
-        return viewList.wrappedValue
+        cache = .trueContent(item: item)
+
+        return DynamicItemViewList(item: item)
     }
 
     private func makeFalseContentViewList(_ falseContent: FalseContent) -> any ViewList {
-        if case let .falseContent(cachedChild, cachedViewList) = cache {
-            cachedChild.wrappedValue = falseContent
-            return cachedViewList.wrappedValue
+        if case let .falseContent(cachedItem) = cache {
+            cachedItem.update(childValue: falseContent)
+            return DynamicItemViewList(item: cachedItem)
         }
 
-        subgraph.clean()
+        cleanCache()
 
-        let (child, viewList) = subgraph.withDependencyCapture {
-            let child: Attribute<FalseContent> = .init("Conditional False Child") { falseContent }
-            let outputs: ViewListOutputs = FalseContent.makeViewList(child, inputs: inputs)
-            let viewList: Attribute<any ViewList> = outputs.makeViewListAttribute("Conditional False ViewList")
-            return (child, viewList)
-        }
-
-        cache = .falseContent(
-            child: child,
-            viewList: viewList
+        let item: DynamicViewListItem<FalseContent> = .make(
+            childLabel: "Conditional False Child",
+            childValue: falseContent,
+            inputs: inputs
         )
 
-        return viewList.wrappedValue
+        cache = .falseContent(item: item)
+
+        return DynamicItemViewList(item: item)
+    }
+
+    private func cleanCache() {
+        switch cache {
+        case let .trueContent(item):
+            item.clean()
+        case let .falseContent(item):
+            item.clean()
+        case nil:
+            break
+        }
     }
 }
 
 extension ConditionalViewListRule {
     enum Cache {
-        case trueContent(
-            child: Attribute<TrueContent>,
-            viewList: Attribute<any ViewList>
-        )
-        case falseContent(
-            child: Attribute<FalseContent>,
-            viewList: Attribute<any ViewList>
-        )
+        case trueContent(item: DynamicViewListItem<TrueContent>)
+        case falseContent(item: DynamicViewListItem<FalseContent>)
     }
 }

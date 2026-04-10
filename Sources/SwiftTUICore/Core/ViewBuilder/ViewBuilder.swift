@@ -35,4 +35,10 @@ public enum ViewBuilder {
     ) -> ConditionalView<TrueContent, FalseContent> {
         .init(.falseContent(component))
     }
+
+    // MARK: - Optional Views
+
+    public static func buildOptional<Content: View>(_ component: Content?) -> Content? {
+        component
+    }
 }

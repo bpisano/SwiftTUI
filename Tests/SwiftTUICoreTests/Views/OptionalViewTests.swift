@@ -1,8 +1,8 @@
 //
-//  File.swift
+//  OptionalViewTests.swift
 //  SwiftTUI
 //
-//  Created by Benjamin Pisano on 31/03/2026.
+//  Created by Benjamin Pisano on 09/04/2026.
 //
 
 import Foundation
@@ -12,16 +12,15 @@ import Geometry
 @testable import AttributeGraph
 @testable import SwiftTUICore
 
-@Suite("ConditionalView")
+@Suite("OptionalView")
 @MainActor
-struct ConditionalViewTests {
+struct OptionalViewTests {
     @Test
-    func `Static condition`() async throws {
+    func `Static present optional`() async throws {
         await expectView(in: Size(width: 9, height: 2)) {
-            if true {
-                Text("Alice")
-            } else {
-                Text("Bob")
+            let name: String? = "Alice"
+            if let name {
+                Text(name)
             }
         } toRender: {
             """
@@ -32,56 +31,22 @@ struct ConditionalViewTests {
     }
 
     @Test
-    func `Dynamic condition`() async throws {
-        @Attribute var screenPosition: Point = .zero
-        @Attribute var screenSize: Size = .init(width: 9, height: 2)
-        @Attribute var viewPhase: ViewPhase = .active
-        let inputs = ViewInputs(
-            position: $screenPosition,
-            size: $screenSize,
-            phase: $viewPhase,
-            storage: .init()
-        )
-
-        @Attribute var showAlice = true
-        @Attribute var view = VStack {
-            if showAlice {
-                Text("Alice")
-            } else {
-                Text("Bob")
+    func `Static nil optional`() async throws {
+        await expectView(in: Size(width: 9, height: 2)) {
+            let name: String? = nil
+            if let name {
+                Text(name)
             }
-        }
-
-        let outputs = type(of: view).makeView($view, inputs: inputs)
-
-        await expectDisplayList(outputs.displayList, in: screenSize) {
+        } toRender: {
             """
-            Alice....
             .........
-            """
-        }
-
-        showAlice = false
-
-        await expectDisplayList(outputs.displayList, in: screenSize) {
-            """
-            Bob......
-            .........
-            """
-        }
-
-        showAlice = true
-
-        await expectDisplayList(outputs.displayList, in: screenSize) {
-            """
-            Alice....
             .........
             """
         }
     }
 
     @Test
-    func `Dynamic condition with empty view`() async throws {
+    func `Dynamic optional toggles content`() async throws {
         @Attribute var screenPosition: Point = .zero
         @Attribute var screenSize: Size = .init(width: 9, height: 2)
         @Attribute var viewPhase: ViewPhase = .active
@@ -92,10 +57,10 @@ struct ConditionalViewTests {
             storage: .init()
         )
 
-        @Attribute var showAlice = true
+        @Attribute var name: String? = "Alice"
         @Attribute var view = VStack {
-            if showAlice {
-                Text("Alice")
+            if let name {
+                Text(name)
             }
         }
 
@@ -108,7 +73,7 @@ struct ConditionalViewTests {
             """
         }
 
-        showAlice = false
+        name = nil
 
         await expectDisplayList(outputs.displayList, in: screenSize) {
             """
@@ -117,11 +82,11 @@ struct ConditionalViewTests {
             """
         }
 
-        showAlice = true
+        name = "Bob"
 
         await expectDisplayList(outputs.displayList, in: screenSize) {
             """
-            Alice....
+            Bob......
             .........
             """
         }
@@ -131,10 +96,9 @@ struct ConditionalViewTests {
     func `Inside view list`() async throws {
         await expectView(in: Size(width: 9, height: 2)) {
             VStack(alignment: .leading) {
-                if true {
-                    Text("Alice")
-                } else {
-                    Text("Bob")
+                let name: String? = "Alice"
+                if let name {
+                    Text(name)
                 }
                 Text("Charlie")
             }
@@ -142,6 +106,24 @@ struct ConditionalViewTests {
             """
             Alice....
             Charlie..
+            """
+        }
+    }
+
+    @Test
+    func `Nil optional inside view list`() async throws {
+        await expectView(in: Size(width: 9, height: 2)) {
+            VStack(alignment: .leading) {
+                let name: String? = nil
+                if let name {
+                    Text(name)
+                }
+                Text("Charlie")
+            }
+        } toRender: {
+            """
+            Charlie..
+            .........
             """
         }
     }

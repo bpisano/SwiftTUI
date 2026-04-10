@@ -210,6 +210,19 @@ func `ForEach items shift position when preceding sibling grows`() async throws 
 
 See `Tests/SwiftTUICoreTests/Views/VStackTests.swift` for examples.
 
+## Performance Workflow
+
+Performance validation is mandatory after every code change, not only after graph changes.
+
+- Run the benchmark suites with:
+  `swift test --filter 'HStackPerformanceTests|VStackPerformanceTests|PerformanceBenchmarkTests'`
+- Compare the new measurements against the latest Markdown baseline under `Docs/Performance`.
+- If there is no newer file, use `Docs/Performance/2026-04-10-performance-baseline.md` as the comparison point.
+- Call out any regression before considering the work complete.
+- When the new numbers are acceptable, update or add a Markdown baseline file with readable tables so future runs have a stable comparison target.
+
+If the change touches `AttributeGraph`, `Subgraph`, `ViewList`, `ForEach`, `LayoutView`, or dynamic child lifetime, treat the performance comparison as especially high priority and do not skip it.
+
 ## Debugging and Validation
 
 Useful tests:

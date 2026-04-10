@@ -127,6 +127,19 @@ Useful commands:
 - `swift test --filter ForEachTests`
 - `swift test`
 
+## Performance Validation
+
+Performance validation is required after every code change.
+
+- Run:
+  `swift test --filter 'HStackPerformanceTests|VStackPerformanceTests|PerformanceBenchmarkTests'`
+- Compare the new measurements against the latest Markdown baseline in `Docs/Performance`.
+- If no newer baseline exists, compare against `Docs/Performance/2026-04-10-performance-baseline.md`.
+- Do not treat the work as complete if the new run shows a meaningful regression that has not been explained.
+- When the numbers are acceptable, update or add a Markdown baseline file with readable tables for future comparisons.
+
+This is especially important for changes involving `AttributeGraph`, `Subgraph`, `ViewList`, `ForEach`, `LayoutView`, dynamic child lifetime, or layout performance.
+
 ## Guidance For Suggestions
 
 - Prefer explanations tied to the local files and types.

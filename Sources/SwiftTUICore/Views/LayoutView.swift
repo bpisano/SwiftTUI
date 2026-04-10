@@ -78,8 +78,13 @@ extension LayoutView {
         }
 
         let displayList = Attribute("\(Content.self) DisplayList") {
-            DisplayList(
-                contentViewOutputs.wrappedValue
+            let childOutputs = contentViewOutputs.wrappedValue
+
+            _ = containerInfo.wrappedValue
+            _ = childGeometries.wrappedValue
+
+            return DisplayList(
+                childOutputs
                     .map { .childList($0.displayList.wrappedValue) }
             )
         }
