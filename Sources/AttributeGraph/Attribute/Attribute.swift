@@ -65,7 +65,9 @@ public struct Attribute<T>: AnyAttribute {
         if let value = storage.value {
             return value
         }
-        return rule.evaluate()
+        let value: T = rule.evaluate()
+        storage.value = value
+        return value
     }
 
     public var id: UUID {

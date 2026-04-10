@@ -20,6 +20,7 @@ final class TerminalEngine<V: View> {
     @Attribute private var screenOrigin: Point = .zero
     @Attribute private var screenSize: Size
     @Attribute private var viewPhase: ViewPhase = .active
+    @Attribute private var environment: EnvironmentValues = .init()
     @Attribute private var view: V
 
     init(
@@ -52,6 +53,7 @@ final class TerminalEngine<V: View> {
             position: $screenOrigin,
             size: $screenSize,
             phase: $viewPhase,
+            environment: $environment,
             storage: .init()
         )
         outputs = V.makeView($view, inputs: inputs)

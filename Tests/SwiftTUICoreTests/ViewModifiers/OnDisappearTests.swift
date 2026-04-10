@@ -24,6 +24,7 @@ struct OnDisappearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -57,6 +58,7 @@ struct OnDisappearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -92,6 +94,7 @@ struct OnDisappearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -120,6 +123,7 @@ struct OnDisappearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 

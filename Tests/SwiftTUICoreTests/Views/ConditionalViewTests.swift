@@ -40,6 +40,7 @@ struct ConditionalViewTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -89,6 +90,7 @@ struct ConditionalViewTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 

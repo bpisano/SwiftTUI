@@ -17,22 +17,26 @@ public extension DynamicProperty {
 }
 
 extension Attribute where T: View {
-    func updateDynamicProperties() {
+    func updateDynamicProperties(environment: Attribute<EnvironmentValues>) {
         let mirror = Mirror(reflecting: unsafeValue)
         for child in mirror.children {
             if let dynamicProperty = child.value as? DynamicProperty {
                 dynamicProperty.update()
+            } else if let environmentProperty = child.value as? EnvironmentProperty {
+                environmentProperty.update(environment: environment)
             }
         }
     }
 }
 
 extension Attribute where T: ViewModifier {
-    func updateDynamicProperties() {
+    func updateDynamicProperties(environment: Attribute<EnvironmentValues>) {
         let mirror = Mirror(reflecting: unsafeValue)
         for child in mirror.children {
             if let dynamicProperty = child.value as? DynamicProperty {
                 dynamicProperty.update()
+            } else if let environmentProperty = child.value as? EnvironmentProperty {
+                environmentProperty.update(environment: environment)
             }
         }
     }

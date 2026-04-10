@@ -14,6 +14,7 @@ public struct ViewInputs: InputStorage, Sendable {
     let size: Attribute<Size>
     let phase: Attribute<ViewPhase>
 
+    var environment: Attribute<EnvironmentValues>
     var storage: ViewInputsStorage
 
     var frame: Rect {
@@ -27,11 +28,13 @@ public struct ViewInputs: InputStorage, Sendable {
         position: Attribute<Point>,
         size: Attribute<Size>,
         phase: Attribute<ViewPhase>,
+        environment: Attribute<EnvironmentValues>,
         storage: ViewInputsStorage
     ) {
         self.position = position
         self.size = size
         self.phase = phase
+        self.environment = environment
         self.storage = storage
     }
 }
