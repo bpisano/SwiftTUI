@@ -8,30 +8,23 @@
 import Foundation
 import AttributeGraph
 
-struct ChildEnvironment<Value>: Rule {
+@MainActor
+struct ChildEnvironment<Value>: @MainActor Rule {
     private let parent: Attribute<EnvironmentValues>
-    private let keyPath: WritableKeyPath<EnvironmentValues, Value>
-    private let value: Value
+    private let viewModifier: Attribute<EnvironmentKeyWritingViewModifier<Value>>
 
     init(
         parent: Attribute<EnvironmentValues>,
-        keyPath: WritableKeyPath<EnvironmentValues, Value>,
-        value: Value
+        viewModifier: Attribute<EnvironmentKeyWritingViewModifier<Value>>
     ) {
         self.parent = parent
-        self.keyPath = keyPath
-        self.value = value
+        self.viewModifier = viewModifier
     }
 
     func evaluate() -> EnvironmentValues {
+        let modifier: EnvironmentKeyWritingViewModifier<Value> = viewModifier.wrappedValue
         var modifiedEnvironment: EnvironmentValues = parent.wrappedValue
-        modifiedEnvironment[keyPath: keyPath] = value
+        modifiedEnvironment[keyPath: modifier.keyPath] = modifier.value
         return modifiedEnvironment
-    }
-}
-
-extension ChildEnvironment: Equatable where Value: Equatable {
-    static func == (lhs: ChildEnvironment<Value>, rhs: ChildEnvironment<Value>) -> Bool {
-        lhs.value == rhs.value
     }
 }

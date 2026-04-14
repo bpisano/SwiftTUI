@@ -9,8 +9,8 @@ import Foundation
 import AttributeGraph
 
 struct EnvironmentKeyWritingViewModifier<Value>: ViewModifier, PrimitiveViewModifier, UnaryViewModifier {
-    private let keyPath: WritableKeyPath<EnvironmentValues, Value>
-    private let value: Value
+    let keyPath: WritableKeyPath<EnvironmentValues, Value>
+    let value: Value
 
     init(
         keyPath: WritableKeyPath<EnvironmentValues, Value>,
@@ -29,11 +29,10 @@ extension EnvironmentKeyWritingViewModifier {
     ) -> ViewOutputs {
         let childEnvironment: ChildEnvironment<Value> = .init(
             parent: inputs.environment,
-            keyPath: modifier.wrappedValue.keyPath,
-            value: modifier.wrappedValue.value
+            viewModifier: modifier
         )
         let childEnvironmentAttribute: Attribute<EnvironmentValues> = .init(
-            "Child environment",
+            "Derived Environment Values",
             rule: childEnvironment
         )
 
