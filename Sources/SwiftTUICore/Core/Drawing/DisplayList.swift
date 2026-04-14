@@ -31,6 +31,7 @@ extension DisplayList {
     public enum CommandAction: Sendable {
         case putLine(_ line: String)
         case backgroundColor(_ color: ANSIColor)
+        case foregroundColor(_ color: ANSIColor)
     }
 
     public struct Command: Sendable {

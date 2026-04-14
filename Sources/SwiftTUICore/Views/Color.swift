@@ -13,8 +13,20 @@ import Terminal
 public struct Color: View, PrimitiveView {
     private let ansiColor: ANSIColor
 
-    public init(_ ansiColor: ANSIColor) {
+    public nonisolated init(_ ansiColor: ANSIColor) {
         self.ansiColor = ansiColor
+    }
+
+    public nonisolated init(
+        red: Float,
+        green: Float,
+        blue: Float
+    ) {
+        self.ansiColor = .rgb(
+            r: UInt8(red),
+            g: UInt8(green),
+            b: UInt8(blue)
+        )
     }
 }
 
@@ -59,7 +71,38 @@ extension Color {
     }
 }
 
+extension Color: ShapeStyle, PrimitiveShapeStyle {
+    public static nonisolated func makeShapeStyle(
+        _ shapeStyle: Color,
+        inputs: ShapeStyleInputs
+    ) -> ShapeStyleOutputs {
+        let commands: [DisplayList.Command] = [
+            .init(.foregroundColor(shapeStyle.ansiColor), in: inputs.rect)
+        ]
+        return .init(commands: commands)
+    }
+}
+
 extension Color: Equatable {}
 extension Color: Hashable {}
 extension Color: Codable {}
 extension Color: Sendable {}
+
+extension ShapeStyle where Self == Color {
+    // MARK: - Styles
+
+    public static var primary: Self { .init(.white) }
+    public static var secondary: Self { .init(red: 0.87, green: 0.87, blue: 0.87) }
+    public static var tertiary: Self { .init(red: 0.63, green: 0.63, blue: 0.63) }
+
+    // MARK: - Colors
+
+    public static var black: Self { .init(.black) }
+    public static var red: Self { .init(.red) }
+    public static var green: Self { .init(.green) }
+    public static var yellow: Self { .init(.yellow) }
+    public static var blue: Self { .init(.blue) }
+    public static var magenta: Self { .init(.magenta) }
+    public static var cyan: Self { .init(.cyan) }
+    public static var white: Self { .init(.white) }
+}

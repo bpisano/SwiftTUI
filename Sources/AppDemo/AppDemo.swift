@@ -18,12 +18,11 @@ struct MyView: View {
     private let tileSize: GeometryUnit = 4
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Color(.red)
-                .frame(width: 2, height: 2)
-            Text("A")
-                .padding([.bottom, .trailing], 1)
-            Text("B")
+        VStack {
+            Text("Hello World!")
+            Text("SwiftTUI")
+                .foregroundStyle(.red)
+        }
 //            Color(.white)
 //                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
 //            BlackTilesLayout(cellSize: tileSize) {
@@ -31,7 +30,6 @@ struct MyView: View {
 //                    Color(.brightBlack)
 //                }
 //            }
-        }
     }
 }
 
