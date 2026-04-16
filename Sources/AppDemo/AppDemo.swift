@@ -17,11 +17,38 @@ struct MyApp: App {
 struct MyView: View {
     private let tileSize: GeometryUnit = 4
 
+    private let allColors: [Color] = [
+        .black,
+        .red,
+        .green,
+        .yellow,
+        .blue,
+        .magenta,
+        .cyan,
+        .white,
+        .gray,
+        .softBlack,
+        .softRed,
+        .softGreen,
+        .softYellow,
+        .softBlue,
+        .softMagenta,
+        .softCyan,
+        .softWhite
+    ]
+
     var body: some View {
-        VStack {
-            Text("Hello World!")
-            Text("SwiftTUI")
-                .foregroundStyle(.red)
+        VStack(alignment: .leading) {
+            Text("Primary")
+                .foregroundStyle(.primary)
+            Text("Secondary")
+                .foregroundStyle(.secondary)
+            Text("Tertiary")
+                .foregroundStyle(.tertiary)
+            Text("Quaternary")
+                .foregroundStyle(.quaternary)
+            Text("Quinary")
+                .foregroundStyle(.quinary)
         }
 //            Color(.white)
 //                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
