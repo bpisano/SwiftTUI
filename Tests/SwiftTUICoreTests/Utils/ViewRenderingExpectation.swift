@@ -30,6 +30,7 @@ func expectView<V: View>(
         position: $screenOrigin,
         size: $screenSize,
         phase: $viewPhase,
+        environment: .init(wrappedValue: .init()),
         storage: .init()
     )
     let outputs: ViewOutputs = V.makeView($viewAttribute, inputs: inputs)

@@ -16,14 +16,15 @@ public enum ANSIColor: Equatable, Hashable, Codable, Sendable {
     case magenta
     case cyan
     case white
-    case brightBlack
-    case brightRed
-    case brightGreen
-    case brightYellow
-    case brightBlue
-    case brightMagenta
-    case brightCyan
-    case brightWhite
+    case gray
+    case softBlack
+    case softRed
+    case softGreen
+    case softYellow
+    case softBlue
+    case softMagenta
+    case softCyan
+    case softWhite
     case rgb(r: UInt8, g: UInt8, b: UInt8)
     case `default`
 
@@ -36,15 +37,16 @@ public enum ANSIColor: Equatable, Hashable, Codable, Sendable {
         case .blue: return "\u{001B}[34m"
         case .magenta: return "\u{001B}[35m"
         case .cyan: return "\u{001B}[36m"
-        case .white: return "\u{001B}[37m"
-        case .brightBlack: return "\u{001B}[90m"
-        case .brightRed: return "\u{001B}[91m"
-        case .brightGreen: return "\u{001B}[92m"
-        case .brightYellow: return "\u{001B}[93m"
-        case .brightBlue: return "\u{001B}[94m"
-        case .brightMagenta: return "\u{001B}[95m"
-        case .brightCyan: return "\u{001B}[96m"
-        case .brightWhite: return "\u{001B}[97m"
+        case .white: return "\u{001B}[97m"
+        case .gray: return "\u{001B}[90m"
+        case .softBlack: return "\u{001B}[90m"
+        case .softRed: return "\u{001B}[91m"
+        case .softGreen: return "\u{001B}[92m"
+        case .softYellow: return "\u{001B}[93m"
+        case .softBlue: return "\u{001B}[94m"
+        case .softMagenta: return "\u{001B}[95m"
+        case .softCyan: return "\u{001B}[96m"
+        case .softWhite: return "\u{001B}[37m"
         case .rgb(let r, let g, let b): return "\u{001B}[38;2;\(r);\(g);\(b)m"
         case .default: return "\u{001B}[39m"
         }
@@ -59,15 +61,16 @@ public enum ANSIColor: Equatable, Hashable, Codable, Sendable {
         case .blue: return "\u{001B}[44m"
         case .magenta: return "\u{001B}[45m"
         case .cyan: return "\u{001B}[46m"
-        case .white: return "\u{001B}[47m"
-        case .brightBlack: return "\u{001B}[100m"
-        case .brightRed: return "\u{001B}[101m"
-        case .brightGreen: return "\u{001B}[102m"
-        case .brightYellow: return "\u{001B}[103m"
-        case .brightBlue: return "\u{001B}[104m"
-        case .brightMagenta: return "\u{001B}[105m"
-        case .brightCyan: return "\u{001B}[106m"
-        case .brightWhite: return "\u{001B}[107m"
+        case .white: return "\u{001B}[107m"
+        case .gray: return "\u{001B}[100m"
+        case .softBlack: return "\u{001B}[100m"
+        case .softRed: return "\u{001B}[101m"
+        case .softGreen: return "\u{001B}[102m"
+        case .softYellow: return "\u{001B}[103m"
+        case .softBlue: return "\u{001B}[104m"
+        case .softMagenta: return "\u{001B}[105m"
+        case .softCyan: return "\u{001B}[106m"
+        case .softWhite: return "\u{001B}[47m"
         case .rgb(let r, let g, let b): return "\u{001B}[48;2;\(r);\(g);\(b)m"
         case .default: return "\u{001B}[49m"
         }

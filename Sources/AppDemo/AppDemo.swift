@@ -17,13 +17,39 @@ struct MyApp: App {
 struct MyView: View {
     private let tileSize: GeometryUnit = 4
 
+    private let allColors: [Color] = [
+        .black,
+        .red,
+        .green,
+        .yellow,
+        .blue,
+        .magenta,
+        .cyan,
+        .white,
+        .gray,
+        .softBlack,
+        .softRed,
+        .softGreen,
+        .softYellow,
+        .softBlue,
+        .softMagenta,
+        .softCyan,
+        .softWhite
+    ]
+
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Color(.red)
-                .frame(width: 2, height: 2)
-            Text("A")
-                .padding([.bottom, .trailing], 1)
-            Text("B")
+        VStack(alignment: .leading) {
+            Text("Primary")
+                .foregroundStyle(.primary)
+            Text("Secondary")
+                .foregroundStyle(.secondary)
+            Text("Tertiary")
+                .foregroundStyle(.tertiary)
+            Text("Quaternary")
+                .foregroundStyle(.quaternary)
+            Text("Quinary")
+                .foregroundStyle(.quinary)
+        }
 //            Color(.white)
 //                .frame(width: tileSize * 8, height: tileSize / 2 * 8)
 //            BlackTilesLayout(cellSize: tileSize) {
@@ -31,7 +57,6 @@ struct MyView: View {
 //                    Color(.brightBlack)
 //                }
 //            }
-        }
     }
 }
 

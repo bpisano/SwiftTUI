@@ -48,21 +48,31 @@ extension Text {
 
             let text: String = view.wrappedValue.text
             let lines: [String] = text.slice(Int(textGeometry.width))
+            let textCommands: [DisplayList.Command] = lines.enumerated().map { index, line in
+                let origin: Point = .init(
+                    x: textGeometry.x,
+                    y: textGeometry.y + GeometryUnit(index)
+                )
+                let size: Size = .init(width: textGeometry.width, height: 1)
+                let commandFrame: Rect = .init(origin: origin, size: size)
+                return DisplayList.Command(
+                    .putLine(line),
+                    in: commandFrame
+                )
+            }
 
-            return DisplayList(
-                commands: lines.enumerated().map { index, line in
-                    let origin: Point = .init(
-                        x: textGeometry.x,
-                        y: textGeometry.y + GeometryUnit(index)
-                    )
-                    let size: Size = .init(width: textGeometry.width, height: 1)
-                    let commandFrame: Rect = .init(origin: origin, size: size)
-                    return DisplayList.Command(
-                        .putLine(line),
-                        in: commandFrame
-                    )
-                }
+            let environment: EnvironmentValues = inputs.environment.wrappedValue
+            let foregroundStyle: AnyShapeStyle = environment[keyPath: \.foregroundStyle]
+            let shapeStyleOutputs: ShapeStyleOutputs = AnyShapeStyle.makeShapeStyle(
+                foregroundStyle,
+                inputs: .init(
+                    rect: textGeometry,
+                    environment: environment
+                )
             )
+            let shapeStyleCommands: [DisplayList.Command] = shapeStyleOutputs.commands
+
+            return DisplayList(commands: textCommands + shapeStyleCommands)
         }
 
         return .init(

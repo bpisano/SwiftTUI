@@ -54,6 +54,8 @@ actor TerminalRenderer {
             buffer.putLine(line, at: command.frame.origin)
         case let .backgroundColor(color):
             buffer.setBackgroundColor(color, in: command.frame)
+        case let .foregroundColor(color):
+            buffer.setForegroundColor(color, in: command.frame)
         }
     }
 }

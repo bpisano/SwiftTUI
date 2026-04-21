@@ -24,6 +24,7 @@ struct OnAppearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -52,6 +53,7 @@ struct OnAppearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -82,6 +84,7 @@ struct OnAppearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -115,6 +118,7 @@ struct OnAppearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -145,6 +149,7 @@ struct OnAppearTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 

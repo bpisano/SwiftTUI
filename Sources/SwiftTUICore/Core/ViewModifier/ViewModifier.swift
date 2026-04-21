@@ -44,7 +44,7 @@ extension ViewModifier {
             return modifier.wrappedValue.body(content: modifierContent)
         }
 
-        modifier.updateDynamicProperties()
+        modifier.updateDynamicProperties(environment: inputs.environment)
 
         return Body.makeView(modifiedBody, inputs: inputs)
     }
@@ -61,7 +61,7 @@ extension ViewModifier {
             return modifier.wrappedValue.body(content: modifierContent)
         }
 
-        modifier.updateDynamicProperties()
+        modifier.updateDynamicProperties(environment: inputs.environment)
 
         return Body.makeViewList(modifiedBody, inputs: inputs)
     }

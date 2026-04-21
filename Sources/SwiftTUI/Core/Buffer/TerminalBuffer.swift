@@ -55,6 +55,23 @@ struct TerminalBuffer: Sendable {
         }
     }
 
+    mutating func setForegroundColor(_ color: ANSIColor, in rect: Rect) {
+        let startRow: Int = max(0, Int(rect.origin.y))
+        let endRow: Int = min(Int(size.height), Int(rect.origin.y + rect.size.height))
+        let startCol: Int = max(0, Int(rect.origin.x))
+        let endCol: Int = min(Int(size.width), Int(rect.origin.x + rect.size.width))
+
+        guard endRow >= startRow else { return }
+        guard endCol >= startCol else { return }
+
+        for row in startRow..<endRow {
+            let base: Int = row * Int(size.width)
+            for col in startCol..<endCol {
+                cells[base + col].setForegroundColor(color)
+            }
+        }
+    }
+
     func makeStringFrame() -> String {
         let width: Int = Int(size.width)
         let height: Int = Int(size.height)

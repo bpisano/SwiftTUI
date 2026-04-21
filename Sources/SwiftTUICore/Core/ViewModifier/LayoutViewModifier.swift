@@ -60,6 +60,7 @@ extension LayoutViewModifier {
             position: modifiedPosition,
             size: modifiedSize,
             phase: inputs.phase,
+            environment: inputs.environment,
             storage: inputs.storage
         )
 

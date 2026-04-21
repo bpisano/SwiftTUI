@@ -21,6 +21,7 @@ func `ViewModifier`() {
         position: $position,
         size: $size,
         phase: $phase,
+        environment: .init(wrappedValue: .init()),
         storage: .init()
     )
     @Attribute var view = Text("Hello world")

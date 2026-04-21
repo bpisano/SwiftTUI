@@ -6,19 +6,23 @@
 //
 
 import Foundation
+import AttributeGraph
 
 public struct ViewListInputs: InputStorage {
-    var storage: ViewInputsStorage
     var implicitId: Int
+    var environment: Attribute<EnvironmentValues>
+    var storage: ViewInputsStorage
 
     init(viewInputs: ViewInputs, implicitId: Int = 0) {
-        self.storage = viewInputs.storage
         self.implicitId = implicitId
+        self.environment = viewInputs.environment
+        self.storage = viewInputs.storage
     }
 
     @MainActor
     init(implicitId: Int = 0) {
-        self.storage = .init()
         self.implicitId = implicitId
+        self.environment = .init(wrappedValue: EnvironmentValues())
+        self.storage = .init()
     }
 }

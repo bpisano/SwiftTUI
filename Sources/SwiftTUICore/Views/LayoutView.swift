@@ -56,6 +56,7 @@ extension LayoutView {
                     return childGeometries[index].size
                 },
                 phase: inputs.phase,
+                environment: inputs.environment,
                 storage: inputs.storage
             )
             let rawOutputs = makeViewOutputs(modifiedInputs)

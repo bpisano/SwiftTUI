@@ -67,6 +67,7 @@ struct StateTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
@@ -102,10 +103,11 @@ struct StateTests {
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
             storage: .init()
         )
 
-        let modifier: BaseViewModifier = .init()
+        var modifier: BaseViewModifier = .init()
         @Attribute var view = Text("A")
             .modifier(modifier)
 
