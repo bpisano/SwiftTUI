@@ -22,4 +22,6 @@ public protocol AnyAttribute: DigraphRepresentable {
     func addOutgoing(edge: Edge)
     func removeIncoming(edge: Edge)
     func removeOutgoing(edge: Edge)
+
+    func detachRef()
 }

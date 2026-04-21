@@ -28,6 +28,9 @@ public final class Subgraph {
 
     public func clean() {
         for attributeRef in attributeRefs {
+            // Break the Storage ↔ AttributeRef retain cycle before releasing the
+            // graph/subgraph strong refs, so ARC can free the AttributeRef.
+            attributeRef.attribute.detachRef()
             attributeRef.attribute.state = .clean
             for incomingEdge in attributeRef.attribute.incomingEdges {
                 incomingEdge.fromRef.attribute.removeOutgoing(edge: incomingEdge)

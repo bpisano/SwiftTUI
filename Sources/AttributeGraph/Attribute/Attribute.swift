@@ -11,7 +11,9 @@ import Foundation
 public struct Attribute<T>: AnyAttribute {
     public var wrappedValue: T {
         get {
-            Graph.current.registerDependency(storage.ref)
+            if let ref = storage.ref {
+                Graph.current.registerDependency(ref)
+            }
 
             if let cachedValue = storage.value, storage.state == .clean {
                 return cachedValue
@@ -106,15 +108,17 @@ public struct Attribute<T>: AnyAttribute {
         _ label: String? = nil
     ) {
         self.rule = AnyRule(ValueRule(wrappedValue))
-        self.storage.ref = AttributeRef(self)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
         self.storage.label = label ?? ""
-        Graph.current.register(attributeRef: storage.ref)
+        Graph.current.register(attributeRef: ref)
     }
 
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
-        self.storage.ref = AttributeRef(self)
-        Graph.current.register(attributeRef: storage.ref)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
+        Graph.current.register(attributeRef: ref)
     }
 
     public init<R: Rule>(
@@ -122,9 +126,10 @@ public struct Attribute<T>: AnyAttribute {
         rule: R
     ) where R.Value == T {
         self.rule = AnyRule(rule)
-        self.storage.ref = AttributeRef(self)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
         self.storage.label = label ?? ""
-        Graph.current.register(attributeRef: storage.ref)
+        Graph.current.register(attributeRef: ref)
     }
 
     public func addIncoming(edge: Edge) {
@@ -141,6 +146,15 @@ public struct Attribute<T>: AnyAttribute {
 
     public func removeOutgoing(edge: Edge) {
         storage.outgoingEdges.remove(edge)
+    }
+
+    /// Breaks the `Storage ↔ AttributeRef` retain cycle.
+    ///
+    /// Called by `Subgraph.clean()` before removing the `AttributeRef` from the graph
+    /// and subgraph containers. Once this is called, `evaluateSelf()` and
+    /// `wrappedValue` treat the attribute as dead.
+    public func detachRef() {
+        storage.ref = nil
     }
 
     public func evaluateIfNeeded() {
@@ -186,9 +200,10 @@ public struct Attribute<T>: AnyAttribute {
     /// Uses iterative DFS with an "expanded" flag to produce a valid topological order
     /// (dependencies before their dependents). Only includes `.dirty` and `.pending` nodes.
     private func collectPostOrder() -> [AttributeRef] {
+        guard let selfRef = storage.ref else { return [] }
         var result: [AttributeRef] = []
         var visited: Set<AttributeRef> = []
-        var stack: [(ref: AttributeRef, expanded: Bool)] = [(storage.ref, false)]
+        var stack: [(ref: AttributeRef, expanded: Bool)] = [(selfRef, false)]
 
         while !stack.isEmpty {
             let (ref, expanded) = stack.removeLast()
@@ -221,6 +236,10 @@ public struct Attribute<T>: AnyAttribute {
     /// Prunes stale incoming edges before re-running so that conditional dependencies
     /// are re-registered correctly. Returns `true` if the value changed (enabling change-cut).
     public func evaluateSelf() -> Bool {
+        guard let ref = storage.ref else {
+            storage.state = .clean
+            return false
+        }
         let oldValue = storage.value
 
         // Stale edge pruning: clear incoming edges so re-evaluation registers only
@@ -230,8 +249,8 @@ public struct Attribute<T>: AnyAttribute {
         }
         storage.incomingEdges.removeAll()
 
-        Graph.current.reevaluate(storage.ref)
-        Graph.current.withDependencyCapture(of: storage.ref) {
+        Graph.current.reevaluate(ref)
+        Graph.current.withDependencyCapture(of: ref) {
             storage.value = rule.evaluate()
         }
 
@@ -254,7 +273,7 @@ public struct Attribute<T>: AnyAttribute {
 extension Attribute {
     final class Storage: @unchecked Sendable {
         var id: UUID = .init()
-        var ref: AttributeRef!
+        var ref: AttributeRef?
         var flags: AttributeFlags = []
         var label: String = ""
         var value: T?
@@ -319,17 +338,19 @@ extension Attribute where T: Equatable {
         _ label: String? = nil
     ) {
         self.rule = AnyRule(ValueRule(wrappedValue))
-        self.storage.ref = AttributeRef(self)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
         self.storage.label = label ?? ""
         self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: storage.ref)
+        Graph.current.register(attributeRef: ref)
     }
 
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.rule = AnyRule(ValueRule(wrappedValue))
-        self.storage.ref = AttributeRef(self)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
         self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: storage.ref)
+        Graph.current.register(attributeRef: ref)
     }
 
     public init<R: Rule>(
@@ -337,10 +358,11 @@ extension Attribute where T: Equatable {
         rule: R
     ) where R.Value == T {
         self.rule = AnyRule(rule)
-        self.storage.ref = AttributeRef(self)
+        let ref = AttributeRef(self)
+        self.storage.ref = ref
         self.storage.label = label ?? ""
         self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: storage.ref)
+        Graph.current.register(attributeRef: ref)
     }
 
     /// Equatable-constrained closure init: sets the equality check so that

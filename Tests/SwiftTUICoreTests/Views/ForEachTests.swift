@@ -180,6 +180,46 @@ struct ForEachTests {
     }
 
     @Test
+    func `Layout update with stable id`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 3)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            storage: .init()
+        )
+
+        @Attribute var items: [PaddedItem] = [PaddedItem(id: 1, leading: 0)]
+        @Attribute var view = VStack(alignment: .leading, spacing: 0) {
+            ForEach(items) { item in
+                Text("X").padding(.leading, item.leading)
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        await expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            X........
+            .........
+            .........
+            """
+        }
+
+        items = [PaddedItem(id: 1, leading: 2)]
+
+        await expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            ..X......
+            .........
+            .........
+            """
+        }
+    }
+
+    @Test
     func `Reorder`() async throws {
         @Attribute var screenPosition: Point = .zero
         @Attribute var screenSize: Size = .init(width: 9, height: 4)
@@ -295,4 +335,9 @@ struct ForEachTests {
 private struct User: Identifiable {
     let id: Int
     let name: String
+}
+
+private struct PaddedItem: Identifiable {
+    let id: Int
+    let leading: Double
 }
