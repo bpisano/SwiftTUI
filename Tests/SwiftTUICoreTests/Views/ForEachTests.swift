@@ -187,10 +187,12 @@ struct ForEachTests {
         @Attribute var screenPosition: Point = .zero
         @Attribute var screenSize: Size = .init(width: 9, height: 3)
         @Attribute var viewPhase: ViewPhase = .active
+        @Attribute var environment: EnvironmentValues = .init()
         let inputs = ViewInputs(
             position: $screenPosition,
             size: $screenSize,
             phase: $viewPhase,
+            environment: $environment,
             storage: .init()
         )
 

@@ -13,16 +13,16 @@ public final class Edge {
         case dirty
     }
 
-    let fromRef: AttributeRef
-    let toRef: AttributeRef
+    let from: AnyAttribute
+    let to: AnyAttribute
     var state: State = .clean
 
     init(
-        from: AttributeRef,
-        to: AttributeRef
+        from: AnyAttribute,
+        to: AnyAttribute
     ) {
-        self.fromRef = from
-        self.toRef = to
+        self.from = from
+        self.to = to
     }
 }
 
@@ -38,8 +38,8 @@ extension Edge: Hashable, Equatable {
 
 extension Edge: DigraphRepresentable {
     public var digraph: String {
-        let fromId: String = fromRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
-        let toId: String = toRef.attribute.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let fromId: String = from.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let toId: String = to.id.uuidString.replacingOccurrences(of: "-", with: "")
         return "\"\(fromId)\" -> \"\(toId)\"\(state == .dirty ? " [style=dashed]" : "")"
     }
 }

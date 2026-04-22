@@ -9,10 +9,11 @@ import Foundation
 
 public final class Subgraph {
     private let graph: Graph
-    private var attributeRefs: Set<AttributeRef> = []
+    private var attributeIDs: Set<ObjectIdentifier> = []
+    private var attributes: [AnyAttribute] = []
 
     public var attributeLabels: [String] {
-        attributeRefs.map(\.attribute.label)
+        attributes.map(\.label)
     }
 
     public init(graph: Graph = .current) {
@@ -26,27 +27,31 @@ public final class Subgraph {
         return body()
     }
 
+    public var debugClean: Bool = false
+
     public func clean() {
-        for attributeRef in attributeRefs {
-            // Break the Storage ↔ AttributeRef retain cycle before releasing the
-            // graph/subgraph strong refs, so ARC can free the AttributeRef.
-            attributeRef.attribute.detachRef()
-            attributeRef.attribute.state = .clean
-            for incomingEdge in attributeRef.attribute.incomingEdges {
-                incomingEdge.fromRef.attribute.removeOutgoing(edge: incomingEdge)
-                attributeRef.attribute.removeIncoming(edge: incomingEdge)
+        for attribute in attributes {
+            attribute.state = .clean
+            if debugClean && !attribute.incomingEdges.isEmpty {
+                print("[Subgraph.clean] \(attribute.label) — removing \(attribute.incomingEdges.count) incoming edges: \(attribute.incomingEdges.map(\.from.label))")
             }
-            for outgoingEdge in attributeRef.attribute.outgoingEdges {
-                outgoingEdge.toRef.attribute.removeIncoming(edge: outgoingEdge)
-                graph.invalidate(outgoingEdge.toRef)
-                attributeRef.attribute.removeOutgoing(edge: outgoingEdge)
+            for incomingEdge in attribute.incomingEdges {
+                incomingEdge.from.removeOutgoing(edge: incomingEdge)
+                attribute.removeIncoming(edge: incomingEdge)
             }
-            graph.unregister(attributeRef: attributeRef)
+            for outgoingEdge in attribute.outgoingEdges {
+                outgoingEdge.to.removeIncoming(edge: outgoingEdge)
+                graph.invalidate(outgoingEdge.to)
+                attribute.removeOutgoing(edge: outgoingEdge)
+            }
+            graph.unregister(attribute)
         }
-        attributeRefs.removeAll()
+        attributes.removeAll()
+        attributeIDs.removeAll()
     }
 
-    func register(attributeRef: AttributeRef) {
-        attributeRefs.insert(attributeRef)
+    func register(_ attribute: AnyAttribute) {
+        guard attributeIDs.insert(ObjectIdentifier(attribute)).inserted else { return }
+        attributes.append(attribute)
     }
 }

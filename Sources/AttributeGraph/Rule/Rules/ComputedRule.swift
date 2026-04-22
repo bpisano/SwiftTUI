@@ -20,13 +20,10 @@ public struct ComputedRule<T>: Rule {
 }
 
 extension Attribute {
-    public init(
+    public convenience init(
         _ label: String? = nil,
         _ compute: @escaping () -> T
     ) {
-        self.init(
-            label,
-            rule: ComputedRule(compute)
-        )
+        self.init(AnyRule(ComputedRule(compute)), label: label ?? "", equalityCheck: nil)
     }
 }

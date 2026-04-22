@@ -8,160 +8,120 @@
 import Foundation
 
 @propertyWrapper
-public struct Attribute<T>: AnyAttribute {
+public final class Attribute<T>: AnyAttribute, @unchecked Sendable {
     public var wrappedValue: T {
         get {
-            if let ref = storage.ref {
-                Graph.current.registerDependency(ref)
-            }
+            Graph.current.registerDependency(self)
 
-            if let cachedValue = storage.value, storage.state == .clean {
+            if let cachedValue = value, state == .clean {
                 return cachedValue
             }
 
             evaluateIfNeeded()
 
-            precondition(storage.value != nil, "Attribute value should have been evaluated")
+            precondition(value != nil, "Attribute value should have been evaluated")
 
-            return storage.value!
+            return value!
         }
-        nonmutating set {
+        set {
             // Equality short-circuit: if the new value equals the current one,
             // skip all dirty propagation entirely.
-            if let check = storage.equalityCheck,
-               let old = storage.value,
+            if let check = equalityCheck,
+               let old = value,
                check.isEqual(old, newValue) {
                 return
             }
 
-            storage.value = newValue
+            value = newValue
 
-            // Collect transactional refs before the BFS loop to avoid interleaving
+            // Collect transactional attributes before the BFS loop to avoid interleaving
             // evaluateIfNeeded calls with the markDirty propagation.
-            var transactionalRefs: [AttributeRef] = []
+            var transactionals: [AnyAttribute] = []
             for edge in outgoingEdges {
-                // markDirty sets the dependent .dirty and BFS-marks its descendants .pending.
-                Graph.current.markDirty(edge.toRef)
-                if edge.toRef.attribute.flags.contains(.transactional) {
-                    transactionalRefs.append(edge.toRef)
+                Graph.current.markDirty(edge.to)
+                if edge.to.flags.contains(.transactional) {
+                    transactionals.append(edge.to)
                 }
             }
             // Transactional attributes must be evaluated eagerly, right now.
-            for ref in transactionalRefs {
-                ref.attribute.evaluateIfNeeded()
+            for attr in transactionals {
+                attr.evaluateIfNeeded()
             }
             Graph.current.onInvalidate?()
         }
     }
 
-    public var projectedValue: Attribute<T> {
-        get {
-            self
-        }
-        set {
-            self = newValue
-        }
-    }
+    public var projectedValue: Attribute<T> { self }
 
     public var unsafeValue: T {
-        if let value = storage.value {
+        if let value {
             return value
         }
-        let value: T = rule.evaluate()
-        storage.value = value
-        return value
+        let computed: T = rule.evaluate()
+        value = computed
+        return computed
     }
 
-    public var id: UUID {
-        get { storage.id }
-        nonmutating set { storage.id = newValue }
-    }
-
-    public var flags: AttributeFlags {
-        get { storage.flags }
-        nonmutating set { storage.flags = newValue }
-    }
-
-    public var label: String {
-        get { storage.label }
-        nonmutating set { storage.label = newValue }
-    }
-
-    public var incomingEdges: Set<Edge> {
-        get { storage.incomingEdges }
-        nonmutating set { storage.incomingEdges = newValue }
-    }
-
-    public var outgoingEdges: Set<Edge> {
-        get { storage.outgoingEdges }
-        nonmutating set { storage.outgoingEdges = newValue }
-    }
-
-    public var state: AttributeState {
-        get { storage.state }
-        nonmutating set { storage.state = newValue }
-    }
+    public var id: UUID = .init()
+    public var flags: AttributeFlags = []
+    public var label: String = ""
+    public var incomingEdges: Set<Edge> = []
+    public var outgoingEdges: Set<Edge> = []
+    public var state: AttributeState = .clean
 
     private let rule: AnyRule<T>
-    private let storage: Storage = .init()
+    var value: T?
+    var equalityCheck: (any EqualityComparator<T>)?
 
-    public init(
+    /// Single designated initializer. All public inits delegate here.
+    internal init(
+        _ rule: AnyRule<T>,
+        label: String,
+        equalityCheck: (any EqualityComparator<T>)?
+    ) {
+        self.rule = rule
+        self.label = label
+        self.equalityCheck = equalityCheck
+        Graph.current.register(self)
+    }
+
+    public convenience init(
         wrappedValue: @autoclosure @escaping () -> T,
         _ label: String? = nil
     ) {
-        self.rule = AnyRule(ValueRule(wrappedValue))
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        self.storage.label = label ?? ""
-        Graph.current.register(attributeRef: ref)
+        self.init(AnyRule(ValueRule(wrappedValue)), label: label ?? "", equalityCheck: nil)
     }
 
-    public init(wrappedValue: @autoclosure @escaping () -> T) {
-        self.rule = AnyRule(ValueRule(wrappedValue))
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        Graph.current.register(attributeRef: ref)
+    public convenience init(wrappedValue: @autoclosure @escaping () -> T) {
+        self.init(AnyRule(ValueRule(wrappedValue)), label: "", equalityCheck: nil)
     }
 
-    public init<R: Rule>(
+    public convenience init<R: Rule>(
         _ label: String? = nil,
         rule: R
     ) where R.Value == T {
-        self.rule = AnyRule(rule)
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        self.storage.label = label ?? ""
-        Graph.current.register(attributeRef: ref)
+        self.init(AnyRule(rule), label: label ?? "", equalityCheck: nil)
     }
 
     public func addIncoming(edge: Edge) {
-        storage.incomingEdges.insert(edge)
+        incomingEdges.insert(edge)
     }
 
     public func addOutgoing(edge: Edge) {
-        storage.outgoingEdges.insert(edge)
+        outgoingEdges.insert(edge)
     }
 
     public func removeIncoming(edge: Edge) {
-        storage.incomingEdges.remove(edge)
+        incomingEdges.remove(edge)
     }
 
     public func removeOutgoing(edge: Edge) {
-        storage.outgoingEdges.remove(edge)
-    }
-
-    /// Breaks the `Storage ↔ AttributeRef` retain cycle.
-    ///
-    /// Called by `Subgraph.clean()` before removing the `AttributeRef` from the graph
-    /// and subgraph containers. Once this is called, `evaluateSelf()` and
-    /// `wrappedValue` treat the attribute as dead.
-    public func detachRef() {
-        storage.ref = nil
+        outgoingEdges.remove(edge)
     }
 
     public func evaluateIfNeeded() {
         // Initial evaluation: no edges registered yet, evaluate self directly.
-        if storage.value == nil {
+        if value == nil {
             _ = evaluateSelf()
             return
         }
@@ -169,30 +129,30 @@ public struct Attribute<T>: AnyAttribute {
         guard state != .clean else { return }
 
         // Fast path: a .dirty leaf (no outgoing edges) can be evaluated directly
-        // without allocating a post-order list, a changedRefs Set, or a DFS stack.
+        // without allocating a post-order list, a changedIDs set, or a DFS stack.
         // This is the common case for all terminal nodes in a fan-out graph.
-        if state == .dirty && storage.outgoingEdges.isEmpty {
+        if state == .dirty && outgoingEdges.isEmpty {
             _ = evaluateSelf()
             return
         }
 
         let postOrder = collectPostOrder()
-        var changedRefs: Set<AttributeRef> = []
+        var changedIDs: Set<ObjectIdentifier> = []
 
-        for ref in postOrder {
+        for attr in postOrder {
             // .pending optimization: skip if no direct dependency actually changed.
-            if ref.attribute.state == .pending {
-                let anyDirectDepChanged = ref.attribute.incomingEdges.contains {
-                    changedRefs.contains($0.fromRef)
+            if attr.state == .pending {
+                let anyDirectDepChanged = attr.incomingEdges.contains {
+                    changedIDs.contains(ObjectIdentifier($0.from))
                 }
                 if !anyDirectDepChanged {
-                    ref.attribute.state = .clean
+                    attr.state = .clean
                     continue
                 }
             }
 
-            if ref.attribute.evaluateSelf() {
-                changedRefs.insert(ref)
+            if attr.evaluateSelf() {
+                changedIDs.insert(ObjectIdentifier(attr))
             }
         }
     }
@@ -201,30 +161,30 @@ public struct Attribute<T>: AnyAttribute {
     ///
     /// Uses iterative DFS with an "expanded" flag to produce a valid topological order
     /// (dependencies before their dependents). Only includes `.dirty` and `.pending` nodes.
-    private func collectPostOrder() -> [AttributeRef] {
-        guard let selfRef = storage.ref else { return [] }
-        var result: [AttributeRef] = []
-        var visited: Set<AttributeRef> = []
-        var stack: [(ref: AttributeRef, expanded: Bool)] = [(selfRef, false)]
+    private func collectPostOrder() -> [AnyAttribute] {
+        var result: [AnyAttribute] = []
+        var visited: Set<ObjectIdentifier> = []
+        var stack: [(attr: AnyAttribute, expanded: Bool)] = [(self, false)]
 
         while !stack.isEmpty {
-            let (ref, expanded) = stack.removeLast()
+            let (attr, expanded) = stack.removeLast()
+            let attrID = ObjectIdentifier(attr)
 
             if expanded {
-                if !visited.contains(ref) {
-                    visited.insert(ref)
-                    result.append(ref)
+                if visited.insert(attrID).inserted {
+                    result.append(attr)
                 }
                 continue
             }
 
-            if visited.contains(ref) || ref.attribute.state == .clean { continue }
+            if visited.contains(attrID) || attr.state == .clean { continue }
 
-            stack.append((ref, true))
+            stack.append((attr, true))
 
-            for edge in ref.attribute.incomingEdges {
-                let dep = edge.fromRef
-                if !visited.contains(dep) && dep.attribute.state != .clean {
+            for edge in attr.incomingEdges {
+                let dep = edge.from
+                let depID = ObjectIdentifier(dep)
+                if !visited.contains(depID) && dep.state != .clean {
                     stack.append((dep, false))
                 }
             }
@@ -238,34 +198,30 @@ public struct Attribute<T>: AnyAttribute {
     /// Prunes stale incoming edges before re-running so that conditional dependencies
     /// are re-registered correctly. Returns `true` if the value changed (enabling change-cut).
     public func evaluateSelf() -> Bool {
-        guard let ref = storage.ref else {
-            storage.state = .clean
-            return false
-        }
-        let oldValue = storage.value
+        let oldValue = value
 
         // Stale edge pruning: clear incoming edges so re-evaluation registers only
         // the deps the rule actually reads this time.
-        for edge in storage.incomingEdges {
-            edge.fromRef.attribute.removeOutgoing(edge: edge)
+        for edge in incomingEdges {
+            edge.from.removeOutgoing(edge: edge)
         }
-        storage.incomingEdges.removeAll()
+        incomingEdges.removeAll()
 
-        Graph.current.reevaluate(ref)
-        Graph.current.withDependencyCapture(of: ref) {
-            storage.value = rule.evaluate()
+        Graph.current.reevaluate(self)
+        Graph.current.withDependencyCapture(of: self) {
+            value = rule.evaluate()
         }
 
-        storage.state = .clean
+        state = .clean
 
-        for edge in storage.incomingEdges {
+        for edge in incomingEdges {
             edge.state = .clean
         }
 
         guard let oldValue else { return true }
 
-        if let check = storage.equalityCheck {
-            return !check.isEqual(oldValue, storage.value!)
+        if let check = equalityCheck {
+            return !check.isEqual(oldValue, value!)
         }
 
         return true
@@ -273,33 +229,19 @@ public struct Attribute<T>: AnyAttribute {
 }
 
 extension Attribute {
-    final class Storage: @unchecked Sendable {
-        var id: UUID = .init()
-        var ref: AttributeRef?
-        var flags: AttributeFlags = []
-        var label: String = ""
-        var value: T?
-        var incomingEdges: Set<Edge> = []
-        var outgoingEdges: Set<Edge> = []
-        var state: AttributeState = .clean
-        var equalityCheck: (any EqualityComparator<T>)?
-    }
-}
-
-extension Attribute {
     public var digraph: String {
-        let formattedId: String = storage.id.uuidString.replacing("-", with: "")
+        let formattedId: String = id.uuidString.replacing("-", with: "")
         var properties: [String] = []
 
         var labelHTML = "<"
         labelHTML += "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\" ALIGN=\"LEFT\">"
 
-        if !storage.label.isEmpty {
-            let escapedLabel = storage.label.htmlEscaped
+        if !label.isEmpty {
+            let escapedLabel = label.htmlEscaped
             labelHTML += "<TR><TD ALIGN=\"LEFT\"><B>\(escapedLabel)</B></TD></TR>"
         }
 
-        if let value = storage.value {
+        if let value {
             let stringValue: String = if let value = value as? AttributeValueRepresentable {
                 "\(value.attributeValueDescription)".htmlEscaped
             } else {
@@ -316,7 +258,7 @@ extension Attribute {
         labelHTML += ">"
         properties.append("label=\(labelHTML)")
 
-        if storage.state == .pending || storage.state == .dirty {
+        if state == .pending || state == .dirty {
             properties.append("style=dashed")
         }
         let formattedProperties: String = properties.joined(separator: ", ")
@@ -335,46 +277,30 @@ extension String {
 }
 
 extension Attribute where T: Equatable {
-    public init(
+    public convenience init(
         wrappedValue: @autoclosure @escaping () -> T,
         _ label: String? = nil
     ) {
-        self.rule = AnyRule(ValueRule(wrappedValue))
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        self.storage.label = label ?? ""
-        self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: ref)
+        self.init(AnyRule(ValueRule(wrappedValue)), label: label ?? "", equalityCheck: EquatableComparator<T>())
     }
 
-    public init(wrappedValue: @autoclosure @escaping () -> T) {
-        self.rule = AnyRule(ValueRule(wrappedValue))
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: ref)
+    public convenience init(wrappedValue: @autoclosure @escaping () -> T) {
+        self.init(AnyRule(ValueRule(wrappedValue)), label: "", equalityCheck: EquatableComparator<T>())
     }
 
-    public init<R: Rule>(
+    public convenience init<R: Rule>(
         _ label: String? = nil,
         rule: R
     ) where R.Value == T {
-        self.rule = AnyRule(rule)
-        let ref = AttributeRef(self)
-        self.storage.ref = ref
-        self.storage.label = label ?? ""
-        self.storage.equalityCheck = EquatableComparator<T>()
-        Graph.current.register(attributeRef: ref)
+        self.init(AnyRule(rule), label: label ?? "", equalityCheck: EquatableComparator<T>())
     }
 
     /// Equatable-constrained closure init: sets the equality check so that
     /// `evaluateSelf()` can return `false` (no change) when value is unchanged.
-    public init(
+    public convenience init(
         _ label: String? = nil,
         _ compute: @escaping () -> T
     ) {
-        self.init(label, rule: ComputedRule(compute))
+        self.init(AnyRule(ComputedRule(compute)), label: label ?? "", equalityCheck: EquatableComparator<T>())
     }
 }
-
-extension Attribute: Sendable where T: Sendable {}

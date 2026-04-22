@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol AnyAttribute: DigraphRepresentable {
+public protocol AnyAttribute: AnyObject, DigraphRepresentable {
     var id: UUID { get }
     var flags: AttributeFlags { get }
     var label: String { get }
@@ -22,6 +22,4 @@ public protocol AnyAttribute: DigraphRepresentable {
     func addOutgoing(edge: Edge)
     func removeIncoming(edge: Edge)
     func removeOutgoing(edge: Edge)
-
-    func detachRef()
 }
