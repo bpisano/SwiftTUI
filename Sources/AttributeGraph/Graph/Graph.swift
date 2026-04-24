@@ -84,8 +84,13 @@ public final class Graph {
         attributes.removeValue(forKey: ObjectIdentifier(attribute))
     }
 
+    func isRegistered(_ attribute: AnyAttribute) -> Bool {
+        attributes[ObjectIdentifier(attribute)] != nil
+    }
+
     func registerDependency(_ attribute: AnyAttribute) {
         guard let currentComputation else { return }
+        guard isRegistered(attribute), isRegistered(currentComputation) else { return }
 
         // O(1) dedup: the set tracks every source already registered in this capture session.
         // This replaces the previous O(n) linear scan over `outgoingEdges` which caused
@@ -105,9 +110,11 @@ public final class Graph {
         let previousDeps = capturedDependencies
         currentComputation = attribute
         capturedDependencies = []
+        defer {
+            currentComputation = previousComputation
+            capturedDependencies = previousDeps
+        }
         try perform()
-        currentComputation = previousComputation
-        capturedDependencies = previousDeps
     }
 
     /// Marks `attribute` as `.dirty` and BFS-propagates `.pending` to all transitive descendants.

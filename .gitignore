@@ -9,3 +9,5 @@ DerivedData/
 .vscode/
 *.trace
 *.trace/
+.agents
+skills-lock.json

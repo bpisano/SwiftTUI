@@ -66,16 +66,33 @@ struct ViewIdTests {
         let graph = Graph()
         graph.makeCurrent()
 
-        // TupleView: Text(implicitId: 0), ForEach(implicitId: 1), Text(implicitId: 2)
-        // ForEach returns viewIds: nil, so MergedViewList.viewIds is nil.
-        // We verify the static runs independently using BaseViewList.viewIds.
         @Attribute var forEach = ForEach(["X"], id: \.self) { Text($0) }
         @Attribute var view = TupleView(Text("Header"), forEach, Text("Footer"))
 
-        // The concat of [static(implicitId:0), dynamic(nil), static(implicitId:2)]
-        // produces nil at the MergedViewList level — that's expected until ForEach viewIds are implemented.
-        let outputs = makeViewListOutputs(of: $view)
-        #expect(outputs.nextImplicitId == 3)
+        let ids = try #require(viewIds(of: $view))
+        #expect(ids.count == 3)
+        #expect(ids[0].implicitId == 0)
+        #expect(ids[1].implicitId == 1)
+        #expect(ids[1].explicit.first?.id == AnyHashable("X"))
+        #expect(ids[2].implicitId == 2)
+    }
+
+    @Test
+    func `Default view output materialization keeps leaf ids`() throws {
+        let graph = Graph()
+        graph.makeCurrent()
+
+        @Attribute var view = TupleView(Text("A"), Text("B"))
+        var startIndex = 0
+        let outputs = makeViewListOutputs(of: $view).makeViewOutputs(
+            startIndex: &startIndex,
+            inputs: makeViewInputs()
+        )
+
+        #expect(outputs.count == 2)
+        #expect(outputs[0].viewId.implicitId == 0)
+        #expect(outputs[1].viewId.implicitId == 1)
+        #expect(outputs.allSatisfy { $0.viewId.implicitId != -1 })
     }
 
     // MARK: - Stability: IDs don't change across re-evaluations
@@ -126,4 +143,19 @@ private func viewIds<V: View>(of view: Attribute<V>) -> [ViewId]? {
 @MainActor
 private func makeViewListOutputs<V: View>(of view: Attribute<V>) -> ViewListOutputs {
     V.makeViewList(view, inputs: .init())
+}
+
+@MainActor
+private func makeViewInputs() -> ViewInputs {
+    @Attribute var position: Point = .zero
+    @Attribute var size: Size = .init(width: 20, height: 10)
+    @Attribute var phase: ViewPhase = .active
+
+    return ViewInputs(
+        position: $position,
+        size: $size,
+        phase: $phase,
+        environment: .init(wrappedValue: .init()),
+        storage: .init()
+    )
 }

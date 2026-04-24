@@ -24,19 +24,9 @@ struct MergedViewList: ViewList {
         return ids
     }
 
-    func makeViewOutputs(
-        startIndex: inout Int,
-        inputs: ViewInputs,
-        makeViewOutputs: MakeViewOutputsInterceptor
-    ) -> [ViewOutputs] {
-        withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
-            viewLists.flatMap { viewList in
-                viewList.wrappedValue.makeViewOutputs(
-                    startIndex: &startIndex,
-                    inputs: inputs,
-                    makeViewOutputs: escapingMakeViewOutputs
-                )
-            }
+    func applyItems(_ body: (RetainedViewListItem) -> Void) {
+        for viewList in viewLists {
+            viewList.wrappedValue.applyItems(body)
         }
     }
 }

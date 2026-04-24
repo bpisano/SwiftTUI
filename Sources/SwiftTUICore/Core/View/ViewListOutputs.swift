@@ -36,6 +36,17 @@ extension ViewListOutputs {
     }
 }
 
+extension ViewListOutputs.Views {
+    var viewIds: [ViewId]? {
+        switch self {
+        case let .staticList(elements):
+            elements.flatMap(\.retainedViewIds)
+        case let .dynamicList(viewList):
+            viewList.wrappedValue.viewIds
+        }
+    }
+}
+
 // MARK: - ViewListOutputs instance creation helpers
 
 extension ViewListOutputs {
@@ -251,7 +262,7 @@ extension ViewListOutputs {
         inputs: ViewInputs
     ) -> [ViewOutputs] {
         makeViewOutputs(startIndex: &startIndex, inputs: inputs) { _, viewId, inputs, makeViewOutputs in
-            makeViewOutputs(inputs)
+            makeViewOutputs(inputs).withViewId(viewId)
         }
     }
 

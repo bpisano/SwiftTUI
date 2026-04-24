@@ -21,15 +21,11 @@ struct ViewId: Hashable, Equatable, Sendable {
     /// ```
     let implicitId: Int
 
-    /// The index of the view among its siblings, starting from 0 for the first sibling.
-    /// Example:
-    /// ```
-    /// ForEach(users) { user in
-    ///    Text(user.name)
-    /// }
-    /// // Text("Alice") -> implicitId: 0, index: 0
-    /// // Text("Bob") -> implicitId: 0, index: 1
-    /// ```
+    /// Secondary position information within the current implicit scope.
+    ///
+    /// For static children this often mirrors the local sibling slot.
+    /// For dynamic children it stores the leaf position that remains after
+    /// explicit identity is rebound by containers like `ForEach`.
     let index: Int
 
     var explicit: [Explicit] = []
@@ -48,5 +44,9 @@ struct ViewId: Hashable, Equatable, Sendable {
 extension ViewId {
     struct Explicit: Hashable, Equatable, @unchecked Sendable {
         let id: AnyHashable
+    }
+
+    struct Scope: Hashable, Equatable, Sendable {
+        let implicitId: Int
     }
 }

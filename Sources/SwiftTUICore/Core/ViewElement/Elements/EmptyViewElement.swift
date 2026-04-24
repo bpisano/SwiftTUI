@@ -10,6 +10,8 @@ import Foundation
 struct EmptyViewElement: ViewElement {
     let viewId: ViewId = ViewId(implicitId: -1)
 
+    var retainedViewIds: [ViewId] { [] }
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,

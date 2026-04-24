@@ -56,7 +56,8 @@ extension ForEach {
             return ForEachViewList(
                 view: view,
                 state: state,
-                implicitId: inputs.implicitId
+                implicitId: inputs.implicitId,
+                viewIds: state.viewIds(forEachImplicitId: inputs.implicitId)
             )
         }
 

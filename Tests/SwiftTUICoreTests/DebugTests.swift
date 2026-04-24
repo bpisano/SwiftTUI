@@ -19,15 +19,14 @@ struct _User: Identifiable {
 
 struct MyView: View {
     @State var users: [_User] = [
-        .init(id: 1, name: "Alice"),
-        .init(id: 2, name: "Bob"),
-        .init(id: 3, name: "Charlie")
+        .init(id: 1, name: "Alice")
     ]
 
     var body: some View {
-        RootLayout {
+        VStack {
             ForEach(users) { user in
                 Text(user.name)
+                    .padding()
             }
         }
     }
@@ -47,8 +46,7 @@ func debugPlaygroundCode() {
         storage: .init()
     )
 
-    @Attribute var view = Text("Hello world")
-        .foregroundStyle(.red)
+    @Attribute var view = MyView()
 
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
@@ -57,6 +55,14 @@ func debugPlaygroundCode() {
     $viewPhase.label = "View Phase"
     $environment.label = "Environment Values"
     $view.label = "\(type(of: view))"
+
+    let _ = outputs.displayList.wrappedValue
+    CallbackQueue.shared.executeAll()
+
+    view.users = [
+        .init(id: 1, name: "Alice"),
+        .init(id: 2, name: "Bob")
+    ]
 
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()

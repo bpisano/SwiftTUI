@@ -107,7 +107,7 @@ struct StateTests {
             storage: .init()
         )
 
-        var modifier: BaseViewModifier = .init()
+        let modifier: BaseViewModifier = .init()
         @Attribute var view = Text("A")
             .modifier(modifier)
 

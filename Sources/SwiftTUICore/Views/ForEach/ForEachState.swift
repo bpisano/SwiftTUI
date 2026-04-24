@@ -30,20 +30,10 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
             let childValue: Content = forEach.makeChildView(element)
 
             if let existingItem = itemsById[id] {
-                if existingItem.index == index {
-                    existingItem.update(childValue: childValue)
-                } else {
-                    // Until the layout path stops capturing list positions,
-                    // a reused item that moved to a different slot needs a
-                    // fresh set of outputs bound to its new index.
-                    existingItem.clean()
-                    itemsById[id] = makeCachedItem(
-                        for: id,
-                        at: index,
-                        childValue: childValue,
-                        inputs: inputs
-                    )
-                }
+                existingItem.update(
+                    index: index,
+                    childValue: childValue
+                )
             } else {
                 let item: Item = makeCachedItem(
                     for: id,
@@ -75,7 +65,6 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         inputs: ViewListInputs
     ) -> Item {
         let subgraph: Subgraph = .init()
-
         return subgraph.withDependencyCapture {
             let childView: Attribute<Content> = Attribute("ForEach Child View \(id)") {
                 childValue
@@ -93,6 +82,23 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
                 subgraph: subgraph
             )
         }
+    }
+
+    func viewIds(forEachImplicitId: Int) -> [ViewId]? {
+        var result: [ViewId] = []
+
+        for elementId in orderedIds {
+            guard let item = itemsById[elementId],
+                  let childViewIds = item.viewIds(
+                    forEachImplicitId: forEachImplicitId,
+                    explicitId: .init(elementId)
+                  ) else {
+                return nil
+            }
+            result.append(contentsOf: childViewIds)
+        }
+
+        return result
     }
 }
 
@@ -117,8 +123,42 @@ extension ForEachState {
             self.subgraph = subgraph
         }
 
-        func update(childValue: Content) {
+        func update(
+            index: Data.Index,
+            childValue: Content
+        ) {
+            self.index = index
             childView.wrappedValue = childValue
+        }
+
+        func viewIds(
+            forEachImplicitId: Int,
+            explicitId: AnyHashable
+        ) -> [ViewId]? {
+            let childViewIds: [ViewId]?
+
+            switch views {
+            case let .staticList(elements):
+                childViewIds = elements.flatMap(\.retainedViewIds)
+            case let .dynamicList(viewList):
+                childViewIds = viewList.wrappedValue.viewIds
+            }
+
+            guard let childViewIds else { return nil }
+
+            return childViewIds.map { childViewId in
+                var explicit: [ViewId.Explicit] = [
+                    .init(id: explicitId),
+                    .init(id: ViewId.Scope(implicitId: childViewId.implicitId))
+                ]
+                explicit.append(contentsOf: childViewId.explicit)
+
+                return .init(
+                    implicitId: forEachImplicitId,
+                    index: childViewId.index,
+                    explicit: explicit
+                )
+            }
         }
 
         @MainActor

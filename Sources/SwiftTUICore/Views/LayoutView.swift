@@ -30,6 +30,7 @@ extension LayoutView {
         var childGeometries: Attribute<[ViewGeometry]>!
         var containerInfo: Attribute<[ViewId: Int]>!
         var engine: LayoutEngine<L>?
+        let container = RetainedLayoutContainer(labelPrefix: "\(Content.self)")
 
         let contentAttribute: Attribute<Content> = view.map(\.content)
         let viewListInputs: ViewListInputs = .init(viewInputs: inputs)
@@ -37,36 +38,15 @@ extension LayoutView {
             contentAttribute,
             inputs: viewListInputs
         )
-        let contentViewOutputs: Attribute<[ViewOutputs]> = contentViewListOutputs.makeViewOutputsAttribute(
-            "\(Content.self) Child Outputs",
-            inputs: inputs
-        ) { index, viewId, inputs, makeViewOutputs in
-            let stableId: ViewId = viewId
-            let modifiedInputs = ViewInputs(
-                position: Attribute {
-                    guard let index = containerInfo.wrappedValue[stableId] else { return .zero }
-                    let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
-                    guard index < childGeometries.count else { return .zero }
-                    return childGeometries[index].origin
-                },
-                size: Attribute {
-                    guard let index = containerInfo.wrappedValue[stableId] else { return .zero }
-                    let childGeometries: [ViewGeometry] = childGeometries.wrappedValue
-                    guard index < childGeometries.count else { return .zero }
-                    return childGeometries[index].size
-                },
-                phase: inputs.phase,
-                environment: inputs.environment,
-                storage: inputs.storage
-            )
-            let rawOutputs = makeViewOutputs(modifiedInputs)
-            // Re-wrap with the stable id so ContainerInfo can find it in the flat array.
-            return ViewOutputs(viewId: stableId, layoutComputer: rawOutputs.layoutComputer, displayList: rawOutputs.displayList)
-        }
+        let contentViewList: Attribute<any ViewList> = contentViewListOutputs.makeViewListAttribute(
+            "\(Content.self) Child ViewList"
+        )
 
         let layoutComputer = Attribute("\(Content.self) LayoutComputer") {
+            _ = containerInfo.wrappedValue
+
             let layout: L = view.wrappedValue.layout
-            let childAttributes: [Attribute<LayoutComputer>] = contentViewOutputs.wrappedValue
+            let childAttributes: [Attribute<LayoutComputer>] = container.orderedOutputs
                 .map(\.layoutComputer)
 
             if let existing = engine {
@@ -79,13 +59,11 @@ extension LayoutView {
         }
 
         let displayList = Attribute("\(Content.self) DisplayList") {
-            let childOutputs = contentViewOutputs.wrappedValue
-
             _ = containerInfo.wrappedValue
             _ = childGeometries.wrappedValue
 
             return DisplayList(
-                childOutputs
+                container.orderedOutputs
                     .map { .childList($0.displayList.wrappedValue) }
             )
         }
@@ -102,11 +80,12 @@ extension LayoutView {
         }
 
         containerInfo = Attribute("\(Content.self) ContainerInfo") {
-            var map: [ViewId: Int] = [:]
-            for (i, output) in contentViewOutputs.wrappedValue.enumerated() {
-                map[output.viewId] = i
-            }
-            return map
+            container.update(
+                from: contentViewList.wrappedValue,
+                inputs: inputs,
+                containerInfo: containerInfo,
+                childGeometries: childGeometries
+            )
         }
 
         return .init(
@@ -128,5 +107,150 @@ extension LayoutView {
 extension LayoutView: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
         "LayoutView"
+    }
+}
+
+@MainActor
+private final class RetainedLayoutContainer {
+    private struct Entry {
+        let identity: AnyHashable
+        let viewIds: [ViewId]
+        let outputs: [ViewOutputs]
+        let subgraph: Subgraph
+
+        func clean() {
+            subgraph.clean()
+        }
+    }
+
+    private let labelPrefix: String
+
+    private var entriesByIdentity: [AnyHashable: Entry] = [:]
+    private var orderedEntries: [Entry] = []
+
+    init(labelPrefix: String) {
+        self.labelPrefix = labelPrefix
+    }
+
+    var orderedOutputs: [ViewOutputs] {
+        orderedEntries.flatMap(\.outputs)
+    }
+
+    func update(
+        from viewList: any ViewList,
+        inputs: ViewInputs,
+        containerInfo: Attribute<[ViewId: Int]>,
+        childGeometries: Attribute<[ViewGeometry]>
+    ) -> [ViewId: Int] {
+        var nextEntriesByIdentity: [AnyHashable: Entry] = [:]
+        var nextOrderedEntries: [Entry] = []
+
+        viewList.applyItems { item in
+            let entry: Entry
+
+            if let existing = entriesByIdentity.removeValue(forKey: item.identity),
+               existing.viewIds == item.viewIds {
+                entry = existing
+            } else {
+                entry = makeEntry(
+                    from: item,
+                    inputs: inputs,
+                    containerInfo: containerInfo,
+                    childGeometries: childGeometries
+                )
+            }
+
+            nextEntriesByIdentity[item.identity] = entry
+            nextOrderedEntries.append(entry)
+        }
+
+        for removedEntry in entriesByIdentity.values {
+            removedEntry.clean()
+        }
+
+        entriesByIdentity = nextEntriesByIdentity
+        orderedEntries = nextOrderedEntries
+
+        return makeIndexMap()
+    }
+
+    private func makeIndexMap() -> [ViewId: Int] {
+        var map: [ViewId: Int] = [:]
+        var index = 0
+
+        for entry in orderedEntries {
+            for viewId in entry.viewIds {
+                map[viewId] = index
+                index += 1
+            }
+        }
+
+        return map
+    }
+
+    private func makeEntry(
+        from item: RetainedViewListItem,
+        inputs: ViewInputs,
+        containerInfo: Attribute<[ViewId: Int]>,
+        childGeometries: Attribute<[ViewGeometry]>
+    ) -> Entry {
+        let subgraph = Subgraph()
+
+        let outputs = subgraph.withDependencyCapture {
+            let viewIds = item.viewIds
+            var localStartIndex = 0
+            var leafIndex = 0
+
+            let outputs = item.makeViewOutputs(
+                startIndex: &localStartIndex,
+                inputs: inputs
+            ) { [self] _, viewId, childInputs, makeViewOutputs in
+                let stableId =
+                    if leafIndex < viewIds.count {
+                        viewIds[leafIndex]
+                    } else {
+                        viewId
+                    }
+                leafIndex += 1
+
+                let childGeometry = Attribute("\(self.labelPrefix) Child Geometry \(stableId)") {
+                    guard let index = containerInfo.wrappedValue[stableId] else {
+                        return ViewGeometry.zero
+                    }
+
+                    let geometries = childGeometries.wrappedValue
+                    guard index < geometries.count else {
+                        return ViewGeometry.zero
+                    }
+
+                    return geometries[index]
+                }
+
+                let modifiedInputs = ViewInputs(
+                    position: childGeometry.map(\.origin),
+                    size: childGeometry.map(\.size),
+                    phase: childInputs.phase,
+                    environment: childInputs.environment,
+                    storage: childInputs.storage
+                )
+
+                let rawOutputs = makeViewOutputs(modifiedInputs)
+                return rawOutputs.withViewId(stableId)
+            }
+
+            precondition(
+                outputs.count == viewIds.count,
+                "Retained layout item produced \(outputs.count) outputs for \(viewIds.count) ids."
+            )
+
+            return outputs
+        }
+
+        return Entry(
+            identity: item.identity,
+            viewIds: item.viewIds,
+            outputs: outputs,
+            subgraph: subgraph
+        )
     }
 }

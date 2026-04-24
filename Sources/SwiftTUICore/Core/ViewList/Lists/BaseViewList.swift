@@ -15,19 +15,12 @@ struct BaseViewList: ViewList {
         self.elements = elements
     }
 
-    var viewIds: [ViewId]? { elements.map(\.viewId) }
+    var viewIds: [ViewId]? { elements.flatMap(\.retainedViewIds) }
 
-    func makeViewOutputs(
-        startIndex: inout Int,
-        inputs: ViewInputs,
-        makeViewOutputs: MakeViewOutputsInterceptor
-    ) -> [ViewOutputs] {
-        withoutActuallyEscaping(makeViewOutputs) { escapingMakeViewOutputs in
-            elements.compactMap { element in
-                element.makeViewOutputs(startIndex: &startIndex, inputs: inputs) { index, viewId, inputs, makeViewOutputs in
-                    escapingMakeViewOutputs(&index, viewId, inputs, makeViewOutputs)
-                }
-            }
+    func applyItems(_ body: (RetainedViewListItem) -> Void) {
+        for element in elements {
+            guard let item = element.retainedViewListItem() else { continue }
+            body(item)
         }
     }
 }

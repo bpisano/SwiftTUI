@@ -55,6 +55,10 @@ final class DynamicViewListItem<Content: View> {
         childView.wrappedValue = childValue
     }
 
+    var viewIds: [ViewId]? {
+        views.viewIds
+    }
+
     func makeViewOutputs(
         startIndex: inout Int,
         inputs: ViewInputs,
@@ -77,6 +81,19 @@ final class DynamicViewListItem<Content: View> {
         return outputs
     }
 
+    @MainActor
+    func retainedViewListItem() -> RetainedViewListItem? {
+        guard let viewIds else { return nil }
+
+        return RetainedViewListItem(identity: AnyHashable(ObjectIdentifier(self)), viewIds: viewIds) { startIndex, inputs, makeViewOutputs in
+            self.makeViewOutputs(
+                startIndex: &startIndex,
+                inputs: inputs,
+                makeViewOutputs: makeViewOutputs
+            )
+        }
+    }
+
     func clean() {
         viewOutputs = nil
         subgraph.clean()
@@ -85,19 +102,19 @@ final class DynamicViewListItem<Content: View> {
 
 struct DynamicItemViewList<Content: View>: ViewList {
     let item: DynamicViewListItem<Content>
+    private let cachedViewIds: [ViewId]?
 
-    var viewIds: [ViewId]? { nil }
+    @MainActor
+    init(item: DynamicViewListItem<Content>) {
+        self.item = item
+        self.cachedViewIds = item.viewIds
+    }
 
-    func makeViewOutputs(
-        startIndex: inout Int,
-        inputs: ViewInputs,
-        makeViewOutputs: @escaping MakeViewOutputsInterceptor
-    ) -> [ViewOutputs] {
-        item.makeViewOutputs(
-            startIndex: &startIndex,
-            inputs: inputs,
-            makeViewOutputs: makeViewOutputs
-        )
+    var viewIds: [ViewId]? { cachedViewIds }
+
+    func applyItems(_ body: (RetainedViewListItem) -> Void) {
+        guard let item = item.retainedViewListItem() else { return }
+        body(item)
     }
 }
 

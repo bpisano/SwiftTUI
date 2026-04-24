@@ -24,6 +24,14 @@ public struct ViewOutputs: Sendable {
         self.layoutComputer = layoutComputer
         self.displayList = displayList
     }
+
+    func withViewId(_ viewId: ViewId) -> ViewOutputs {
+        ViewOutputs(
+            viewId: viewId,
+            layoutComputer: layoutComputer,
+            displayList: displayList
+        )
+    }
 }
 
 extension ViewOutputs {
