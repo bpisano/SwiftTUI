@@ -6,14 +6,17 @@
 //
 
 import Foundation
+import AttributeGraph
 #if canImport(AppKit)
 import AppKit
 #endif
 
-func copyToClipboard(_ string: String) {
 #if canImport(AppKit)
-    let pasteboard: NSPasteboard = .general
-    pasteboard.clearContents()
-    pasteboard.setString(string, forType: .string)
-#endif
+extension Graph {
+    public func copyToClipboard() {
+        let pasteboard: NSPasteboard = .general
+        pasteboard.clearContents()
+        pasteboard.setString(digraph, forType: .string)
+    }
 }
+#endif

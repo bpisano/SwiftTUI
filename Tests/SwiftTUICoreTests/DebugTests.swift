@@ -67,5 +67,5 @@ func debugPlaygroundCode() {
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()
 
-    copyToClipboard(Graph.current.digraph)
+    Graph.current.copyToClipboard()
 }
