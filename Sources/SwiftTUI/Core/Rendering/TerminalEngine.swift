@@ -37,6 +37,7 @@ final class TerminalEngine<V: View> {
     func setup() {
         terminal.cursor.clearScreen()
         terminal.enableRawMode()
+        terminal.enableKeyboardEventReporting()
         terminal.cursor.hide()
         terminal.screen.onSizeChange = { [weak self] screenSize in
             guard let self else { return }
@@ -44,6 +45,7 @@ final class TerminalEngine<V: View> {
         }
         terminal.onExit = { [weak self] in
             guard let self else { return }
+            self.terminal.disableKeyboardEventReporting()
             self.terminal.disableRawMode()
             self.terminal.cursor.show()
             exit(0)

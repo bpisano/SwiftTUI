@@ -54,6 +54,7 @@ let package = Package(
             dependencies: [
                 "Geometry",
                 "AttributeGraph",
+                "Terminal",
                 "SwiftTUICore",
                 "SwiftTUI",
             ]

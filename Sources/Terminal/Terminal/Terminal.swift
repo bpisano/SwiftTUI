@@ -40,4 +40,12 @@ public final class Terminal {
     public func disableRawMode() {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &termios)
     }
+
+    public func enableKeyboardEventReporting() {
+        cursor.write("\u{1B}[>15u")
+    }
+
+    public func disableKeyboardEventReporting() {
+        cursor.write("\u{1B}[<u")
+    }
 }

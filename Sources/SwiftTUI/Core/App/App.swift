@@ -7,10 +7,10 @@
 
 import Foundation
 import AttributeGraph
-import Terminal
 
 @_exported import SwiftTUICore
 @_exported import Geometry
+@_exported import Terminal
 
 @MainActor
 public protocol App {
