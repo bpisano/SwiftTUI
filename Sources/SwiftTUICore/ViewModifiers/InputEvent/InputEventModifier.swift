@@ -37,7 +37,6 @@ struct InputEventViewModifier<I: Input>: ViewModifier, PrimitiveViewModifier, Un
     }
 }
 
-
 extension View {
     public func onEvent<I: Input>(
         of input: I,
