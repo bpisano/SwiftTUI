@@ -16,6 +16,7 @@ final class TerminalEngine<V: View> {
     private let terminal: Terminal
     private let renderer: TerminalRenderer
     private var outputs: ViewOutputs?
+    private var exitInputTask: Task<Void, Never>?
 
     @Attribute private var screenOrigin: Point = .zero
     @Attribute private var screenSize: Size
@@ -45,11 +46,9 @@ final class TerminalEngine<V: View> {
         }
         terminal.onExit = { [weak self] in
             guard let self else { return }
-            self.terminal.disableKeyboardEventReporting()
-            self.terminal.disableRawMode()
-            self.terminal.cursor.show()
-            exit(0)
+            self.shutdownAndExit()
         }
+        startExitInputWatcher()
 
         let inputs: ViewInputs = .init(
             position: $screenOrigin,
@@ -81,6 +80,30 @@ final class TerminalEngine<V: View> {
         terminal.cursor.write(frame)
 
         CallbackQueue.shared.executeAll()
+    }
+
+    private func startExitInputWatcher() {
+        exitInputTask?.cancel()
+        exitInputTask = Task { [weak self] in
+            let events = await Keyboard.current.events()
+
+            for await event in events {
+                guard event.isPressed else { continue }
+                guard event.key == .character("c") else { continue }
+                guard event.modifiers.contains(.control) else { continue }
+
+                self?.shutdownAndExit()
+                break
+            }
+        }
+    }
+
+    private func shutdownAndExit() {
+        exitInputTask?.cancel()
+        terminal.disableKeyboardEventReporting()
+        terminal.disableRawMode()
+        terminal.cursor.show()
+        exit(0)
     }
 }
 

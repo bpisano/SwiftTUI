@@ -11,6 +11,10 @@ let package = Package(
         .library(
             name: "SwiftTUI",
             targets: ["SwiftTUI"]
+        ),
+        .library(
+            name: "SwiftTUIRuntime",
+            targets: ["SwiftTUIRuntime"]
         )
     ],
     targets: [
@@ -31,10 +35,20 @@ let package = Package(
             ]
         ),
         .target(
+            name: "SwiftTUIRuntime",
+            dependencies: [
+                "Geometry",
+                "AttributeGraph",
+                "Terminal",
+                "SwiftTUICore",
+            ]
+        ),
+        .target(
             name: "SwiftTUI",
             dependencies: [
                 "Terminal",
                 "SwiftTUICore",
+                "SwiftTUIRuntime",
             ],
         ),
         .executableTarget(
@@ -57,6 +71,7 @@ let package = Package(
                 "Terminal",
                 "SwiftTUICore",
                 "SwiftTUI",
+                "SwiftTUIRuntime",
             ]
         )
     ]

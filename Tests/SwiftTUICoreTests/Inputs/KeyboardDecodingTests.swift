@@ -11,7 +11,7 @@ import Testing
 
 @Suite("Keyboard decoding")
 struct KeyboardDecodingTests {
-    private let decoder = KeyboardEventDecoder()
+    private let decoder: KeyboardEventDecoder = .init()
 
     @Test
     func `decodes multiple printable keys from one read`() {

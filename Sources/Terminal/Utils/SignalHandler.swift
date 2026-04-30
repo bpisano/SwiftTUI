@@ -18,7 +18,7 @@ actor SignalHandler {
 
     private func setupSignalHandling() {
         signal(signalNumber, SIG_IGN)
-        source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
+        source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .global())
         source?.setEventHandler { [handler] in
             Task {
                 await handler()

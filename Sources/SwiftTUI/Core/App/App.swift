@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import AttributeGraph
 
 @_exported import SwiftTUICore
 @_exported import Geometry
 @_exported import Terminal
+@_exported import SwiftTUIRuntime
 
 @MainActor
 public protocol App {
@@ -23,41 +23,10 @@ public protocol App {
 }
 
 extension App {
-    public static func main() {
-        let app: Self = .init()
-        nonisolated(unsafe) let view: Body = app.body
-
-        let terminal: Terminal = .current
-        let renderState: RenderState = .init()
-        let engine: TerminalEngine = .init(
-            configuration: .standard,
-            terminal: terminal,
-            view: RootLayout {
-                view
-            }
-        )
-
-        let graph: Graph = .init()
-        graph.makeCurrent()
-        graph.onInvalidate = {
-            renderState.setNeedsRender()
+    public nonisolated static func main() {
+        SwiftTUIRuntime.main {
+            let app: Self = .init()
+            app.body
         }
-
-        engine.setup()
-
-        let frameRate: Double = 1 / 60
-        let timer = Timer.scheduledTimer(
-            withTimeInterval: frameRate,
-            repeats: true
-        ) { _ in
-            Task { @MainActor in
-                guard renderState.needsRender else { return }
-                renderState.clearNeedsRender()
-                await engine.render()
-            }
-        }
-
-        RunLoop.main.add(timer, forMode: .common)
-        RunLoop.main.run()
     }
 }

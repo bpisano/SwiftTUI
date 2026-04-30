@@ -12,6 +12,7 @@ import Testing
 
 @testable import SwiftTUI
 @testable import SwiftTUICore
+@testable import SwiftTUIRuntime
 
 @MainActor
 func expectView<V: View>(

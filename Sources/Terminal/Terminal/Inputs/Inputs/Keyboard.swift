@@ -22,24 +22,10 @@ public struct Keyboard: Input, Sendable {
         let decoder: KeyboardEventDecoder = .init()
 
         self.makeEvents = {
-            AsyncStream { continuation in
-                let task: Task<Void, Never> = .init {
-                    var buffer: [UInt8] = Array(repeating: 0, count: 64)
-                    while !Task.isCancelled {
-                        let count: Int = read(fileDescriptor, &buffer, buffer.count)
-                        guard count > 0 else { continue }
-
-                        let bytes = Array(buffer.prefix(count))
-                        for event in decoder.decode(bytes: bytes) {
-                            continuation.yield(event)
-                        }
-                    }
-                }
-
-                continuation.onTermination = { _ in
-                    task.cancel()
-                }
-            }
+            KeyboardEventCenter.shared.events(
+                fileDescriptor: fileDescriptor,
+                decoder: decoder
+            )
         }
     }
 
@@ -170,5 +156,78 @@ extension Keyboard {
 extension Input where Self == Keyboard {
     public static var keyboard: Keyboard {
         .current
+    }
+}
+
+private final class KeyboardEventCenter: @unchecked Sendable {
+    static let shared = KeyboardEventCenter()
+
+    private let lock = NSLock()
+    private var continuations: [UUID: AsyncStream<Keyboard.Event>.Continuation] = [:]
+    private var task: Task<Void, Never>?
+
+    private init() {}
+
+    func events(
+        fileDescriptor: Int32,
+        decoder: KeyboardEventDecoder
+    ) -> AsyncStream<Keyboard.Event> {
+        startIfNeeded(fileDescriptor: fileDescriptor, decoder: decoder)
+
+        let id = UUID()
+        return AsyncStream { continuation in
+            insert(continuation, id: id)
+            continuation.onTermination = { [weak self] _ in
+                self?.remove(id: id)
+            }
+        }
+    }
+
+    private func startIfNeeded(
+        fileDescriptor: Int32,
+        decoder: KeyboardEventDecoder
+    ) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard task == nil else { return }
+
+        task = Task.detached { [weak self] in
+            var buffer: [UInt8] = Array(repeating: 0, count: 64)
+            while !Task.isCancelled {
+                let count = read(fileDescriptor, &buffer, buffer.count)
+                guard count > 0 else { continue }
+
+                let bytes = Array(buffer.prefix(count))
+                for event in decoder.decode(bytes: bytes) {
+                    self?.yield(event)
+                }
+            }
+        }
+    }
+
+    private func insert(
+        _ continuation: AsyncStream<Keyboard.Event>.Continuation,
+        id: UUID
+    ) {
+        lock.lock()
+        continuations[id] = continuation
+        lock.unlock()
+    }
+
+    private func remove(id: UUID) {
+        lock.lock()
+        continuations.removeValue(forKey: id)
+        lock.unlock()
+    }
+
+    private func yield(_ event: Keyboard.Event) {
+        lock.lock()
+        let currentContinuations = Array(continuations.values)
+        lock.unlock()
+
+        for continuation in currentContinuations {
+            continuation.yield(event)
+        }
     }
 }
