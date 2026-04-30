@@ -11,14 +11,14 @@ import Geometry
 import Terminal
 import SwiftTUICore
 
-actor TerminalRenderer {
+public actor TerminalRenderer {
     private let configuration: RenderingConfiguration
 
-    init(configuration: RenderingConfiguration) {
+    public init(configuration: RenderingConfiguration) {
         self.configuration = configuration
     }
 
-    func renderFrame(
+    public func renderFrame(
         displayList: DisplayList,
         in size: Size
     ) -> String {

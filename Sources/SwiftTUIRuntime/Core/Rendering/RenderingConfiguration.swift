@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct RenderingConfiguration: Sendable {
-    let emptyChar: Character
-    let lineJoinSeparator: String
-    let renderColor: Bool
+public struct RenderingConfiguration: Sendable {
+    public let emptyChar: Character
+    public let lineJoinSeparator: String
+    public let renderColor: Bool
 
-    init(
+    public init(
         emptyChar: Character,
         lineJoinSeparator: String,
         renderColor: Bool
@@ -21,4 +21,20 @@ struct RenderingConfiguration: Sendable {
         self.lineJoinSeparator = lineJoinSeparator
         self.renderColor = renderColor
     }
+}
+
+extension RenderingConfiguration {
+    public static let standard: Self = .init(
+        emptyChar: " ",
+        lineJoinSeparator: "",
+        renderColor: true
+    )
+
+    /// Offline-friendly variant: rows are joined by `\n` so the result can be
+    /// printed directly without cursor escape codes (used by `renderToANSI`).
+    public static let offline: Self = .init(
+        emptyChar: " ",
+        lineJoinSeparator: "\n",
+        renderColor: true
+    )
 }
