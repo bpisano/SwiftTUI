@@ -57,7 +57,8 @@ let package = Package(
         ),
         .testTarget(
             name: "AttributeGraphTests",
-            dependencies: ["AttributeGraph"]
+            dependencies: ["AttributeGraph"],
+            swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(
             name: "GeometryTests",
@@ -72,7 +73,8 @@ let package = Package(
                 "SwiftTUICore",
                 "SwiftTUI",
                 "SwiftTUIRuntime",
-            ]
+            ],
+            swiftSettings: [.defaultIsolation(MainActor.self)]
         )
     ]
 )

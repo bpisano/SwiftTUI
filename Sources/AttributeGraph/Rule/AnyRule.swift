@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AnyRule<T>: Rule, @unchecked Sendable {
+struct AnyRule<T>: Rule {
     private let _evaluate: () -> T
 
     init<R: Rule>(_ rule: R) where R.Value == T {

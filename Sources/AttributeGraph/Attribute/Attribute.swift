@@ -7,8 +7,9 @@
 
 import Foundation
 
+@MainActor
 @propertyWrapper
-public final class Attribute<T>: AnyAttribute, @unchecked Sendable {
+public final class Attribute<T>: AnyAttribute {
     public var wrappedValue: T {
         get {
             Graph.current.registerDependency(self)

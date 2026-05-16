@@ -4,25 +4,30 @@ import SwiftTUICore
 import Terminal
 
 public enum SwiftTUIRuntime {
+    @MainActor
     public static func run<V: View>(
         @ViewBuilder _ content: @escaping @MainActor () -> V
     ) async -> Never {
-        await MainActor.run {
+        let graph = Graph()
+        await Graph.withCurrent(graph) {
             start(content())
+            await withUnsafeContinuation { (_: UnsafeContinuation<Void, Never>) in }
         }
-        await withUnsafeContinuation { (_: UnsafeContinuation<Void, Never>) in }
         fatalError("SwiftTUI runtime suspension resumed unexpectedly.")
     }
 
-    public static func main<V: View>(
+    public nonisolated static func main<V: View>(
         @ViewBuilder _ content: @escaping @MainActor () -> V
     ) -> Never {
+        let graph = MainActor.assumeIsolated { Graph() }
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 start(content())
             }
         }
-        RunLoop.main.run()
+        Graph.withCurrent(graph) {
+            RunLoop.main.run()
+        }
 
         fatalError("RunLoop.main.run() returned unexpectedly.")
     }
@@ -39,9 +44,7 @@ public enum SwiftTUIRuntime {
             }
         )
 
-        let graph: Graph = .init()
-        graph.makeCurrent()
-        graph.onInvalidate = {
+        Graph.current.onInvalidate = {
             renderState.setNeedsRender()
         }
 

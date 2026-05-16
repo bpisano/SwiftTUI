@@ -118,6 +118,7 @@ private final class RetainedLayoutContainer {
         let outputs: [ViewOutputs]
         let subgraph: Subgraph
 
+        @MainActor
         func clean() {
             subgraph.clean()
         }

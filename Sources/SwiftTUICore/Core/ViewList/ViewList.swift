@@ -49,13 +49,13 @@ struct RetainedViewListItem {
     }
 }
 
+@MainActor
 protocol ViewList {
     typealias MakeViewOutputs = ViewListMakeViewOutputs
     typealias MakeViewOutputsInterceptor = ViewListMakeViewOutputsInterceptor
 
     var viewIds: [ViewId]? { get }
 
-    @MainActor
     func applyItems(_ body: (RetainedViewListItem) -> Void)
 }
 

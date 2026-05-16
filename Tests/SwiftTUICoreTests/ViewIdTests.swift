@@ -20,14 +20,14 @@ struct ViewIdTests {
     @Test
     func `Single Text has implicit ID 0`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var view = Text("Hello")
 
-        @Attribute var view = Text("Hello")
-
-        let ids = try #require(viewIds(of: $view))
-        #expect(ids.count == 1)
-        #expect(ids[0].implicitId == 0)
-        #expect(ids[0].explicit.isEmpty)
+            let ids = try #require(viewIds(of: $view))
+            #expect(ids.count == 1)
+            #expect(ids[0].implicitId == 0)
+            #expect(ids[0].explicit.isEmpty)
+        }
     }
 
     // MARK: - Siblings (TupleView)
@@ -35,28 +35,28 @@ struct ViewIdTests {
     @Test
     func `Two siblings get consecutive implicit IDs`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var view = TupleView(Text("A"), Text("B"))
 
-        @Attribute var view = TupleView(Text("A"), Text("B"))
-
-        let ids = try #require(viewIds(of: $view))
-        #expect(ids.count == 2)
-        #expect(ids[0].implicitId == 0)
-        #expect(ids[1].implicitId == 1)
+            let ids = try #require(viewIds(of: $view))
+            #expect(ids.count == 2)
+            #expect(ids[0].implicitId == 0)
+            #expect(ids[1].implicitId == 1)
+        }
     }
 
     @Test
     func `Three siblings get consecutive implicit IDs`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var view = TupleView(Text("A"), Text("B"), Text("C"))
 
-        @Attribute var view = TupleView(Text("A"), Text("B"), Text("C"))
-
-        let ids = try #require(viewIds(of: $view))
-        #expect(ids.count == 3)
-        #expect(ids[0].implicitId == 0)
-        #expect(ids[1].implicitId == 1)
-        #expect(ids[2].implicitId == 2)
+            let ids = try #require(viewIds(of: $view))
+            #expect(ids.count == 3)
+            #expect(ids[0].implicitId == 0)
+            #expect(ids[1].implicitId == 1)
+            #expect(ids[2].implicitId == 2)
+        }
     }
 
     // MARK: - ForEach slots
@@ -64,35 +64,35 @@ struct ViewIdTests {
     @Test
     func `Static views around ForEach occupy correct implicit ID slots`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var forEach = ForEach(["X"], id: \.self) { Text($0) }
+            @Attribute var view = TupleView(Text("Header"), forEach, Text("Footer"))
 
-        @Attribute var forEach = ForEach(["X"], id: \.self) { Text($0) }
-        @Attribute var view = TupleView(Text("Header"), forEach, Text("Footer"))
-
-        let ids = try #require(viewIds(of: $view))
-        #expect(ids.count == 3)
-        #expect(ids[0].implicitId == 0)
-        #expect(ids[1].implicitId == 1)
-        #expect(ids[1].explicit.first?.id == AnyHashable("X"))
-        #expect(ids[2].implicitId == 2)
+            let ids = try #require(viewIds(of: $view))
+            #expect(ids.count == 3)
+            #expect(ids[0].implicitId == 0)
+            #expect(ids[1].implicitId == 1)
+            #expect(ids[1].explicit.first?.id == AnyHashable("X"))
+            #expect(ids[2].implicitId == 2)
+        }
     }
 
     @Test
     func `Default view output materialization keeps leaf ids`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        Graph.withCurrent(graph) {
+            @Attribute var view = TupleView(Text("A"), Text("B"))
+            var startIndex = 0
+            let outputs = makeViewListOutputs(of: $view).makeViewOutputs(
+                startIndex: &startIndex,
+                inputs: makeViewInputs()
+            )
 
-        @Attribute var view = TupleView(Text("A"), Text("B"))
-        var startIndex = 0
-        let outputs = makeViewListOutputs(of: $view).makeViewOutputs(
-            startIndex: &startIndex,
-            inputs: makeViewInputs()
-        )
-
-        #expect(outputs.count == 2)
-        #expect(outputs[0].viewId.implicitId == 0)
-        #expect(outputs[1].viewId.implicitId == 1)
-        #expect(outputs.allSatisfy { $0.viewId.implicitId != -1 })
+            #expect(outputs.count == 2)
+            #expect(outputs[0].viewId.implicitId == 0)
+            #expect(outputs[1].viewId.implicitId == 1)
+            #expect(outputs.allSatisfy { $0.viewId.implicitId != -1 })
+        }
     }
 
     // MARK: - Stability: IDs don't change across re-evaluations
@@ -100,14 +100,14 @@ struct ViewIdTests {
     @Test
     func `Implicit IDs are stable across multiple evaluations`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var view = TupleView(Text("A"), Text("B"), Text("C"))
 
-        @Attribute var view = TupleView(Text("A"), Text("B"), Text("C"))
+            let first = try #require(viewIds(of: $view))
+            let second = try #require(viewIds(of: $view))
 
-        let first = try #require(viewIds(of: $view))
-        let second = try #require(viewIds(of: $view))
-
-        #expect(first == second)
+            #expect(first == second)
+        }
     }
 
     // MARK: - Container (LayoutView) is opaque as a single slot
@@ -115,18 +115,18 @@ struct ViewIdTests {
     @Test
     func `VStack appears as one slot in its parent`() throws {
         let graph = Graph()
-        graph.makeCurrent()
+        try Graph.withCurrent(graph) {
+            @Attribute var view = TupleView(
+                VStack { Text("Inside") },
+                Text("After")
+            )
 
-        @Attribute var view = TupleView(
-            VStack { Text("Inside") },
-            Text("After")
-        )
-
-        let ids = try #require(viewIds(of: $view))
-        // VStack (LayoutView) is a unary element from its parent's perspective
-        #expect(ids.count == 2)
-        #expect(ids[0].implicitId == 0)
-        #expect(ids[1].implicitId == 1)
+            let ids = try #require(viewIds(of: $view))
+            // VStack (LayoutView) is a unary element from its parent's perspective
+            #expect(ids.count == 2)
+            #expect(ids[0].implicitId == 0)
+            #expect(ids[1].implicitId == 1)
+        }
     }
 }
 

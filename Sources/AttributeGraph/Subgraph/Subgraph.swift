@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public final class Subgraph {
     private let graph: Graph
     private var attributeIDs: Set<ObjectIdentifier> = []

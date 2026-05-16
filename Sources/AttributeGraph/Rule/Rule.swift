@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public protocol Rule {
     associatedtype Value
 

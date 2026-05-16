@@ -43,6 +43,10 @@ struct ViewId: Hashable, Equatable, Sendable {
 
 extension ViewId {
     struct Explicit: Hashable, Equatable, @unchecked Sendable {
+        // `AnyHashable` is not Sendable in general (user-provided types may not conform),
+        // so we keep `@unchecked Sendable` here. The struct is immutable, the contained
+        // value comes from `ForEach`'s `id:` keypath, and all current call sites stage
+        // these through the main-actor view tree, so the contract is honored in practice.
         let id: AnyHashable
     }
 

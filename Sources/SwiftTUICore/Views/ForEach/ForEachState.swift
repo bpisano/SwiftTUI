@@ -103,6 +103,7 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
 }
 
 extension ForEachState {
+    @MainActor
     final class Item {
         let childView: Attribute<Content>
         let views: ViewListOutputs.Views

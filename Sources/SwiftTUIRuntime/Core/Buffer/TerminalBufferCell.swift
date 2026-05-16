@@ -9,7 +9,7 @@ import Foundation
 import Geometry
 import Terminal
 
-struct TerminalBufferCell: Sendable {
+nonisolated struct TerminalBufferCell: Sendable {
     var character: Character
     var foregroundColor: ANSIColor = .default
     var backgroundColor: ANSIColor = .default

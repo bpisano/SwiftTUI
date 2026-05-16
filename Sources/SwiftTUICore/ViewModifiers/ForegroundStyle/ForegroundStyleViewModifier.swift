@@ -14,7 +14,7 @@ extension View {
 }
 
 struct ForegroundStyleEnvironmentKey: EnvironmentKey {
-    static let defaultValue: AnyShapeStyle = AnyShapeStyle(Color.white)
+    nonisolated(unsafe) static let defaultValue: AnyShapeStyle = AnyShapeStyle(Color.white)
 }
 
 extension EnvironmentValues {

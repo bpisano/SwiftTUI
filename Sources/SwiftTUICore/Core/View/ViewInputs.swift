@@ -17,6 +17,7 @@ public struct ViewInputs: InputStorage, Sendable {
     var environment: Attribute<EnvironmentValues>
     var storage: ViewInputsStorage
 
+    @MainActor
     var frame: Rect {
         .init(
             origin: position.wrappedValue,

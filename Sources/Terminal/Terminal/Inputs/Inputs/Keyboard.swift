@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Synchronization
 
 #if os(macOS)
     import Darwin
@@ -159,12 +160,15 @@ extension Input where Self == Keyboard {
     }
 }
 
-private final class KeyboardEventCenter: @unchecked Sendable {
-    static let shared = KeyboardEventCenter()
+private final class KeyboardEventCenter: Sendable {
+    static let shared: KeyboardEventCenter = .init()
 
-    private let lock = NSLock()
-    private var continuations: [UUID: AsyncStream<Keyboard.Event>.Continuation] = [:]
-    private var task: Task<Void, Never>?
+    private struct State {
+        var continuations: [UUID: AsyncStream<Keyboard.Event>.Continuation] = [:]
+        var task: Task<Void, Never>? = nil
+    }
+
+    private let state = Mutex<State>(State())
 
     private init() {}
 
@@ -176,9 +180,9 @@ private final class KeyboardEventCenter: @unchecked Sendable {
 
         let id = UUID()
         return AsyncStream { continuation in
-            insert(continuation, id: id)
+            state.withLock { $0.continuations[id] = continuation }
             continuation.onTermination = { [weak self] _ in
-                self?.remove(id: id)
+                _ = self?.state.withLock { $0.continuations.removeValue(forKey: id) }
             }
         }
     }
@@ -187,46 +191,26 @@ private final class KeyboardEventCenter: @unchecked Sendable {
         fileDescriptor: Int32,
         decoder: KeyboardEventDecoder
     ) {
-        lock.lock()
-        defer { lock.unlock() }
+        state.withLock { s in
+            guard s.task == nil else { return }
+            s.task = Task.detached { [weak self] in
+                var buffer: [UInt8] = Array(repeating: 0, count: 64)
+                while !Task.isCancelled {
+                    let count = read(fileDescriptor, &buffer, buffer.count)
+                    guard count > 0 else { continue }
 
-        guard task == nil else { return }
-
-        task = Task.detached { [weak self] in
-            var buffer: [UInt8] = Array(repeating: 0, count: 64)
-            while !Task.isCancelled {
-                let count = read(fileDescriptor, &buffer, buffer.count)
-                guard count > 0 else { continue }
-
-                let bytes = Array(buffer.prefix(count))
-                for event in decoder.decode(bytes: bytes) {
-                    self?.yield(event)
+                    let bytes = Array(buffer.prefix(count))
+                    for event in decoder.decode(bytes: bytes) {
+                        self?.yield(event)
+                    }
                 }
             }
         }
     }
 
-    private func insert(
-        _ continuation: AsyncStream<Keyboard.Event>.Continuation,
-        id: UUID
-    ) {
-        lock.lock()
-        continuations[id] = continuation
-        lock.unlock()
-    }
-
-    private func remove(id: UUID) {
-        lock.lock()
-        continuations.removeValue(forKey: id)
-        lock.unlock()
-    }
-
     private func yield(_ event: Keyboard.Event) {
-        lock.lock()
-        let currentContinuations = Array(continuations.values)
-        lock.unlock()
-
-        for continuation in currentContinuations {
+        let snapshot = state.withLock { Array($0.continuations.values) }
+        for continuation in snapshot {
             continuation.yield(event)
         }
     }

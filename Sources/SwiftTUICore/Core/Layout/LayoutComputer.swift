@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-struct LayoutComputer: @unchecked Sendable {
+struct LayoutComputer {
     let sizeThatFits: (_ proposedSize: ProposedViewSize) -> Size
     let viewGeometries: (_ rect: Rect) -> [ViewGeometry]
 }

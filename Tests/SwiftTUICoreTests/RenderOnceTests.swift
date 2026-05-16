@@ -8,7 +8,6 @@ import SwiftTUICore
 @Suite("renderOnce + renderToANSI")
 struct RenderOnceTests {
     @Test("Codable round-trip + ANSI render contains text")
-    @MainActor
     func roundTrip() async throws {
         let displayList = SwiftTUIRuntime.renderOnce(
             Text("hello"),

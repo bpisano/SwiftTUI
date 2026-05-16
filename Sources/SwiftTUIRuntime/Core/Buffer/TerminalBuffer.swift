@@ -9,7 +9,7 @@ import Foundation
 import Geometry
 import Terminal
 
-struct TerminalBuffer: Sendable {
+nonisolated struct TerminalBuffer: Sendable {
     let configuration: RenderingConfiguration
     let size: Size
 

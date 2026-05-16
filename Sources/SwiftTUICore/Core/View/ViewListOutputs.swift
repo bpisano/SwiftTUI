@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-public struct ViewListOutputs: @unchecked Sendable {
+public struct ViewListOutputs {
     let views: Views
     let nextImplicitId: Int
 
@@ -17,6 +17,7 @@ public struct ViewListOutputs: @unchecked Sendable {
         self.nextImplicitId = nextImplicitId
     }
 
+    @MainActor
     func makeViewListAttribute(_ label: String = "ViewList") -> Attribute<any ViewList> {
         switch views {
         case let .staticList(viewElements):
@@ -37,6 +38,7 @@ extension ViewListOutputs {
 }
 
 extension ViewListOutputs.Views {
+    @MainActor
     var viewIds: [ViewId]? {
         switch self {
         case let .staticList(elements):
@@ -105,6 +107,7 @@ extension ViewListOutputs {
     ///   - viewListOutputs: An array of `ViewListOutputs` to concatenate.
     ///   - label: An optional label for the merged view list attribute. Defaults to "Concatenated ViewList".
     /// - Returns: A single `ViewListOutputs` instance that represents the concatenation of all the input view list outputs.
+    @MainActor
     static func concat(
         _ viewListOutputs: [ViewListOutputs],
         label: String = "Concatenated ViewList"

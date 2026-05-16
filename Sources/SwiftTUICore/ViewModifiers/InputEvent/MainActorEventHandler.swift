@@ -7,10 +7,10 @@
 
 import Foundation
 
-final class MainActorEventHandler<Event: Sendable>: @unchecked Sendable {
-    private let action: @MainActor (Event) -> Void
+final class MainActorEventHandler<Event: Sendable>: Sendable {
+    private let action: @MainActor @Sendable (Event) -> Void
 
-    init(_ action: @escaping @MainActor (Event) -> Void) {
+    init(_ action: @escaping @MainActor @Sendable (Event) -> Void) {
         self.action = action
     }
 

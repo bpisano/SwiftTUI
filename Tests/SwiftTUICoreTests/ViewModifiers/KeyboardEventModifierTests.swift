@@ -20,141 +20,141 @@ struct KeyboardEventModifierTests {
     @Test
     func `onKeyPressed is called for down and repeat events`() async throws {
         let graph = Graph()
-        graph.makeCurrent()
+        await Graph.withCurrent(graph) {
+            let keyboard = TestKeyboard()
+            let inputs = makeInputs()
+            var receivedEvents: [Keyboard.Event] = []
 
-        let keyboard = TestKeyboard()
-        let inputs = makeInputs()
-        var receivedEvents: [Keyboard.Event] = []
+            @Attribute var view = Text("Hello")
+                .modifier(
+                    KeyboardEventViewModifier(
+                        keyboard: keyboard.value,
+                        trigger: .pressed,
+                        key: nil,
+                        modifiers: nil
+                    ) { event in
+                        receivedEvents.append(event)
+                    }
+                )
 
-        @Attribute var view = Text("Hello")
-            .modifier(
-                KeyboardEventViewModifier(
-                    keyboard: keyboard.value,
-                    trigger: .pressed,
-                    key: nil,
-                    modifiers: nil
-                ) { event in
-                    receivedEvents.append(event)
-                }
-            )
+            let outputs = type(of: view).makeView($view, inputs: inputs)
+            _ = outputs.displayList.wrappedValue
+            CallbackQueue.shared.executeAll()
 
-        let outputs = type(of: view).makeView($view, inputs: inputs)
-        _ = outputs.displayList.wrappedValue
-        CallbackQueue.shared.executeAll()
+            keyboard.send(.keyDown(.character("a")))
+            keyboard.send(.keyRepeat(.character("b")))
+            keyboard.send(.keyUp(.character("c")))
+            await waitUntil { receivedEvents.count == 2 }
 
-        keyboard.send(.keyDown(.character("a")))
-        keyboard.send(.keyRepeat(.character("b")))
-        keyboard.send(.keyUp(.character("c")))
-        await waitUntil { receivedEvents.count == 2 }
+            #expect(receivedEvents.map(\.key) == [.character("a"), .character("b")])
 
-        #expect(receivedEvents.map(\.key) == [.character("a"), .character("b")])
-
-        keyboard.finish()
+            keyboard.finish()
+        }
     }
 
     @Test
     func `onKeyDown ignores repeat and up events`() async throws {
         let graph = Graph()
-        graph.makeCurrent()
+        await Graph.withCurrent(graph) {
+            let keyboard = TestKeyboard()
+            let inputs = makeInputs()
+            var callCount = 0
 
-        let keyboard = TestKeyboard()
-        let inputs = makeInputs()
-        var callCount = 0
+            @Attribute var view = Text("Hello")
+                .modifier(
+                    KeyboardEventViewModifier(
+                        keyboard: keyboard.value,
+                        trigger: .down,
+                        key: nil,
+                        modifiers: nil
+                    ) { _ in
+                        callCount += 1
+                    }
+                )
 
-        @Attribute var view = Text("Hello")
-            .modifier(
-                KeyboardEventViewModifier(
-                    keyboard: keyboard.value,
-                    trigger: .down,
-                    key: nil,
-                    modifiers: nil
-                ) { _ in
-                    callCount += 1
-                }
-            )
+            let outputs = type(of: view).makeView($view, inputs: inputs)
+            _ = outputs.displayList.wrappedValue
+            CallbackQueue.shared.executeAll()
 
-        let outputs = type(of: view).makeView($view, inputs: inputs)
-        _ = outputs.displayList.wrappedValue
-        CallbackQueue.shared.executeAll()
+            keyboard.send(.keyRepeat(.character("a")))
+            keyboard.send(.keyUp(.character("a")))
+            keyboard.send(.keyDown(.character("a")))
+            await waitUntil { callCount == 1 }
 
-        keyboard.send(.keyRepeat(.character("a")))
-        keyboard.send(.keyUp(.character("a")))
-        keyboard.send(.keyDown(.character("a")))
-        await waitUntil { callCount == 1 }
+            #expect(callCount == 1)
 
-        #expect(callCount == 1)
-
-        keyboard.finish()
+            keyboard.finish()
+        }
     }
 
     @Test
     func `onKeyUp is called for release events`() async throws {
         let graph = Graph()
-        graph.makeCurrent()
+        await Graph.withCurrent(graph) {
+            let keyboard = TestKeyboard()
+            let inputs = makeInputs()
+            var releasedKeys: [Keyboard.Key] = []
 
-        let keyboard = TestKeyboard()
-        let inputs = makeInputs()
-        var releasedKeys: [Keyboard.Key] = []
+            @Attribute var view = Text("Hello")
+                .modifier(
+                    KeyboardEventViewModifier(
+                        keyboard: keyboard.value,
+                        trigger: .up,
+                        key: nil,
+                        modifiers: nil
+                    ) { event in
+                        releasedKeys.append(event.key)
+                    }
+                )
 
-        @Attribute var view = Text("Hello")
-            .modifier(
-                KeyboardEventViewModifier(
-                    keyboard: keyboard.value,
-                    trigger: .up,
-                    key: nil,
-                    modifiers: nil
-                ) { event in
-                    releasedKeys.append(event.key)
-                }
-            )
+            let outputs = type(of: view).makeView($view, inputs: inputs)
+            _ = outputs.displayList.wrappedValue
+            CallbackQueue.shared.executeAll()
 
-        let outputs = type(of: view).makeView($view, inputs: inputs)
-        _ = outputs.displayList.wrappedValue
-        CallbackQueue.shared.executeAll()
+            keyboard.send(.keyDown(.enter))
+            keyboard.send(.keyUp(.enter))
+            await waitUntil { releasedKeys == [.enter] }
 
-        keyboard.send(.keyDown(.enter))
-        keyboard.send(.keyUp(.enter))
-        await waitUntil { releasedKeys == [.enter] }
+            #expect(releasedKeys == [.enter])
 
-        #expect(releasedKeys == [.enter])
-
-        keyboard.finish()
+            keyboard.finish()
+        }
     }
 
     @Test
     func `keyboard modifiers filter by key and modifier set`() async throws {
         let graph = Graph()
-        graph.makeCurrent()
+        await Graph.withCurrent(graph) {
+            let keyboard = TestKeyboard()
+            let inputs = makeInputs()
+            let requiredModifiers: Keyboard.Modifiers = [.shift, .option]
+            var callCount = 0
 
-        let keyboard = TestKeyboard()
-        let inputs = makeInputs()
-        let requiredModifiers: Keyboard.Modifiers = [.shift, .option]
-        var callCount = 0
+            @Attribute var view = Text("Hello")
+                .modifier(
+                    KeyboardEventViewModifier(
+                        keyboard: keyboard.value,
+                        trigger: .pressed,
+                        key: .character("a"),
+                        modifiers: requiredModifiers
+                    ) { _ in
+                        callCount += 1
+                    }
+                )
 
-        @Attribute var view = Text("Hello")
-            .modifier(
-                KeyboardEventViewModifier(
-                    keyboard: keyboard.value,
-                    trigger: .pressed,
-                    key: .character("a"),
-                    modifiers: requiredModifiers
-                ) { _ in
-                    callCount += 1
-                }
-            )
+            let outputs = type(of: view).makeView($view, inputs: inputs)
+            _ = outputs.displayList.wrappedValue
+            CallbackQueue.shared.executeAll()
 
-        let outputs = type(of: view).makeView($view, inputs: inputs)
-        _ = outputs.displayList.wrappedValue
-        CallbackQueue.shared.executeAll()
+            keyboard.send(.keyDown(.character("a"), modifiers: .shift))
+            keyboard.send(.keyDown(.character("b"), modifiers: requiredModifiers))
+            keyboard.send(.keyDown(.character("a"), modifiers: requiredModifiers))
+            await waitUntil { callCount == 1 }
 
-        keyboard.send(.keyDown(.character("a"), modifiers: .shift))
-        keyboard.send(.keyDown(.character("b"), modifiers: requiredModifiers))
-        keyboard.send(.keyDown(.character("a"), modifiers: requiredModifiers))
-        await waitUntil { callCount == 1 }
+            #expect(callCount == 1)
 
-        #expect(callCount == 1)
-
-        keyboard.finish()
+            keyboard.finish()
+        }
     }
 }
 
@@ -177,7 +177,7 @@ private func waitUntil(
     _ condition: @MainActor () -> Bool
 ) async {
     for _ in 0..<20 {
-        if await condition() {
+        if condition() {
             return
         }
         await Task.yield()

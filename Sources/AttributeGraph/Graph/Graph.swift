@@ -7,8 +7,17 @@
 
 import Foundation
 
+/// Task-local storage for the current graph.
+/// Declared on a `nonisolated` enum so the macro-generated `$current` projection stays
+/// nonisolated and can be read from any actor context (e.g. the SwiftTUIRuntime
+/// `nonisolated static func main` entry point or parallel tests).
+nonisolated public enum GraphStorage {
+    @TaskLocal public static var current: Graph = Graph()
+}
+
+@MainActor
 public final class Graph {
-    public static nonisolated(unsafe) private(set) var current: Graph = .init()
+    public nonisolated static var current: Graph { GraphStorage.current }
 
     public var onInvalidate: (() -> Void)?
 
@@ -24,7 +33,29 @@ public final class Graph {
     private var tracksTransaction: Bool = false
     private(set) var transaction: Transaction = .init()
 
-    public init() {}
+    public nonisolated init() {}
+
+    /// Binds `graph` as `Graph.current` for the duration of `perform`.
+    /// Uses task-local storage so concurrent tasks (e.g. parallel tests, separate render contexts)
+    /// each see their own current graph without racing on a shared singleton.
+    ///
+    /// The `isolation` parameter forwards the caller's actor isolation so `perform`
+    /// can call MainActor (or other-actor) APIs without needing to hop.
+    public static func withCurrent<T>(
+        _ graph: Graph,
+        isolation: isolated (any Actor)? = #isolation,
+        perform: () throws -> T
+    ) rethrows -> T {
+        try GraphStorage.$current.withValue(graph, operation: perform)
+    }
+
+    public static func withCurrent<T>(
+        _ graph: Graph,
+        isolation: isolated (any Actor)? = #isolation,
+        perform: () async throws -> T
+    ) async rethrows -> T {
+        try await GraphStorage.$current.withValue(graph, operation: perform)
+    }
 
     /// Total number of registered attributes in the graph. Useful for growth tests.
     public var attributeCount: Int { attributes.count }
@@ -56,10 +87,6 @@ public final class Graph {
             .filter { $0.label.contains(substr) }
             .flatMap { attr in attr.outgoingEdges.map { (attr.label, $0.to.label) } }
             .sorted { $0.from < $1.from }
-    }
-
-    public func makeCurrent() {
-        Graph.current = self
     }
 
     public func beginTransactionTracking() {
@@ -193,14 +220,16 @@ extension Graph: DigraphRepresentable {
 }
 
 extension Graph {
-    public struct Transaction {
+    public nonisolated struct Transaction {
         var invalidations: [AnyAttribute] = []
         var reevaluations: [AnyAttribute] = []
+
+        public init() {}
     }
 }
 
-extension Graph.Transaction: CustomStringConvertible {
-    public var description: String {
+extension Graph.Transaction: @MainActor CustomStringConvertible {
+    @MainActor public var description: String {
         let invalidationsDescription =
             invalidations
             .map(\.label)

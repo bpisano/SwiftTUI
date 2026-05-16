@@ -21,6 +21,7 @@ import Geometry
 /// are stored by reference and resolved only when `sizeThatFits`/`placeSubviews` runs.
 /// This prevents eager recursion through the entire view tree when the parent's
 /// `layoutComputer` attribute is first evaluated.
+@MainActor
 final class LayoutEngine<L: Layout> {
     private var layout: L
     private var cache: L.Cache

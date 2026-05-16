@@ -8,8 +8,8 @@
 import Foundation
 
 public struct AnyShapeStyle: ShapeStyle {
-    private let _makeShapeStyle: @Sendable (ShapeStyleInputs) -> ShapeStyleOutputs
-    private let _resolve: @Sendable (EnvironmentValues) -> AnyShapeStyle
+    private let _makeShapeStyle: (ShapeStyleInputs) -> ShapeStyleOutputs
+    private let _resolve: (EnvironmentValues) -> AnyShapeStyle
 
     public init<S: ShapeStyle>(_ shapeStyle: S) {
         self._makeShapeStyle = { inputs in

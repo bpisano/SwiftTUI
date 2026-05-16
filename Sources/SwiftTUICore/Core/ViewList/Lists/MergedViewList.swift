@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@MainActor
 struct MergedViewList: ViewList {
     private let viewLists: [Attribute<any ViewList>]
 
@@ -31,7 +32,7 @@ struct MergedViewList: ViewList {
     }
 }
 
-extension MergedViewList: AttributeValueRepresentable {
+extension MergedViewList: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
         "MergedViewList with \(viewLists.count) lists"
     }

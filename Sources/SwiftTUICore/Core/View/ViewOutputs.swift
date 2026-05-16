@@ -51,6 +51,7 @@ extension ViewOutputs {
         return viewListOutputs.makeUnaryViewOutputs(inputs: inputs)
     }
 
+    @MainActor
     static func combineViewOutputs(_ viewOutputs: [ViewOutputs]) -> ViewOutputs {
         guard !viewOutputs.isEmpty else {
             fatalError("Cannot combine an empty array of ViewOutputs")

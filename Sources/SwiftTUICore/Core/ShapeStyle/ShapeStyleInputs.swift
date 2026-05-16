@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-public struct ShapeStyleInputs: Sendable {
+public struct ShapeStyleInputs {
     let rect: Rect
     let environment: EnvironmentValues
 }

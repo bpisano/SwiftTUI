@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@MainActor
 struct BaseViewList: ViewList {
     private let elements: [any ViewElement]
 
@@ -25,7 +26,7 @@ struct BaseViewList: ViewList {
     }
 }
 
-extension BaseViewList: AttributeValueRepresentable {
+extension BaseViewList: @MainActor AttributeValueRepresentable {
     var attributeValueDescription: String {
         "BaseViewList with \(elements.count) elements"
     }

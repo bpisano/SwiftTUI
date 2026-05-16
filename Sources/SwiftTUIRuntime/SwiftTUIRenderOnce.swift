@@ -14,17 +14,17 @@ extension SwiftTUIRuntime {
         size: Size
     ) -> DisplayList {
         let graph = Graph()
-        graph.makeCurrent()
+        return Graph.withCurrent(graph) {
+            let inputs = ViewInputs(
+                position: Attribute<Point>(wrappedValue: .zero),
+                size: Attribute<Size>(wrappedValue: size),
+                phase: Attribute<ViewPhase>(wrappedValue: .active),
+                environment: Attribute<EnvironmentValues>(wrappedValue: .init()),
+                storage: ViewInputsStorage()
+            )
 
-        let inputs = ViewInputs(
-            position: Attribute<Point>(wrappedValue: .zero),
-            size: Attribute<Size>(wrappedValue: size),
-            phase: Attribute<ViewPhase>(wrappedValue: .active),
-            environment: Attribute<EnvironmentValues>(wrappedValue: .init()),
-            storage: ViewInputsStorage()
-        )
-
-        return resolveDisplayList(for: RootLayout { view }, inputs: inputs)
+            return resolveDisplayList(for: RootLayout { view }, inputs: inputs)
+        }
     }
 
     /// Renders an existing `DisplayList` to an ANSI escape-encoded string.

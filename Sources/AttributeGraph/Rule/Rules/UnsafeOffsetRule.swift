@@ -10,7 +10,7 @@ import Foundation
 public struct UnsafeOffsetRule<T, U>: Rule {
     let parent: Attribute<T>
     let offset: Int
-    
+
     public func evaluate() -> U {
         withUnsafePointer(to: parent.wrappedValue) { ptr in
             let rawPtr = UnsafeRawPointer(ptr)

@@ -8,7 +8,7 @@
 import Foundation
 import Geometry
 
-public protocol ShapeStyle: Sendable {
+public protocol ShapeStyle {
     associatedtype Style: ShapeStyle
 
     static func makeShapeStyle(

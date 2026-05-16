@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public protocol DigraphRepresentable {
     var digraph: String { get }
 }

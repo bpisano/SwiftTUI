@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct EnvironmentValues: @unchecked Sendable {
+public struct EnvironmentValues {
     private var storage: [ObjectIdentifier: Any] = [:]
 
     public init(storage: [ObjectIdentifier: Any] = [:]) {

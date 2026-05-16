@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public protocol AnyAttribute: AnyObject, DigraphRepresentable {
     var id: UUID { get }
     var flags: AttributeFlags { get }

@@ -10,7 +10,7 @@ import Terminal
 import Geometry
 import AttributeGraph
 
-public struct DisplayList: Codable, Sendable {
+public nonisolated struct DisplayList: Codable, Sendable {
     public let items: [Item]
 
     public init(items: [Item]) {
@@ -27,18 +27,18 @@ public struct DisplayList: Codable, Sendable {
 }
 
 extension DisplayList {
-    public enum Item: Codable, Sendable {
+    public nonisolated enum Item: Codable, Sendable {
         case command(Command)
         case childList(DisplayList)
     }
 
-    public enum CommandAction: Codable, Sendable {
+    public nonisolated enum CommandAction: Codable, Sendable {
         case putLine(_ line: String)
         case backgroundColor(_ color: ANSIColor)
         case foregroundColor(_ color: ANSIColor)
     }
 
-    public struct Command: Codable, Sendable {
+    public nonisolated struct Command: Codable, Sendable {
         public let action: CommandAction
         public let frame: Rect
 
