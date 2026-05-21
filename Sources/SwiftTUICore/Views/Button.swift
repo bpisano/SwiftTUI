@@ -13,7 +13,10 @@ public struct Button<Label: View>: View {
     private let label: Label
 
     @State private var isFocused: Bool = false
+    @State private var isPressed: Bool = false
+
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.buttonStyle) private var buttonStyle
 
     public init(
         action: @escaping @MainActor () -> Void,
@@ -24,22 +27,25 @@ public struct Button<Label: View>: View {
     }
 
     public var body: some View {
-        let showFocusMarker = isEnabled && isFocused
-        let content = HStack {
-            Text(showFocusMarker ? ">" : " ")
-            label
-            Text(showFocusMarker ? "<" : " ")
-        }
+        let configuration = ButtonStyleConfiguration(
+            label: .init(label),
+            isPressed: isPressed
+        )
+        let styled = buttonStyle.makeBody(configuration)
 
         if isEnabled {
-            content
+            styled
                 .focused($isFocused)
-                .onKeyPressed(.enter) { _ in
+                .onKeyDown(.enter) { _ in
                     guard isFocused else { return }
+                    isPressed = true
                     action()
                 }
+                .onKeyUp(.enter) { _ in
+                    isPressed = false
+                }
         } else {
-            content
+            styled
         }
     }
 }
