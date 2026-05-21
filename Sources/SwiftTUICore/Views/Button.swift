@@ -13,6 +13,7 @@ public struct Button<Label: View>: View {
     private let label: Label
 
     @State private var isFocused: Bool = false
+    @Environment(\.isEnabled) private var isEnabled
 
     public init(
         action: @escaping @MainActor () -> Void,
@@ -23,15 +24,22 @@ public struct Button<Label: View>: View {
     }
 
     public var body: some View {
-        HStack {
-            Text(isFocused ? ">" : " ")
+        let showFocusMarker = isEnabled && isFocused
+        let content = HStack {
+            Text(showFocusMarker ? ">" : " ")
             label
-            Text(isFocused ? "<" : " ")
+            Text(showFocusMarker ? "<" : " ")
         }
-        .focused($isFocused)
-        .onKeyPressed(.enter) { _ in
-            guard isFocused else { return }
-            action()
+
+        if isEnabled {
+            content
+                .focused($isFocused)
+                .onKeyPressed(.enter) { _ in
+                    guard isFocused else { return }
+                    action()
+                }
+        } else {
+            content
         }
     }
 }
