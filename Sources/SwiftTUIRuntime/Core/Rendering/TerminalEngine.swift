@@ -15,8 +15,10 @@ import SwiftTUICore
 final class TerminalEngine<V: View> {
     private let terminal: Terminal
     private let renderer: TerminalRenderer
+    private let focusManager: FocusManager
     private var outputs: ViewOutputs?
     private var exitInputTask: Task<Void, Never>?
+    private var lastFocusList: FocusList?
 
     @Attribute private var screenOrigin: Point = .zero
     @Attribute private var screenSize: Size
@@ -31,8 +33,12 @@ final class TerminalEngine<V: View> {
     ) {
         self.renderer = .init(configuration: configuration)
         self.terminal = terminal
+        self.focusManager = .init()
         self._screenSize = .init(wrappedValue: terminal.screen.size)
         self._view = .init(wrappedValue: view)
+        var initialEnvironment: EnvironmentValues = .init()
+        initialEnvironment.focusManager = self.focusManager
+        self._environment = .init(wrappedValue: initialEnvironment)
     }
 
     func setup() {
@@ -70,6 +76,14 @@ final class TerminalEngine<V: View> {
         // wrappedValue reads must happen here — this is where the graph lives.
         let displayList = outputs.displayList.wrappedValue
         let size = screenSize
+
+        if let focusListAttribute = outputs.focusList {
+            let focusList = focusListAttribute.wrappedValue
+            if focusList != lastFocusList {
+                lastFocusList = focusList
+                focusManager.rebuild(from: focusList)
+            }
+        }
 
         // Buffer fill and string construction run on the renderer actor's executor,
         // freeing MainActor to process input events and state updates in the meantime.

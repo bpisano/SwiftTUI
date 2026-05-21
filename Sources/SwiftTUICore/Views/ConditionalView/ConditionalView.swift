@@ -43,9 +43,14 @@ extension ConditionalView {
             viewOutputs.wrappedValue.displayList.wrappedValue
         }
 
+        let focusList = Attribute("ConditionalView FocusList") {
+            viewOutputs.wrappedValue.focusList?.wrappedValue ?? .empty
+        }
+
         return .init(
             layoutComputer: layoutComputer,
-            displayList: displayList
+            displayList: displayList,
+            focusList: focusList
         )
     }
 

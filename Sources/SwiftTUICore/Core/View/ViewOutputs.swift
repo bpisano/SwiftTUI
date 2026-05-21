@@ -11,6 +11,7 @@ import AttributeGraph
 
 public struct ViewOutputs: Sendable {
     public let displayList: Attribute<DisplayList>
+    public let focusList: Attribute<FocusList>?
 
     let viewId: ViewId
     let layoutComputer: Attribute<LayoutComputer>
@@ -18,18 +19,21 @@ public struct ViewOutputs: Sendable {
     init(
         viewId: ViewId = ViewId(implicitId: -1),
         layoutComputer: Attribute<LayoutComputer>,
-        displayList: Attribute<DisplayList>
+        displayList: Attribute<DisplayList>,
+        focusList: Attribute<FocusList>? = nil
     ) {
         self.viewId = viewId
         self.layoutComputer = layoutComputer
         self.displayList = displayList
+        self.focusList = focusList
     }
 
     func withViewId(_ viewId: ViewId) -> ViewOutputs {
         ViewOutputs(
             viewId: viewId,
             layoutComputer: layoutComputer,
-            displayList: displayList
+            displayList: displayList,
+            focusList: focusList
         )
     }
 }
@@ -132,10 +136,25 @@ extension ViewOutputs {
             return DisplayList(items)
         }
 
+        let combinedFocusList: Attribute<FocusList>? = combineFocusLists(viewOutputs)
+
         return ViewOutputs(
             layoutComputer: combinedLayoutComputer,
-            displayList: combinedDisplayList
+            displayList: combinedDisplayList,
+            focusList: combinedFocusList
         )
+    }
+
+    @MainActor
+    static func combineFocusLists(_ viewOutputs: [ViewOutputs]) -> Attribute<FocusList>? {
+        let focusListAttributes: [Attribute<FocusList>] = viewOutputs.compactMap(\.focusList)
+        guard !focusListAttributes.isEmpty else { return nil }
+        if focusListAttributes.count == 1 {
+            return focusListAttributes[0]
+        }
+        return Attribute("Combined FocusList") {
+            FocusList.concat(focusListAttributes.map(\.wrappedValue))
+        }
     }
 }
 

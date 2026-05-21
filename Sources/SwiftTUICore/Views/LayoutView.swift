@@ -68,6 +68,16 @@ extension LayoutView {
             )
         }
 
+        let focusList = Attribute("\(Content.self) FocusList") {
+            _ = containerInfo.wrappedValue
+            _ = childGeometries.wrappedValue
+
+            let lists: [FocusList] = container.orderedOutputs.compactMap { output in
+                output.focusList?.wrappedValue
+            }
+            return FocusList.concat(lists)
+        }
+
         childGeometries = Attribute("\(Content.self) Child Geometries") {
             let proposal: ProposedViewSize = .init(inputs.size.wrappedValue)
             let containerSize: Size = layoutComputer.wrappedValue.sizeThatFits(proposal)
@@ -90,7 +100,8 @@ extension LayoutView {
 
         return .init(
             layoutComputer: layoutComputer,
-            displayList: displayList
+            displayList: displayList,
+            focusList: focusList
         )
     }
 

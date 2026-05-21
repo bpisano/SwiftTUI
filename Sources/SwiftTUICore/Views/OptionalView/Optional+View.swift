@@ -31,7 +31,15 @@ extension Optional: View where Wrapped: View {
             viewOutputs.wrappedValue.displayList.wrappedValue
         }
 
-        return .init(layoutComputer: layoutComputer, displayList: displayList)
+        let focusList = Attribute("OptionalView FocusList") {
+            viewOutputs.wrappedValue.focusList?.wrappedValue ?? .empty
+        }
+
+        return .init(
+            layoutComputer: layoutComputer,
+            displayList: displayList,
+            focusList: focusList
+        )
     }
 
     public static func makeViewList(
