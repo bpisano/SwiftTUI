@@ -208,23 +208,27 @@ private extension KeyboardEventDecoder {
         parameters: String,
         finalByte: UInt8
     ) -> Event? {
-        let modifiers = modifiersFromCSIParameters(parameters)
+        let fields = parameterFields(parameters)
+        let modifiers = fields.count > 1
+            ? modifiersFromCSIParameter(integerComponent(fields[1]))
+            : []
+        let phase = phaseFromCSIUFields(fields)
 
         switch finalByte {
         case 65:
-            return .keyPress(.arrowUp, modifiers: modifiers)
+            return Event(key: .arrowUp, modifiers: modifiers, phase: phase)
         case 66:
-            return .keyPress(.arrowDown, modifiers: modifiers)
+            return Event(key: .arrowDown, modifiers: modifiers, phase: phase)
         case 67:
-            return .keyPress(.arrowRight, modifiers: modifiers)
+            return Event(key: .arrowRight, modifiers: modifiers, phase: phase)
         case 68:
-            return .keyPress(.arrowLeft, modifiers: modifiers)
+            return Event(key: .arrowLeft, modifiers: modifiers, phase: phase)
         case 70:
-            return .keyPress(.end, modifiers: modifiers)
+            return Event(key: .end, modifiers: modifiers, phase: phase)
         case 72:
-            return .keyPress(.home, modifiers: modifiers)
+            return Event(key: .home, modifiers: modifiers, phase: phase)
         case 90:
-            return .keyPress(.tab, modifiers: [.shift])
+            return Event(key: .tab, modifiers: [.shift], phase: phase)
         case 117:
             return eventForCSIU(parameters: parameters)
         case 126:

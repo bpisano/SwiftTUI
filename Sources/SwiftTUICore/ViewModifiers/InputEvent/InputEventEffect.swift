@@ -39,12 +39,12 @@ struct InputEventEffect<I: Input>: @MainActor Rule {
         }
 
         storage.task?.cancel()
-        storage.task = Task.detached {
+        storage.task = Task {
             let events = await modifier.input.events()
 
             for await event in events {
                 guard !Task.isCancelled else { break }
-                await modifier.onEvent(event)
+                modifier.onEvent(event)
             }
         }
     }

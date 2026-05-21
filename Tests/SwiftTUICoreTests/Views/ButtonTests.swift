@@ -18,11 +18,11 @@ import Testing
 @MainActor
 struct ButtonTests {
     @Test
-    func `Button renders its title text`() async {
+    func `Button renders its title surrounded by blank caret slots when unfocused`() async {
         await expectView(in: Size(width: 4, height: 1)) {
             Button("OK") {}
         } toRender: {
-            "OK.."
+            " OK "
         }
     }
 
@@ -36,7 +36,7 @@ struct ButtonTests {
     }
 
     @Test
-    func `Focused Button issues backgroundColor gray command`() {
+    func `Focused Button shows caret markers around its label`() {
         let manager: FocusManager = .init()
         var env: EnvironmentValues = .init()
         env.focusManager = manager
@@ -48,9 +48,10 @@ struct ButtonTests {
         let nodes = flattenNodes(list)
         #expect(nodes.count == 1)
 
-        // Initially unfocused → no bg command
-        let dlBefore = outputs.displayList.wrappedValue
-        #expect(findBackgroundColor(dlBefore) == nil)
+        // Initially unfocused → no caret markers
+        let textsBefore = collectTextLines(outputs.displayList.wrappedValue)
+        #expect(textsBefore.contains(">") == false)
+        #expect(textsBefore.contains("<") == false)
 
         // Focus the button
         manager.rebuild(from: list)
@@ -58,22 +59,24 @@ struct ButtonTests {
         // Reading focusList triggers FocusedViewModifier sync → enqueues binding write
         _ = outputs.focusList?.wrappedValue
         CallbackQueue.shared.executeAll()
-        let dlAfter = outputs.displayList.wrappedValue
-        #expect(findBackgroundColor(dlAfter) == .gray)
+        let textsAfter = collectTextLines(outputs.displayList.wrappedValue)
+        #expect(textsAfter.contains(">"))
+        #expect(textsAfter.contains("<"))
     }
 
     // MARK: - helpers
 
-    private func findBackgroundColor(_ displayList: DisplayList) -> ANSIColor? {
+    private func collectTextLines(_ displayList: DisplayList) -> [String] {
+        var result: [String] = []
         for item in displayList.items {
             switch item {
             case .command(let cmd):
-                if case .backgroundColor(let color) = cmd.action { return color }
+                if case .putLine(let line) = cmd.action { result.append(line) }
             case .childList(let sub):
-                if let c = findBackgroundColor(sub) { return c }
+                result.append(contentsOf: collectTextLines(sub))
             }
         }
-        return nil
+        return result
     }
 
     private func flattenNodes(_ list: FocusList) -> [FocusableNode] {

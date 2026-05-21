@@ -16,6 +16,7 @@ final class TerminalEngine<V: View> {
     private let terminal: Terminal
     private let renderer: TerminalRenderer
     private let focusManager: FocusManager
+    private let focusRouter: FocusKeyboardRouter
     private var outputs: ViewOutputs?
     private var exitInputTask: Task<Void, Never>?
     private var lastFocusList: FocusList?
@@ -33,11 +34,16 @@ final class TerminalEngine<V: View> {
     ) {
         self.renderer = .init(configuration: configuration)
         self.terminal = terminal
-        self.focusManager = .init()
+
+        let manager: FocusManager = .init()
+        self.focusManager = manager
+        self.focusRouter = .init(manager: manager)
+
         self._screenSize = .init(wrappedValue: terminal.screen.size)
         self._view = .init(wrappedValue: view)
+
         var initialEnvironment: EnvironmentValues = .init()
-        initialEnvironment.focusManager = self.focusManager
+        initialEnvironment.focusManager = manager
         self._environment = .init(wrappedValue: initialEnvironment)
     }
 
@@ -55,6 +61,7 @@ final class TerminalEngine<V: View> {
             self.shutdownAndExit()
         }
         startExitInputWatcher()
+        focusRouter.start()
 
         let inputs: ViewInputs = .init(
             position: $screenOrigin,
@@ -114,6 +121,7 @@ final class TerminalEngine<V: View> {
 
     private func shutdownAndExit() {
         exitInputTask?.cancel()
+        focusRouter.stop()
         terminal.disableKeyboardEventReporting()
         terminal.disableRawMode()
         terminal.cursor.show()

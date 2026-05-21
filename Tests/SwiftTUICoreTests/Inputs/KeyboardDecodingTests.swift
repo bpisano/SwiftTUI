@@ -58,4 +58,31 @@ struct KeyboardDecodingTests {
             .keyUp(.character("a"), modifiers: .control)
         ])
     }
+
+    @Test
+    func `decodes CSI arrow press with explicit event type`() {
+        let events = decoder.decode(bytes: Array("\u{1B}[1;1:1B".utf8))
+
+        #expect(events == [
+            .keyDown(.arrowDown)
+        ])
+    }
+
+    @Test
+    func `decodes CSI arrow release with kitty progressive event type`() {
+        let events = decoder.decode(bytes: Array("\u{1B}[1;1:3B".utf8))
+
+        #expect(events == [
+            .keyUp(.arrowDown)
+        ])
+    }
+
+    @Test
+    func `decodes CSI arrow key repeat`() {
+        let events = decoder.decode(bytes: Array("\u{1B}[1;1:2B".utf8))
+
+        #expect(events == [
+            .keyRepeat(.arrowDown)
+        ])
+    }
 }

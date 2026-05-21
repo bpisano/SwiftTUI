@@ -23,11 +23,10 @@ public struct Button<Label: View>: View {
     }
 
     public var body: some View {
-        ZStack {
-            if isFocused {
-                Color.gray
-            }
+        HStack {
+            Text(isFocused ? ">" : " ")
             label
+            Text(isFocused ? "<" : " ")
         }
         .focused($isFocused)
         .onKeyPressed(.enter) { _ in
