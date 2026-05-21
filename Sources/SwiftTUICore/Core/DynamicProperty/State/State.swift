@@ -30,6 +30,13 @@ public final class State<Value>: @MainActor DynamicProperty {
         }
     }
 
+    public var projectedValue: Binding<Value> {
+        Binding(
+            get: { self.wrappedValue },
+            set: { self.wrappedValue = $0 }
+        )
+    }
+
     public nonisolated init(wrappedValue: Value) {
         self.value = wrappedValue
     }
