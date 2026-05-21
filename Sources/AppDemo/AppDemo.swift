@@ -15,19 +15,19 @@ struct MyApp: App {
 }
 
 struct MyView: View {
-    @State private var keyPressCount: Int = 0
+    @State private var count: Int = 0
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Keyboard counter")
-                .foregroundStyle(.primary)
-            Text("Pressed keys: \(keyPressCount)")
-                .foregroundStyle(.secondary)
-            Text("Press any key")
-                .foregroundStyle(.tertiary)
-        }
-        .onKeyPressed { _ in
-            keyPressCount += 1
+        VStack {
+            Text("Count: \(count)")
+
+            Button("Increment") {
+                count += 1
+            }
+
+            Button("Decrement") {
+                count -= 1
+            }
         }
     }
 }
