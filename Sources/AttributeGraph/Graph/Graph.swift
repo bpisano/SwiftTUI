@@ -153,6 +153,9 @@ public final class Graph {
     func markDirty(_ attribute: AnyAttribute) {
         guard attribute.state != .dirty else { return }
         attribute.state = .dirty
+        // Reset the change flag so the pending-skip optimization only fires
+        // when this propagation actually produces a new value.
+        attribute.didChangeInLatestPropagation = false
 
         if tracksTransaction {
             transaction.invalidations.append(attribute)
@@ -178,6 +181,7 @@ public final class Graph {
             let current = queue.removeFirst()
             guard current.state == .clean else { continue }
             current.state = .pending
+            current.didChangeInLatestPropagation = false
 
             for edge in current.outgoingEdges {
                 let dep = edge.to

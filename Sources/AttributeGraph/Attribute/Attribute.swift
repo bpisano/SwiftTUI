@@ -70,6 +70,12 @@ public final class Attribute<T>: AnyAttribute {
     public var outgoingEdges: Set<Edge> = []
     public var state: AttributeState = .clean
 
+    /// Whether the most recent evaluation produced a value different from the
+    /// previous one. Set by `evaluateSelf`, cleared by `markDirty`.
+    /// Used by the pending-skip optimization across multiple `evaluateIfNeeded`
+    /// passes (e.g. when displayList and focusList are read separately).
+    public var didChangeInLatestPropagation: Bool = false
+
     private let rule: AnyRule<T>
     var value: T?
     var equalityCheck: (any EqualityComparator<T>)?
@@ -130,31 +136,33 @@ public final class Attribute<T>: AnyAttribute {
         guard state != .clean else { return }
 
         // Fast path: a .dirty leaf (no outgoing edges) can be evaluated directly
-        // without allocating a post-order list, a changedIDs set, or a DFS stack.
-        // This is the common case for all terminal nodes in a fan-out graph.
+        // without allocating a post-order list or a DFS stack.
+        // Common case for terminal nodes in a fan-out graph.
         if state == .dirty && outgoingEdges.isEmpty {
             _ = evaluateSelf()
             return
         }
 
         let postOrder = collectPostOrder()
-        var changedIDs: Set<ObjectIdentifier> = []
 
         for attr in postOrder {
-            // .pending optimization: skip if no direct dependency actually changed.
+            // .pending optimization: skip when no incoming dep actually changed
+            // in the latest dirty propagation. The `didChangeInLatestPropagation`
+            // flag persists across `evaluateIfNeeded` calls (cleared by
+            // `markDirty`) so that changes observed during a prior read pass
+            // (e.g. focusList) still propagate to a subsequent read pass
+            // (e.g. displayList).
             if attr.state == .pending {
-                let anyDirectDepChanged = attr.incomingEdges.contains {
-                    changedIDs.contains(ObjectIdentifier($0.from))
-                }
+                let anyDirectDepChanged = attr.incomingEdges.contains(where: {
+                    $0.from.didChangeInLatestPropagation
+                })
                 if !anyDirectDepChanged {
                     attr.state = .clean
                     continue
                 }
             }
 
-            if attr.evaluateSelf() {
-                changedIDs.insert(ObjectIdentifier(attr))
-            }
+            _ = attr.evaluateSelf()
         }
     }
 
@@ -219,13 +227,19 @@ public final class Attribute<T>: AnyAttribute {
             edge.state = .clean
         }
 
-        guard let oldValue else { return true }
-
-        if let check = equalityCheck {
-            return !check.isEqual(oldValue, value!)
+        let changed: Bool
+        if let oldValue {
+            if let check = equalityCheck {
+                changed = !check.isEqual(oldValue, value!)
+            } else {
+                changed = true
+            }
+        } else {
+            changed = true
         }
 
-        return true
+        didChangeInLatestPropagation = changed
+        return changed
     }
 }
 

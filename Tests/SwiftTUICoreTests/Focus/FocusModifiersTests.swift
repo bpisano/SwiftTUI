@@ -135,6 +135,44 @@ struct FocusModifiersTests {
     }
 
     @Test
+    func `Two focused() siblings sharing a binding settle without ping-pong`() async {
+        let probe = BindingProbe<MockFocus>(initial: .none)
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+
+        let outputs = makeOutputsWith(environment: env) {
+            VStack {
+                Text("save").focused(probe.binding, equals: .save)
+                Text("cancel").focused(probe.binding, equals: .cancel)
+            }
+        }
+
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        let nodes = flattenNodes(list)
+        #expect(nodes.count == 2)
+
+        // Tab onto "save" — manager picks first, sync mirrors to binding.
+        manager.setFocus(nodes[0].id)
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(probe.value == .save)
+        #expect(manager.currentFocus == nodes[0].id)
+
+        // Tab onto "cancel" — manager moves, the previous sibling must NOT claim back.
+        manager.setFocus(nodes[1].id)
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(probe.value == .cancel)
+        #expect(manager.currentFocus == nodes[1].id)
+    }
+
+    @Test
     func `Bool binding: focus moves -> binding mirrors true and false`() async {
         let probe = BindingProbe<Bool>(initial: false)
         let manager: FocusManager = .init()
@@ -168,12 +206,18 @@ struct FocusModifiersTests {
 
     @MainActor
     private final class BindingProbe<V: Sendable> {
-        var value: V
-        init(initial: V) { self.value = initial }
+        private let attribute: Attribute<V>
+
+        init(initial: V) {
+            self.attribute = Attribute(wrappedValue: initial)
+        }
+
+        var value: V { attribute.wrappedValue }
+
         var binding: Binding<V> {
             Binding(
-                get: { self.value },
-                set: { self.value = $0 }
+                get: { self.attribute.wrappedValue },
+                set: { self.attribute.wrappedValue = $0 }
             )
         }
     }
