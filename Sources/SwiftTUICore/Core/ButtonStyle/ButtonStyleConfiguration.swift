@@ -11,8 +11,8 @@ public struct ButtonStyleConfiguration {
     public let label: Label
     public let isPressed: Bool
 
-    init(label: Label, isPressed: Bool) {
-        self.label = label
+    init(label: AnyView, isPressed: Bool) {
+        self.label = Label(content: label)
         self.isPressed = isPressed
     }
 }
@@ -21,8 +21,8 @@ extension ButtonStyleConfiguration {
     public struct Label: View {
         let content: AnyView
 
-        init<V: View>(_ view: V) {
-            self.content = AnyView(view)
+        nonisolated init(content: AnyView) {
+            self.content = content
         }
 
         public var body: some View {

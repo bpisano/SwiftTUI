@@ -58,6 +58,7 @@ struct MyView: View {
                 }
             }
         }
+        .buttonStyle(BracketButtonStyle())
     }
 }
 
@@ -65,5 +66,18 @@ extension MyView {
     enum Field: Hashable {
         case username
         case password
+    }
+}
+
+struct BracketButtonStyle: ButtonStyle {
+    @Environment(\.isFocused) private var isFocused
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            Text(isFocused ? "[ " : "  ")
+            configuration.label
+            Text(isFocused ? " ]" : "  ")
+        }
+        .foregroundStyle(configuration.isPressed ? .gray : .primary)
     }
 }

@@ -16,7 +16,6 @@ public struct Button<Label: View>: View {
     @State private var isPressed: Bool = false
 
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.buttonStyle) private var buttonStyle
 
     public init(
         action: @escaping @MainActor () -> Void,
@@ -27,11 +26,10 @@ public struct Button<Label: View>: View {
     }
 
     public var body: some View {
-        let configuration = ButtonStyleConfiguration(
-            label: .init(label),
+        let styled = StyledButtonContent(
+            label: AnyView(label),
             isPressed: isPressed
         )
-        let styled = buttonStyle.makeBody(configuration)
 
         if isEnabled {
             styled

@@ -8,23 +8,21 @@
 import Foundation
 
 public struct DefaultButtonStyle: ButtonStyle {
-    public nonisolated init() {}
-
-    public func makeBody(configuration: Configuration) -> some View {
-        DefaultButtonStyleBody(configuration: configuration)
-    }
-}
-
-private struct DefaultButtonStyleBody: View {
-    let configuration: ButtonStyleConfiguration
-
     @Environment(\.isFocused) private var isFocused
 
-    var body: some View {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
         HStack {
             Text(isFocused ? ">" : " ")
             configuration.label
             Text(isFocused ? "<" : " ")
         }
+    }
+}
+
+public extension ButtonStyle where Self == DefaultButtonStyle {
+    static var `default`: some ButtonStyle {
+        DefaultButtonStyle()
     }
 }
