@@ -64,7 +64,41 @@ private extension KeyboardEventDecoder {
             return parseEscapeSequence(from: bytes)
         }
 
+        // UTF-8 leading byte (0xC2…0xF4): consume the full multi-byte scalar
+        // so terminal-composed characters (accents like `é` from alt+e e on
+        // QWERTY) arrive as a single `.character` event.
+        if first >= 0xC2 && first <= 0xF4 {
+            return parseUTF8Scalar(from: bytes)
+        }
+
         return parseSingleByte(first).map { ($0, 1) }
+    }
+
+    func parseUTF8Scalar(
+        from bytes: ArraySlice<UInt8>
+    ) -> (event: Event, length: Int)? {
+        guard let first = bytes.first else { return nil }
+        let expectedLength: Int
+        switch first {
+        case 0xC2...0xDF: expectedLength = 2
+        case 0xE0...0xEF: expectedLength = 3
+        case 0xF0...0xF4: expectedLength = 4
+        default: return nil
+        }
+        guard bytes.count >= expectedLength else { return nil }
+
+        let scalarBytes = bytes.prefix(expectedLength)
+        // Validate continuation bytes (0x80..0xBF) — bail out on malformed
+        // input rather than emitting garbage events.
+        for byte in scalarBytes.dropFirst() {
+            guard byte & 0xC0 == 0x80 else { return nil }
+        }
+
+        let str = String(decoding: scalarBytes, as: UTF8.self)
+        guard !str.isEmpty, !str.unicodeScalars.contains(where: { $0 == "\u{FFFD}" }) else {
+            return nil
+        }
+        return (.keyPress(.character(str)), expectedLength)
     }
 
     func parseEscapeSequence(
@@ -274,11 +308,49 @@ private extension KeyboardEventDecoder {
             : []
         let phase = phaseFromCSIUFields(fields)
 
+        // Kitty "Report associated text" puts the resolved character
+        // (post dead-key composition, post shift-layout) in field 3 as
+        // colon-separated decimal codepoints. When present, prefer it over
+        // synthesizing from the raw keycode + shift mapping.
+        if fields.count > 2, let associated = associatedText(fields[2]) {
+            // Stripping `.shift` avoids TextField double-shifting (e.g.
+            // uppercasing a character the terminal already shifted to "@").
+            // Modifiers like control/option/command stay so handlers can
+            // still detect chords (ctrl+@ etc.).
+            var cleanModifiers = modifiers
+            cleanModifiers.remove(.shift)
+            return Event(
+                key: .character(associated),
+                modifiers: cleanModifiers,
+                phase: phase
+            )
+        }
+
         return eventForKeyCode(
             keyCode,
             modifiers: modifiers,
             phase: phase
         )
+    }
+
+    /// Decodes kitty's CSI u 3rd parameter (associated text) — a list of
+    /// colon-separated decimal codepoints — into a Swift `String`. Returns
+    /// `nil` when the field is empty or contains non-printable scalars only.
+    func associatedText(_ field: String) -> String? {
+        guard !field.isEmpty else { return nil }
+        let codepoints = field.split(separator: ":", omittingEmptySubsequences: false)
+        var result = ""
+        for cp in codepoints {
+            guard let value = Int(cp), let scalar = UnicodeScalar(value) else {
+                return nil
+            }
+            // Skip control chars — keycode path handles those (enter, tab…).
+            if scalar.value < 0x20 || scalar.value == 0x7F {
+                return nil
+            }
+            result.unicodeScalars.append(scalar)
+        }
+        return result.isEmpty ? nil : result
     }
 
     func eventForKeyCode(

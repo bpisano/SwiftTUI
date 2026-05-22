@@ -54,7 +54,7 @@ func expectDisplayList(
     let frame: String = await renderer.renderFrame(
         displayList: displayList.wrappedValue,
         in: size
-    )
+    ).content
 
     #expect(frame == expected())
 }

@@ -38,9 +38,10 @@ public struct Button<Label: View>: View {
                     guard isFocused else { return }
                     isPressed = true
                     action()
-                }
-                .onKeyUp(.enter) { _ in
-                    isPressed = false
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(80))
+                        isPressed = false
+                    }
                 }
         } else {
             styled

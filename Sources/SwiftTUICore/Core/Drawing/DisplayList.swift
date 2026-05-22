@@ -36,6 +36,7 @@ extension DisplayList {
         case putLine(_ line: String)
         case backgroundColor(_ color: ANSIColor)
         case foregroundColor(_ color: ANSIColor)
+        case cursorAnchor
     }
 
     public nonisolated struct Command: Codable, Sendable {

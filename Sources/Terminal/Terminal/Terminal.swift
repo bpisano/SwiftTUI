@@ -42,7 +42,7 @@ public final class Terminal {
     }
 
     public func enableKeyboardEventReporting() {
-        cursor.write("\u{1B}[>15u")
+        cursor.write("\u{1B}[>23u")
     }
 
     public func disableKeyboardEventReporting() {

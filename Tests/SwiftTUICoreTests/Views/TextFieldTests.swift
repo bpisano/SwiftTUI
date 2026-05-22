@@ -47,19 +47,44 @@ struct TextFieldTests {
 
     @Test
     func `computeWindow returns full text when it fits`() {
-        let (window, cursor) = TextFieldVisual.computeWindow(text: "hi", cursor: 1, width: 5)
+        let (window, cursor, start) = TextFieldVisual.computeWindow(text: "hi", cursor: 1, width: 5)
         #expect(window == "hi")
         #expect(cursor == 1)
+        #expect(start == 0)
     }
 
     @Test
     func `computeWindow scrolls so cursor stays visible`() {
         // "hello world" 11 chars, width 5, cursor at end (11).
-        let (window, cursor) = TextFieldVisual.computeWindow(text: "hello world", cursor: 11, width: 5)
+        let (window, cursor, _) = TextFieldVisual.computeWindow(text: "hello world", cursor: 11, width: 5)
         #expect(window.count <= 5)
         #expect(cursor >= 0 && cursor < 5)
         // Cursor at end → window ends with last chars of text.
         #expect("hello world".hasSuffix(window))
+    }
+
+    @Test
+    func `computeWindow is sticky and only scrolls on cursor edge crossing`() {
+        // After scrolling to the end of "hello world" (width 5, cursor 11),
+        // moving the cursor back one cell keeps the window stable.
+        let initial = TextFieldVisual.computeWindow(
+            text: "hello world", cursor: 11, width: 5, previousStart: 0
+        )
+        #expect(initial.start == 7)
+
+        // Cursor moves left into the visible window — no scroll.
+        let stable = TextFieldVisual.computeWindow(
+            text: "hello world", cursor: 10, width: 5, previousStart: initial.start
+        )
+        #expect(stable.start == 7)
+        #expect(stable.cursorOffset == 3)
+
+        // Cursor crosses the left edge — window snaps left.
+        let leftSnap = TextFieldVisual.computeWindow(
+            text: "hello world", cursor: 6, width: 5, previousStart: 7
+        )
+        #expect(leftSnap.start == 6)
+        #expect(leftSnap.cursorOffset == 0)
     }
 
     @Test

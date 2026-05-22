@@ -37,7 +37,7 @@ extension SwiftTUIRuntime {
         configuration: RenderingConfiguration = .offline
     ) async -> String {
         let renderer = TerminalRenderer(configuration: configuration)
-        return await renderer.renderFrame(displayList: list, in: size)
+        return await renderer.renderFrame(displayList: list, in: size).content
     }
 
     @MainActor

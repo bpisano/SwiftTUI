@@ -21,17 +21,19 @@ public actor TerminalRenderer {
     public func renderFrame(
         displayList: DisplayList,
         in size: Size
-    ) -> String {
+    ) -> Frame {
         var buffer: TerminalBuffer = .init(
             configuration: configuration,
             size: size
         )
-        fill(buffer: &buffer, with: displayList)
-        return buffer.makeStringFrame()
+        var cursorAnchor: Point? = nil
+        fill(buffer: &buffer, cursorAnchor: &cursorAnchor, with: displayList)
+        return Frame(content: buffer.makeStringFrame(), cursorAnchor: cursorAnchor)
     }
 
     private func fill(
         buffer: inout TerminalBuffer,
+        cursorAnchor: inout Point?,
         with displayList: DisplayList
     ) {
         var stack: [DisplayList.Item] = displayList.items.reversed()
@@ -40,13 +42,14 @@ public actor TerminalRenderer {
             case let .childList(child):
                 stack.append(contentsOf: child.items.reversed())
             case let .command(command):
-                fillCell(buffer: &buffer, with: command)
+                fillCell(buffer: &buffer, cursorAnchor: &cursorAnchor, with: command)
             }
         }
     }
 
     private func fillCell(
         buffer: inout TerminalBuffer,
+        cursorAnchor: inout Point?,
         with command: DisplayList.Command
     ) {
         switch command.action {
@@ -56,6 +59,15 @@ public actor TerminalRenderer {
             buffer.setBackgroundColor(color, in: command.frame)
         case let .foregroundColor(color):
             buffer.setForegroundColor(color, in: command.frame)
+        case .cursorAnchor:
+            cursorAnchor = command.frame.origin
         }
+    }
+}
+
+extension TerminalRenderer {
+    public struct Frame: Sendable {
+        public let content: String
+        public let cursorAnchor: Point?
     }
 }

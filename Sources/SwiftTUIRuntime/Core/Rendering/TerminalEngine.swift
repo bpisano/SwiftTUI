@@ -48,13 +48,12 @@ final class TerminalEngine<V: View> {
     }
 
     func setup() {
+        let graph: Graph = .current
+
         terminal.cursor.clearScreen()
         terminal.enableRawMode()
         terminal.enableKeyboardEventReporting()
         terminal.cursor.hide()
-        // Capture the runtime Graph so signal-driven mutations (resize) and
-        // exit callbacks still notify the right `onInvalidate`.
-        let graph: Graph = .current
         terminal.screen.onSizeChange = { [weak self] screenSize in
             guard let self else { return }
             Graph.withCurrent(graph) {
@@ -85,7 +84,7 @@ final class TerminalEngine<V: View> {
         }
 
         // Snapshot Sendable values on MainActor before crossing the actor boundary.
-        // wrappedValue reads must happen here — this is where the graph lives.
+        // wrappedValue reads must happen here. This is where the graph lives.
         let displayList = outputs.displayList.wrappedValue
         let size = screenSize
 
@@ -103,7 +102,8 @@ final class TerminalEngine<V: View> {
 
         // Back on MainActor: write to the terminal (fast syscall) and flush callbacks.
         terminal.cursor.move(to: .zero)
-        terminal.cursor.write(frame)
+        terminal.cursor.write(frame.content)
+        terminal.cursor.move(to: frame.cursorAnchor ?? .zero)
 
         CallbackQueue.shared.executeAll()
     }

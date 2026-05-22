@@ -11,11 +11,14 @@ import AttributeGraph
 import Terminal
 
 public struct TextField: View {
-    @Binding private var text: String
     private let placeholder: String
 
     @State private var cursor: Int = 0
     @State private var isFocused: Bool = false
+    @State private var scrollState: TextFieldScrollState = .init()
+
+    @Binding private var text: String
+
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.submitAction) private var submitAction
 
@@ -33,10 +36,11 @@ public struct TextField: View {
             cursor: clampedCursor,
             placeholder: placeholder,
             isFocused: isFocused,
-            isEnabled: isEnabled
+            isEnabled: isEnabled,
+            scrollState: scrollState
         )
         .focused($isFocused)
-        .onKeyDown { event in
+        .onKeyPressed { event in
             handleKey(event)
         }
     }
@@ -171,16 +175,17 @@ public struct TextField: View {
     private func wordBoundaryAfter(_ from: Int) -> Int {
         var pos = from
         let count = text.count
-        // Skip whitespace at cursor.
-        while pos < count {
-            let idx = text.index(text.startIndex, offsetBy: pos)
-            guard text[idx].isWhitespace else { break }
-            pos += 1
-        }
-        // Walk forward over the word.
+        // Walk forward over any word the cursor is inside (or starts on).
         while pos < count {
             let idx = text.index(text.startIndex, offsetBy: pos)
             guard !text[idx].isWhitespace else { break }
+            pos += 1
+        }
+        // Then skip the gap so the cursor always lands at the start of the
+        // *next* word, matching native text editors and SwiftUI semantics.
+        while pos < count {
+            let idx = text.index(text.startIndex, offsetBy: pos)
+            guard text[idx].isWhitespace else { break }
             pos += 1
         }
         return pos
@@ -202,12 +207,21 @@ public struct TextField: View {
     }
 }
 
+/// Holds the horizontal scroll offset for a `TextField` across renders so
+/// the visible window only shifts when the caret leaves it. Mutated by the
+/// `TextFieldVisual` primitive on the main actor during layout; not observed
+/// by the attribute graph (changes don't trigger a redraw on their own).
+final class TextFieldScrollState: @unchecked Sendable {
+    var start: Int = 0
+}
+
 struct TextFieldVisual: View, PrimitiveView {
     let text: String
     let cursor: Int
     let placeholder: String
     let isFocused: Bool
     let isEnabled: Bool
+    let scrollState: TextFieldScrollState
 }
 
 extension TextFieldVisual {
@@ -254,16 +268,20 @@ extension TextFieldVisual {
                         origin: frame.origin,
                         size: Size(width: 1, height: 1)
                     )
-                    commands.append(.init(.backgroundColor(.softWhite), in: cursorFrame))
+                    appendFakeCursor(into: &commands, at: cursorFrame)
                 }
                 return DisplayList(commands: commands)
             }
 
-            let (window, cursorOffset) = computeWindow(
+            let result = computeWindow(
                 text: value.text,
                 cursor: value.cursor,
-                width: availableWidth
+                width: availableWidth,
+                previousStart: value.scrollState.start
             )
+            value.scrollState.start = result.start
+            let window = result.window
+            let cursorOffset = result.cursorOffset
             if !window.isEmpty {
                 let textFrame = Rect(
                     origin: frame.origin,
@@ -278,7 +296,7 @@ extension TextFieldVisual {
                     origin: Point(x: cursorX, y: frame.origin.y),
                     size: Size(width: 1, height: 1)
                 )
-                commands.append(.init(.backgroundColor(.softWhite), in: cursorFrame))
+                appendFakeCursor(into: &commands, at: cursorFrame)
             }
 
             return DisplayList(commands: commands)
@@ -299,38 +317,64 @@ extension TextFieldVisual {
         }
     }
 
+    /// Draws the fake cursor: a `.cursorAnchor` (so the terminal anchors IME
+    /// composition glyphs at the right spot even though the real cursor is
+    /// hidden) plus an inverted-color cell (`bg=softWhite`, `fg=black`) that
+    /// simulates a blinking block caret without flickering as bytes flow
+    /// during render.
+    private static func appendFakeCursor(
+        into commands: inout [DisplayList.Command],
+        at frame: Rect
+    ) {
+        commands.append(.init(.cursorAnchor, in: frame))
+        commands.append(.init(.backgroundColor(.white), in: frame))
+        commands.append(.init(.foregroundColor(.black), in: frame))
+    }
+
     private static func naturalWidth(value: TextFieldVisual) -> Int {
         // +1 reserves a cell for cursor placed past the last character.
         max(1, max(value.text.count + 1, value.placeholder.count))
     }
 
-    /// Picks the visible substring around `cursor` so the cursor cell stays in
-    /// view when text is longer than `width`. Returns the windowed string plus
-    /// the cursor's offset inside the window.
+    /// Picks the visible substring around `cursor` so the caret stays in
+    /// view when text is longer than `width`. Sticky scroll: the window only
+    /// shifts when the cursor leaves the previously visible range
+    /// (`previousStart ..< previousStart + width`). When typing past the
+    /// last character of a full field, reserves the rightmost cell for the
+    /// caret so it doesn't overlay the last letter.
     static func computeWindow(
         text: String,
         cursor: Int,
-        width: Int
-    ) -> (window: String, cursorOffset: Int) {
-        guard width > 0 else { return ("", 0) }
+        width: Int,
+        previousStart: Int = 0
+    ) -> (window: String, cursorOffset: Int, start: Int) {
+        guard width > 0 else { return ("", 0, 0) }
         let clampedCursor: Int = max(0, min(cursor, text.count))
 
-        // Text + virtual end-cursor cell fits inside the available width.
+        // Text + virtual end-cursor cell fits inside the available width:
+        // no scrolling needed, anchor at 0.
         if text.count + 1 <= width {
-            return (text, clampedCursor)
+            return (text, clampedCursor, 0)
         }
 
-        // Scroll: keep cursor in view, biased so cursor sits near the middle.
-        let half: Int = width / 2
-        var start: Int = max(0, clampedCursor - half)
-        var end: Int = min(text.count, start + width)
-        start = max(0, end - width)
-        end = min(text.count, start + width)
+        // Reserve the rightmost cell for the caret when it sits past the
+        // last character, so the cursor block doesn't overlay a letter.
+        let maxStart = max(0, text.count - (width - 1))
+        var start = max(0, min(previousStart, maxStart))
+        if clampedCursor < start {
+            start = clampedCursor
+        }
+        let rightEdge = start + width - 1
+        if clampedCursor > rightEdge {
+            start = clampedCursor - (width - 1)
+        }
+        start = max(0, min(start, maxStart))
 
+        let end = min(text.count, start + width)
         let startIdx = text.index(text.startIndex, offsetBy: start)
         let endIdx = text.index(text.startIndex, offsetBy: end)
         let window = String(text[startIdx..<endIdx])
-        let cursorOffset: Int = min(width - 1, max(0, clampedCursor - start))
-        return (window, cursorOffset)
+        let cursorOffset: Int = clampedCursor - start
+        return (window, cursorOffset, start)
     }
 }

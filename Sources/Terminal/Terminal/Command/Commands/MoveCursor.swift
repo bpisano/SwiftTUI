@@ -8,7 +8,7 @@ public struct MoveCursor: Command {
     }
 
     public func makeCommand() -> String {
-        return "\u{1B}[\(Int(point.y));\(Int(point.x))H"
+        "\u{1B}[\(Int(point.y) + 1);\(Int(point.x) + 1)H"
     }
 }
 
