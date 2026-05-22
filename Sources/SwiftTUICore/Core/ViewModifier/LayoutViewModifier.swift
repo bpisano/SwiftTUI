@@ -68,7 +68,8 @@ extension LayoutViewModifier {
 
         return .init(
             layoutComputer: layoutComputer,
-            displayList: childViewOutputs[0].displayList
+            displayList: childViewOutputs[0].displayList,
+            focusList: childViewOutputs[0].focusList
         )
     }
 }

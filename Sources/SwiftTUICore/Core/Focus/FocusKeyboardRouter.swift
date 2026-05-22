@@ -6,13 +6,14 @@
 //
 
 import Foundation
+import AttributeGraph
 import Terminal
 
 @MainActor
 public final class FocusKeyboardRouter {
     private let manager: FocusManager
     private let keyboard: Keyboard
-    private var task: Task<Void, Never>?
+    private var subscription: InputSubscription?
 
     public init(
         manager: FocusManager,
@@ -23,24 +24,25 @@ public final class FocusKeyboardRouter {
     }
 
     public func start() {
-        task?.cancel()
-        task = Task { [weak self] in
-            let events = await self?.keyboard.events()
-            guard let events else { return }
-
-            for await event in events {
-                guard let self else { return }
-                self.handle(event)
+        subscription?.cancel()
+        // Capture the runtime Graph so that handler-driven attribute writes
+        // notify the right `onInvalidate`, even though dispatch hops through
+        // a detached background task and would otherwise see the default graph.
+        let graph: Graph = .current
+        subscription = keyboard.subscribe(priority: .system) { [weak self] event in
+            Graph.withCurrent(graph) {
+                self?.handle(event)
             }
         }
     }
 
     public func stop() {
-        task?.cancel()
-        task = nil
+        subscription?.cancel()
+        subscription = nil
     }
 
     func handle(_ event: Keyboard.Event) {
+        guard !event.isConsumed else { return }
         guard event.isPressed else { return }
         guard let move = focusMove(for: event) else { return }
         execute(move)

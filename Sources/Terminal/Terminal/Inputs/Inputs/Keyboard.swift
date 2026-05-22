@@ -17,30 +17,88 @@ import Synchronization
 public struct Keyboard: Input, Sendable {
     public static let current: Keyboard = .init()
 
+    private let subscribeFunc: @Sendable (SubscriberPriority, @escaping @MainActor @Sendable (Event) -> Void) -> InputSubscription
     private let makeEvents: @Sendable @InputActor () -> AsyncStream<Keyboard.Event>
 
     public init(fileDescriptor: Int32 = STDIN_FILENO) {
         let decoder: KeyboardEventDecoder = .init()
+        let center: KeyboardEventCenter = .shared
 
-        self.makeEvents = {
-            KeyboardEventCenter.shared.events(
+        self.subscribeFunc = { priority, handler in
+            let id = center.subscribe(
                 fileDescriptor: fileDescriptor,
-                decoder: decoder
+                decoder: decoder,
+                priority: priority,
+                handler: handler
             )
+            return InputSubscription {
+                center.unsubscribe(id)
+            }
+        }
+        self.makeEvents = {
+            center.events(fileDescriptor: fileDescriptor, decoder: decoder)
         }
     }
 
-    init(events: @escaping @Sendable @InputActor () -> AsyncStream<Keyboard.Event>) {
+    init(
+        events: @escaping @Sendable @InputActor () -> AsyncStream<Keyboard.Event>,
+        subscribe: @escaping @Sendable (SubscriberPriority, @escaping @MainActor @Sendable (Event) -> Void) -> InputSubscription
+    ) {
+        self.subscribeFunc = subscribe
         self.makeEvents = events
     }
 
+    /// Backward-compatible: returns a broadcast stream of events. Subscribers
+    /// receive events without ordering guarantees and cannot consume.
     public func events() -> AsyncStream<Keyboard.Event> {
         makeEvents()
+    }
+
+    /// `Input` conformance: subscribes with `.view` priority. Use the
+    /// priority-aware overload for `.system` (focus router etc.).
+    public func subscribe(
+        handler: @escaping @MainActor @Sendable (Event) -> Void
+    ) -> InputSubscription {
+        subscribe(priority: .view, handler: handler)
+    }
+
+    /// Synchronous, priority-ordered subscription. Handlers registered with
+    /// `.view` priority run first in registration order; then handlers with
+    /// `.system` priority run, gated on `Event.isConsumed`.
+    public func subscribe(
+        priority: SubscriberPriority,
+        handler: @escaping @MainActor @Sendable (Event) -> Void
+    ) -> InputSubscription {
+        subscribeFunc(priority, handler)
     }
 }
 
 extension Keyboard {
-    public struct Event: Sendable, Hashable {
+    public enum SubscriberPriority: Sendable {
+        case view
+        case system
+    }
+}
+
+extension Keyboard {
+    /// Reference-typed flag shared by every copy of an `Event` so a subscriber
+    /// processed earlier can mark the event consumed and downstream
+    /// `.system`-priority handlers (focus router, etc.) can skip it.
+    public final class EventConsumeState: Sendable {
+        private let flag: Mutex<Bool> = .init(false)
+
+        public init() {}
+
+        public var isConsumed: Bool {
+            flag.withLock { $0 }
+        }
+
+        public func consume() {
+            flag.withLock { $0 = true }
+        }
+    }
+
+    public struct Event: Sendable {
         public enum Phase: Sendable, Hashable {
             case down
             case repeated
@@ -51,6 +109,9 @@ extension Keyboard {
         public let modifiers: Modifiers
         public let phase: Phase
 
+        // Reference type so struct copies share the same flag across threads.
+        private let consumeState: EventConsumeState
+
         public init(
             key: Key,
             modifiers: Modifiers = [],
@@ -59,6 +120,7 @@ extension Keyboard {
             self.key = key
             self.modifiers = modifiers
             self.phase = phase
+            self.consumeState = EventConsumeState()
         }
 
         public static func keyPress(
@@ -100,6 +162,16 @@ extension Keyboard {
             phase == .down || phase == .repeated
         }
 
+        /// Marks this event as handled. `.system`-priority subscribers (focus
+        /// router, etc.) skip events where `isConsumed == true`.
+        public func consume() {
+            consumeState.consume()
+        }
+
+        public var isConsumed: Bool {
+            consumeState.isConsumed
+        }
+
         func withModifiers(_ modifiers: Modifiers) -> Self {
             .init(
                 key: key,
@@ -108,7 +180,21 @@ extension Keyboard {
             )
         }
     }
+}
 
+extension Keyboard.Event: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(key)
+        hasher.combine(modifiers)
+        hasher.combine(phase)
+    }
+
+    public static func == (lhs: Keyboard.Event, rhs: Keyboard.Event) -> Bool {
+        lhs.key == rhs.key && lhs.modifiers == rhs.modifiers && lhs.phase == rhs.phase
+    }
+}
+
+extension Keyboard {
     public struct Modifiers: OptionSet, Sendable, Hashable {
         public let rawValue: UInt8
 
@@ -163,14 +249,46 @@ extension Input where Self == Keyboard {
 private final class KeyboardEventCenter: Sendable {
     static let shared: KeyboardEventCenter = .init()
 
-    private struct State {
-        var continuations: [UUID: AsyncStream<Keyboard.Event>.Continuation] = [:]
-        var task: Task<Void, Never>? = nil
+    private struct Handler {
+        let id: UUID
+        let handler: @MainActor @Sendable (Keyboard.Event) -> Void
     }
 
-    private let state = Mutex<State>(State())
+    private struct State {
+        var viewHandlers: [Handler] = []
+        var systemHandlers: [Handler] = []
+        var legacyContinuations: [UUID: AsyncStream<Keyboard.Event>.Continuation] = [:]
+        var readTask: Task<Void, Never>? = nil
+    }
+
+    private let state: Mutex<State> = .init(State())
 
     private init() {}
+
+    func subscribe(
+        fileDescriptor: Int32,
+        decoder: KeyboardEventDecoder,
+        priority: Keyboard.SubscriberPriority,
+        handler: @escaping @MainActor @Sendable (Keyboard.Event) -> Void
+    ) -> UUID {
+        startIfNeeded(fileDescriptor: fileDescriptor, decoder: decoder)
+        let id = UUID()
+        state.withLock { s in
+            let entry: Handler = .init(id: id, handler: handler)
+            switch priority {
+            case .view: s.viewHandlers.append(entry)
+            case .system: s.systemHandlers.append(entry)
+            }
+        }
+        return id
+    }
+
+    func unsubscribe(_ id: UUID) {
+        state.withLock { s in
+            s.viewHandlers.removeAll { $0.id == id }
+            s.systemHandlers.removeAll { $0.id == id }
+        }
+    }
 
     func events(
         fileDescriptor: Int32,
@@ -180,9 +298,9 @@ private final class KeyboardEventCenter: Sendable {
 
         let id = UUID()
         return AsyncStream { continuation in
-            state.withLock { $0.continuations[id] = continuation }
+            state.withLock { $0.legacyContinuations[id] = continuation }
             continuation.onTermination = { [weak self] _ in
-                _ = self?.state.withLock { $0.continuations.removeValue(forKey: id) }
+                _ = self?.state.withLock { $0.legacyContinuations.removeValue(forKey: id) }
             }
         }
     }
@@ -192,25 +310,35 @@ private final class KeyboardEventCenter: Sendable {
         decoder: KeyboardEventDecoder
     ) {
         state.withLock { s in
-            guard s.task == nil else { return }
-            s.task = Task.detached { [weak self] in
+            guard s.readTask == nil else { return }
+            s.readTask = Task.detached { [weak self] in
                 var buffer: [UInt8] = Array(repeating: 0, count: 64)
                 while !Task.isCancelled {
                     let count = read(fileDescriptor, &buffer, buffer.count)
                     guard count > 0 else { continue }
-
                     let bytes = Array(buffer.prefix(count))
                     for event in decoder.decode(bytes: bytes) {
-                        self?.yield(event)
+                        await self?.dispatch(event)
                     }
                 }
             }
         }
     }
 
-    private func yield(_ event: Keyboard.Event) {
-        let snapshot = state.withLock { Array($0.continuations.values) }
-        for continuation in snapshot {
+    @MainActor
+    private func dispatch(_ event: Keyboard.Event) {
+        let snapshot: (view: [Handler], system: [Handler], legacy: [AsyncStream<Keyboard.Event>.Continuation]) = state.withLock { s in
+            (s.viewHandlers, s.systemHandlers, Array(s.legacyContinuations.values))
+        }
+
+        for h in snapshot.view {
+            h.handler(event)
+        }
+        for h in snapshot.system {
+            if event.isConsumed { break }
+            h.handler(event)
+        }
+        for continuation in snapshot.legacy {
             continuation.yield(event)
         }
     }

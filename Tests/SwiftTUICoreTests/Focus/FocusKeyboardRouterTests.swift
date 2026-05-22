@@ -133,26 +133,73 @@ private func waitUntil(_ condition: @MainActor () -> Bool) async {
     }
 }
 
+@MainActor
 private final class TestKeyboard {
     let value: Keyboard
 
     private let continuation: AsyncStream<Keyboard.Event>.Continuation
+    private let state: TestKeyboardDispatch
 
     init() {
         var continuation: AsyncStream<Keyboard.Event>.Continuation?
         let stream = AsyncStream<Keyboard.Event> { streamContinuation in
             continuation = streamContinuation
         }
-
         self.continuation = continuation!
-        self.value = Keyboard { stream }
+
+        let state = TestKeyboardDispatch()
+        self.state = state
+
+        self.value = Keyboard(
+            events: { stream },
+            subscribe: { priority, handler in
+                let id = UUID()
+                state.add(id: id, priority: priority, handler: handler)
+                return InputSubscription { state.remove(id: id) }
+            }
+        )
     }
 
     func send(_ event: Keyboard.Event) {
+        state.dispatch(event)
         continuation.yield(event)
     }
 
     func finish() {
         continuation.finish()
+    }
+}
+
+nonisolated private final class TestKeyboardDispatch: @unchecked Sendable {
+    private var viewHandlers: [(id: UUID, action: @MainActor @Sendable (Keyboard.Event) -> Void)] = []
+    private var systemHandlers: [(id: UUID, action: @MainActor @Sendable (Keyboard.Event) -> Void)] = []
+    private let lock = NSLock()
+
+    func add(
+        id: UUID,
+        priority: Keyboard.SubscriberPriority,
+        handler: @escaping @MainActor @Sendable (Keyboard.Event) -> Void
+    ) {
+        lock.withLock {
+            switch priority {
+            case .view: viewHandlers.append((id, handler))
+            case .system: systemHandlers.append((id, handler))
+            }
+        }
+    }
+
+    func remove(id: UUID) {
+        lock.withLock {
+            viewHandlers.removeAll { $0.id == id }
+            systemHandlers.removeAll { $0.id == id }
+        }
+    }
+
+    @MainActor
+    func dispatch(_ event: Keyboard.Event) {
+        let view = lock.withLock { viewHandlers }
+        let system = lock.withLock { systemHandlers }
+        for h in view { h.action(event) }
+        for h in system where !event.isConsumed { h.action(event) }
     }
 }

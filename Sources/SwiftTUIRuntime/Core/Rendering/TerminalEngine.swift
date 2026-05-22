@@ -52,9 +52,14 @@ final class TerminalEngine<V: View> {
         terminal.enableRawMode()
         terminal.enableKeyboardEventReporting()
         terminal.cursor.hide()
+        // Capture the runtime Graph so signal-driven mutations (resize) and
+        // exit callbacks still notify the right `onInvalidate`.
+        let graph: Graph = .current
         terminal.screen.onSizeChange = { [weak self] screenSize in
             guard let self else { return }
-            self.screenSize = screenSize
+            Graph.withCurrent(graph) {
+                self.screenSize = screenSize
+            }
         }
         terminal.onExit = { [weak self] in
             guard let self else { return }

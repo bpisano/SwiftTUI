@@ -33,17 +33,19 @@ struct InputEventEffect<I: Input>: @MainActor Rule {
 
         guard isActive else {
             guard storage.wasActive else { return }
-            storage.task?.cancel()
-            storage.task = nil
+            storage.subscription?.cancel()
+            storage.subscription = nil
             return
         }
 
-        storage.task?.cancel()
-        storage.task = Task {
-            let events = await modifier.input.events()
-
-            for await event in events {
-                guard !Task.isCancelled else { break }
+        storage.subscription?.cancel()
+        // Capture the runtime Graph so attribute writes inside the handler
+        // (e.g. @State mutations from Button actions) trigger the right
+        // `onInvalidate`. Dispatch hops through a detached background task
+        // and would otherwise see the default graph.
+        let graph: Graph = .current
+        storage.subscription = modifier.input.subscribe { event in
+            Graph.withCurrent(graph) {
                 modifier.onEvent(event)
             }
         }
@@ -53,6 +55,6 @@ struct InputEventEffect<I: Input>: @MainActor Rule {
 private extension InputEventEffect {
     final class Storage {
         var wasActive: Bool = false
-        var task: Task<Void, Never>?
+        var subscription: InputSubscription?
     }
 }
