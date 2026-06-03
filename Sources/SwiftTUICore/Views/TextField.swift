@@ -10,6 +10,21 @@ import Geometry
 import AttributeGraph
 import Terminal
 
+/// A control for editing a single line of text.
+///
+/// A text field reads and writes its value through a ``Binding``, showing the
+/// placeholder when the bound string is empty. While focused, it accepts typed
+/// characters and supports caret movement, word/line deletion, and Home/End
+/// navigation; pressing Return triggers the submit action from the environment.
+/// Long text scrolls horizontally to keep the caret visible.
+///
+/// ```swift
+/// @State private var name: String = ""
+///
+/// var body: some View {
+///     TextField("Name", text: $name)
+/// }
+/// ```
 public struct TextField: View {
     private let placeholder: String
 
@@ -22,6 +37,11 @@ public struct TextField: View {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.submitAction) private var submitAction
 
+    /// Creates a text field with a placeholder and a binding to its value.
+    ///
+    /// - Parameters:
+    ///   - placeholder: The text shown when the bound string is empty.
+    ///   - text: A binding to the string the field reads from and writes to.
     public init(
         _ placeholder: String,
         text: Binding<String>

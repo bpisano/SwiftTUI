@@ -44,6 +44,14 @@ extension EnvironmentKeyWritingViewModifier {
 }
 
 extension View {
+    /// Sets an environment value for this view and its subviews.
+    ///
+    /// Use this to write a value into the ``EnvironmentValues`` read by
+    /// descendant views through the `@Environment` property wrapper.
+    ///
+    /// - Parameters:
+    ///   - keyPath: A key path to the environment value to set.
+    ///   - value: The value to set for the given key path.
     public func environment<Value>(
         _ keyPath: WritableKeyPath<EnvironmentValues, Value>,
         _ value: Value

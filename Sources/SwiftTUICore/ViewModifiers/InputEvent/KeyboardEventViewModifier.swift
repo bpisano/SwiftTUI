@@ -84,6 +84,16 @@ struct KeyboardEventViewModifier: ViewModifier, PrimitiveViewModifier, UnaryView
 }
 
 extension View {
+    /// Runs an action while a matching key is pressed.
+    ///
+    /// The action runs for keyboard events whose phase is "pressed". Pass `key`
+    /// and `modifiers` to match a specific combination, or leave them `nil` to
+    /// match any key.
+    ///
+    /// - Parameters:
+    ///   - key: The key to match, or `nil` to match any key.
+    ///   - modifiers: The modifier keys to require, or `nil` to ignore modifiers.
+    ///   - action: A closure called with the matching keyboard event.
     public func onKeyPressed(
         _ key: Keyboard.Key? = nil,
         modifiers: Keyboard.Modifiers? = nil,
@@ -99,6 +109,23 @@ extension View {
         )
     }
 
+    /// Runs an action when a matching key goes down.
+    ///
+    /// The action runs for keyboard events whose phase is "down". Pass `key`
+    /// and `modifiers` to match a specific combination, or leave them `nil` to
+    /// match any key.
+    ///
+    /// ```swift
+    /// Text("Press q to quit")
+    ///     .onKeyDown(.character("q")) { _ in
+    ///         exit(0)
+    ///     }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - key: The key to match, or `nil` to match any key.
+    ///   - modifiers: The modifier keys to require, or `nil` to ignore modifiers.
+    ///   - action: A closure called with the matching keyboard event.
     public func onKeyDown(
         _ key: Keyboard.Key? = nil,
         modifiers: Keyboard.Modifiers? = nil,
@@ -114,6 +141,16 @@ extension View {
         )
     }
 
+    /// Runs an action when a matching key is released.
+    ///
+    /// The action runs for keyboard events whose phase is "up". Pass `key`
+    /// and `modifiers` to match a specific combination, or leave them `nil` to
+    /// match any key.
+    ///
+    /// - Parameters:
+    ///   - key: The key to match, or `nil` to match any key.
+    ///   - modifiers: The modifier keys to require, or `nil` to ignore modifiers.
+    ///   - action: A closure called with the matching keyboard event.
     public func onKeyUp(
         _ key: Keyboard.Key? = nil,
         modifiers: Keyboard.Modifiers? = nil,

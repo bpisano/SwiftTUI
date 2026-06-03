@@ -7,6 +7,11 @@
 
 import Foundation
 
+/// A result builder that composes multiple child views from a closure.
+///
+/// The engine applies this to a ``View``'s ``View/body`` and to other view-content
+/// closures, allowing several views, optionals, and `if`/`else` branches to be listed
+/// without explicit wrapping.
 @MainActor
 @resultBuilder
 public enum ViewBuilder {

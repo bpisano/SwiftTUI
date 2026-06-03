@@ -8,6 +8,7 @@
 import Foundation
 
 @MainActor
+@_documentation(visibility: internal)
 public final class CallbackQueue {
     public static let shared: CallbackQueue = .init()
 

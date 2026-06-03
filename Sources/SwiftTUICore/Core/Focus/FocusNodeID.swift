@@ -7,6 +7,7 @@
 
 import Foundation
 
+@_documentation(visibility: internal)
 public struct FocusNodeID: Hashable, @unchecked Sendable, CustomStringConvertible {
     private let raw: AnyHashable
 

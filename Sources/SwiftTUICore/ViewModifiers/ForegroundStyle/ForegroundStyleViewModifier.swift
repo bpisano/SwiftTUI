@@ -8,6 +8,17 @@
 import Foundation
 
 extension View {
+    /// Sets the foreground style used to render this view's content.
+    ///
+    /// The style applies to text and other foreground content in this view and
+    /// its subviews. Pass a ``Color`` or any other ``ShapeStyle``.
+    ///
+    /// ```swift
+    /// Text("Hello")
+    ///     .foregroundStyle(Color.green)
+    /// ```
+    ///
+    /// - Parameter style: The ``ShapeStyle`` to use for foreground content.
     public func foregroundStyle<S: ShapeStyle>(_ style: S) -> some View {
         environment(\.foregroundStyle, AnyShapeStyle(style))
     }

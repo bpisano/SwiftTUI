@@ -23,6 +23,18 @@ extension EnvironmentValues {
 }
 
 extension View {
+    /// Sets the style used to draw buttons in this view's subtree.
+    ///
+    /// - Parameter style: A ``ButtonStyle`` that builds each button's view from
+    ///   its label and state.
+    ///
+    /// ```swift
+    /// VStack {
+    ///     Button("Save") { save() }
+    ///     Button("Cancel") { cancel() }
+    /// }
+    /// .buttonStyle(BracketButtonStyle())
+    /// ```
     public func buttonStyle<S: ButtonStyle>(_ style: S) -> some View {
         environment(\.buttonStyle, AnyButtonStyle(style))
     }

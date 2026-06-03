@@ -39,6 +39,11 @@ extension ViewPhaseViewModifier {
 }
 
 extension View {
+    /// Runs an action when the view appears.
+    ///
+    /// The action runs when the view becomes active in the view hierarchy.
+    ///
+    /// - Parameter action: A closure to run when the view appears.
     public func onAppear(_ action: @escaping () -> Void) -> some View {
         modifier(
             ViewPhaseViewModifier(
@@ -48,6 +53,12 @@ extension View {
         )
     }
 
+    /// Runs an action when the view disappears.
+    ///
+    /// The action runs when the view becomes inactive and is removed from the
+    /// view hierarchy.
+    ///
+    /// - Parameter action: A closure to run when the view disappears.
     public func onDisappear(_ action: @escaping () -> Void) -> some View {
         modifier(
             ViewPhaseViewModifier(

@@ -8,6 +8,25 @@
 import Foundation
 import AttributeGraph
 
+/// A property wrapper that moves keyboard focus imperatively.
+///
+/// Declare a `@Focus` property in a view and call it to move focus in a
+/// direction, mirroring the keys the runtime handles automatically:
+///
+/// ```swift
+/// struct Toolbar: View {
+///     @Focus private var focus
+///
+///     var body: some View {
+///         Button("Next") {
+///             focus(.next)
+///         }
+///     }
+/// }
+/// ```
+///
+/// Use this to drive focus from your own logic; for binding focus to state,
+/// use ``View/focused(_:)`` or ``View/focused(_:equals:)`` instead.
 @MainActor
 @propertyWrapper
 public final class Focus: @MainActor EnvironmentProperty {
@@ -23,6 +42,11 @@ public final class Focus: @MainActor EnvironmentProperty {
         self.environment = environment
     }
 
+    /// Moves focus in the given direction.
+    ///
+    /// - Parameter direction: Where to move focus, or ``Direction/clear`` to
+    ///   drop focus entirely.
+    /// - Returns: `true` if focus moved, `false` if there was no eligible view.
     @discardableResult
     public func callAsFunction(_ direction: Direction) -> Bool {
         guard let manager = environment?.wrappedValue.focusManager else { return false }
@@ -47,6 +71,7 @@ public final class Focus: @MainActor EnvironmentProperty {
 }
 
 extension Focus {
+    /// A direction to move keyboard focus.
     public enum Direction: Sendable {
         case next
         case previous

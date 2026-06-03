@@ -37,6 +37,14 @@ extension DisabledViewModifier {
 }
 
 extension View {
+    /// Disables user interaction for this view and its subviews.
+    ///
+    /// The effect is sticky: once a view is disabled, descendants stay disabled
+    /// even if a nested call passes `false`. Disabled views read
+    /// ``EnvironmentValues/isEnabled`` as `false`.
+    ///
+    /// - Parameter isDisabled: A Boolean value that determines whether the view
+    ///   is disabled. Defaults to `true`.
     public func disabled(_ isDisabled: Bool = true) -> some View {
         modifier(DisabledViewModifier(isDisabled: isDisabled))
     }

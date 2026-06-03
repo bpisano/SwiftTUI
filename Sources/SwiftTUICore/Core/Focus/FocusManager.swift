@@ -9,6 +9,7 @@ import Foundation
 import AttributeGraph
 
 @MainActor
+@_documentation(visibility: internal)
 public final class FocusManager {
     private let _currentFocus: Attribute<FocusNodeID?>
     private var _map: FocusMap = .init(list: .empty)

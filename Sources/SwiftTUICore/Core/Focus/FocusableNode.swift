@@ -8,6 +8,7 @@
 import Foundation
 import Geometry
 
+@_documentation(visibility: internal)
 public struct FocusableNode: Sendable, Hashable {
     public let id: FocusNodeID
     public let frame: Rect

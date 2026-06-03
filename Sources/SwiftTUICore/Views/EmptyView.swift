@@ -8,7 +8,12 @@
 import Foundation
 import AttributeGraph
 
+/// A view that draws nothing and takes up no space.
+///
+/// Use an empty view where a ``View`` is required but no content should appear,
+/// such as a branch of a conditional that renders nothing.
 public struct EmptyView: View, PrimitiveView {
+    /// Creates an empty view.
     public init() {}
 }
 

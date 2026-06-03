@@ -8,8 +8,24 @@
 import Foundation
 import AttributeGraph
 
+/// A piece of the terminal user interface.
+///
+/// Conform to `View` and describe the interface by composing other views in the
+/// `body` property. Views are values; the engine renders them and re-renders when
+/// the ``State`` they depend on changes.
+///
+/// ```swift
+/// struct Greeting: View {
+///     let name: String
+///
+///     var body: some View {
+///         Text("Hello, \(name)")
+///     }
+/// }
+/// ```
 @MainActor
 public protocol View {
+    /// The type of view produced by `body`.
     associatedtype Body: View
 
     static func makeView(
@@ -22,6 +38,9 @@ public protocol View {
         inputs: ViewListInputs
     ) -> ViewListOutputs
 
+    /// The content and layout of this view.
+    ///
+    /// Compose other views here. The engine reads this property to render the view.
     @ViewBuilder
     var body: Self.Body { get }
 }

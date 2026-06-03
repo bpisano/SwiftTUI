@@ -156,6 +156,25 @@ extension FocusedConditionViewModifier {
 }
 
 extension View {
+    /// Binds the view's focus state to the given value.
+    ///
+    /// Focus is two-way: setting `binding` to `value` moves focus to this view,
+    /// and when this view gains focus the binding is set to `value`.
+    ///
+    /// ```swift
+    /// enum Field { case name, email }
+    ///
+    /// @State private var focus: Field = .name
+    ///
+    /// TextField("Name", text: $name)
+    ///     .focused($focus, equals: .name)
+    /// TextField("Email", text: $email)
+    ///     .focused($focus, equals: .email)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - binding: A binding whose value drives and reflects focus.
+    ///   - value: The value that corresponds to this view being focused.
     public func focused<Value: Hashable & Sendable>(
         _ binding: Binding<Value>,
         equals value: Value

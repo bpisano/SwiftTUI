@@ -8,9 +8,25 @@
 import Foundation
 import Geometry
 
+/// A layout that overlays its subviews, aligning them in both axes.
+///
+/// Subviews are placed on top of one another in declaration order, so later
+/// subviews draw over earlier ones. The stack sizes itself to the largest
+/// subview, and `alignment` positions each subview within those bounds.
+///
+/// ```swift
+/// ZStack {
+///     Color.blue
+///     Text("Overlay")
+/// }
+/// ```
 public struct ZStack: Layout {
     private let alignment: Alignment
 
+    /// Creates an overlay stack with the given alignment.
+    ///
+    /// - Parameter alignment: The alignment used to position subviews on both
+    ///   axes. Defaults to `.center`.
     public init(alignment: Alignment = .center) {
         self.alignment = alignment
     }

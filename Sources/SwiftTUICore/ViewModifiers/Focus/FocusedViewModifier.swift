@@ -77,6 +77,20 @@ extension FocusedViewModifier {
 }
 
 extension View {
+    /// Binds the view's focus state to a Boolean.
+    ///
+    /// The binding is two-way: setting it to `true` moves focus to this view,
+    /// and the binding tracks whether this view currently holds focus.
+    ///
+    /// ```swift
+    /// @State private var isFocused: Bool = false
+    ///
+    /// TextField("Name", text: $name)
+    ///     .focused($isFocused)
+    /// ```
+    ///
+    /// - Parameter binding: A binding to a Boolean that drives and reflects
+    ///   whether this view is focused.
     public func focused(_ binding: Binding<Bool>) -> some View {
         modifier(FocusedViewModifier(binding: binding))
     }

@@ -37,6 +37,10 @@ extension FocusGroupViewModifier {
 }
 
 extension View {
+    /// Groups the focusable views in this subtree for focus navigation.
+    ///
+    /// Focus moves through the group's members together, keeping them ordered
+    /// as a unit relative to other focusable views.
     public func focusGroup() -> some View {
         modifier(FocusGroupViewModifier())
     }

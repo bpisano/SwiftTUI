@@ -9,9 +9,22 @@ import AttributeGraph
 import Foundation
 import Geometry
 
+/// A view that displays one or more lines of read-only text.
+///
+/// A text view wraps its content to fit the width proposed by its container,
+/// breaking the string across multiple terminal rows when needed. Apply
+/// ``View/foregroundStyle(_:)`` to change the text color.
+///
+/// ```swift
+/// Text("Hello, terminal!")
+///     .foregroundStyle(.green)
+/// ```
 public struct Text: View, PrimitiveView {
     private let text: String
 
+    /// Creates a text view that displays a string.
+    ///
+    /// - Parameter text: The string to display.
     public init(_ text: String) {
         self.text = text
     }

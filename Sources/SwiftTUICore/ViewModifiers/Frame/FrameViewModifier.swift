@@ -40,6 +40,22 @@ extension FrameViewModifier {
 }
 
 extension View {
+    /// Positions this view within an invisible frame of the given size.
+    ///
+    /// An omitted (`nil`) dimension is sized to fit the content. When a fixed
+    /// dimension is larger than the content, the content is positioned using
+    /// `alignment`.
+    ///
+    /// ```swift
+    /// Text("Hello")
+    ///     .frame(width: 20, height: 3, alignment: .leading)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - width: A fixed width for the frame, or `nil` to size to content.
+    ///   - height: A fixed height for the frame, or `nil` to size to content.
+    ///   - alignment: How to align the content inside the frame. Defaults to
+    ///     `.center`.
     public func frame(
         width: GeometryUnit? = nil,
         height: GeometryUnit? = nil,

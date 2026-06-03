@@ -8,11 +8,28 @@
 import Foundation
 import AttributeGraph
 
+/// A view that produces a child view for each element in a collection.
+///
+/// Each element is identified by the value at the given key path, which the
+/// engine uses to keep child views stable as the collection changes.
+///
+/// ```swift
+/// ForEach(items, id: \.name) { item in
+///     Text(item.name)
+/// }
+/// ```
 public struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>: View, PrimitiveView {
     let data: Data
     let id: KeyPath<Data.Element, ID>
     let makeChildView: (Data.Element) -> Content
 
+    /// Creates a view that maps each element of a collection to a child view,
+    /// using a key path for identity.
+    ///
+    /// - Parameters:
+    ///   - data: The collection to iterate over.
+    ///   - id: A key path to a value that uniquely identifies each element.
+    ///   - makeChildView: A view builder that produces a view for an element.
     public init(
         _ data: Data,
         id: KeyPath<Data.Element, ID>,
@@ -25,6 +42,12 @@ public struct ForEach<Data: RandomAccessCollection, ID: Hashable, Content: View>
 }
 
 extension ForEach where Data.Element: Identifiable, ID == Data.Element.ID {
+    /// Creates a view that maps each element of a collection to a child view,
+    /// using the element's `Identifiable` identity.
+    ///
+    /// - Parameters:
+    ///   - data: The collection of identifiable elements to iterate over.
+    ///   - makeChildView: A view builder that produces a view for an element.
     public init(
         _ data: Data,
         @ViewBuilder _ makeChildView: @escaping (Data.Element) -> Content

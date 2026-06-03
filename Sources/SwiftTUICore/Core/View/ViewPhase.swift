@@ -7,6 +7,7 @@
 
 import Foundation
 
+@_documentation(visibility: internal)
 public enum ViewPhase: Int8, Hashable, Equatable, Codable, Sendable {
     case active
     case inactive

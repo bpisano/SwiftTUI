@@ -10,6 +10,7 @@ import AttributeGraph
 import Terminal
 
 @MainActor
+@_documentation(visibility: internal)
 public final class FocusKeyboardRouter {
     private let manager: FocusManager
     private let keyboard: Keyboard

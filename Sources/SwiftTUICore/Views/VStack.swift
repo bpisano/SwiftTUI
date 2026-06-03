@@ -8,10 +8,28 @@
 import Foundation
 import Geometry
 
+/// A layout that arranges its subviews in a vertical column.
+///
+/// Each subview is measured at its natural height; remaining space is divided
+/// among flexible subviews. The `alignment` controls how subviews of differing
+/// widths line up on the horizontal axis.
+///
+/// ```swift
+/// VStack(alignment: .leading, spacing: 1) {
+///     Text("Top")
+///     Text("Bottom")
+/// }
+/// ```
 public struct VStack: Layout {
     private let alignment: HorizontalAlignment
     private let spacing: GeometryUnit
 
+    /// Creates a vertical stack with the given alignment and spacing.
+    ///
+    /// - Parameters:
+    ///   - alignment: The horizontal alignment of subviews within the column.
+    ///     Defaults to `.center`.
+    ///   - spacing: The number of cells between adjacent subviews. Defaults to `0`.
     public init(
         alignment: HorizontalAlignment = .center,
         spacing: GeometryUnit = 0

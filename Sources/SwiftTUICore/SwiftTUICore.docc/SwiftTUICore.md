@@ -34,6 +34,13 @@ SwiftTUI implements a subset of SwiftUI. APIs that do not yet exist are listed i
 - <doc:SwiftUICompatibility>
 - ``View``
 
+### Guides
+
+- <doc:LayingOutViews>
+- <doc:Controls>
+- <doc:ManagingFocus>
+- <doc:StylingViews>
+
 ### Views
 
 - ``Text``
@@ -52,7 +59,10 @@ SwiftTUI implements a subset of SwiftUI. APIs that do not yet exist are listed i
 - ``State``
 - ``Binding``
 - ``Environment``
+- ``Focus``
 
 ### Styling
 
 - ``Color``
+- ``ShapeStyle``
+- ``ButtonStyle``

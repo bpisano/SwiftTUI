@@ -59,6 +59,13 @@ extension FocusableViewModifier {
 }
 
 extension View {
+    /// Marks the view as able to receive keyboard focus.
+    ///
+    /// A focusable view participates in focus navigation and reads
+    /// ``EnvironmentValues/isFocused`` as `true` while it holds focus.
+    ///
+    /// - Parameter isEnabled: A Boolean value that determines whether the view
+    ///   can receive focus. Defaults to `true`.
     public func focusable(_ isEnabled: Bool = true) -> some View {
         modifier(FocusableViewModifier(isEnabled: isEnabled))
     }

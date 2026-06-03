@@ -10,13 +10,36 @@ import Geometry
 import AttributeGraph
 import Terminal
 
+/// A color used to fill a view's background or as a foreground style.
+///
+/// As a view, a color fills the space proposed to it. As a ``ShapeStyle``, it
+/// can be passed to modifiers such as ``View/foregroundStyle(_:)``. Colors are
+/// either one of the named ANSI values (see ``Color/red``, ``Color/blue``, and
+/// the `soft` variants) or an RGB triplet.
+///
+/// ```swift
+/// Text("Status")
+///     .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
+/// ```
+///
+/// - Note: Terminal output is limited to the available ANSI palette; RGB values
+///   are mapped to the closest supported color.
 public struct Color: View, PrimitiveView {
     private let ansiColor: ANSIColor
 
+    /// Creates a color from an ANSI color value.
+    ///
+    /// - Parameter ansiColor: The terminal color to use.
     public nonisolated init(_ ansiColor: ANSIColor) {
         self.ansiColor = ansiColor
     }
 
+    /// Creates a color from red, green, and blue components.
+    ///
+    /// - Parameters:
+    ///   - red: The red component, from `0` to `1`.
+    ///   - green: The green component, from `0` to `1`.
+    ///   - blue: The blue component, from `0` to `1`.
     public nonisolated init(
         red: Float,
         green: Float,
@@ -91,22 +114,39 @@ extension Color: Sendable {}
 // MARK: - Static colors
 
 extension Color {
+    /// The ANSI black color.
     public nonisolated static let black: Color = .init(.black)
+    /// The ANSI red color.
     public nonisolated static let red: Color = .init(.red)
+    /// The ANSI green color.
     public nonisolated static let green: Color = .init(.green)
+    /// The ANSI yellow color.
     public nonisolated static let yellow: Color = .init(.yellow)
+    /// The ANSI blue color.
     public nonisolated static let blue: Color = .init(.blue)
+    /// The ANSI magenta color.
     public nonisolated static let magenta: Color = .init(.magenta)
+    /// The ANSI cyan color.
     public nonisolated static let cyan: Color = .init(.cyan)
+    /// The ANSI white color.
     public nonisolated static let white: Color = .init(.white)
+    /// The ANSI gray (bright black) color.
     public nonisolated static let gray: Color = .init(.gray)
+    /// The dimmed variant of ``black``.
     public nonisolated static let softBlack: Color = .init(.softBlack)
+    /// The dimmed variant of ``red``.
     public nonisolated static let softRed: Color = .init(.softRed)
+    /// The dimmed variant of ``green``.
     public nonisolated static let softGreen: Color = .init(.softGreen)
+    /// The dimmed variant of ``yellow``.
     public nonisolated static let softYellow: Color = .init(.softYellow)
+    /// The dimmed variant of ``blue``.
     public nonisolated static let softBlue: Color = .init(.softBlue)
+    /// The dimmed variant of ``magenta``.
     public nonisolated static let softMagenta: Color = .init(.softMagenta)
+    /// The dimmed variant of ``cyan``.
     public nonisolated static let softCyan: Color = .init(.softCyan)
+    /// The dimmed variant of ``white``.
     public nonisolated static let softWhite: Color = .init(.softWhite)
 }
 

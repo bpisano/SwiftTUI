@@ -7,8 +7,11 @@
 
 import Foundation
 
+/// The label and state of a button, passed to a ``ButtonStyle``.
 public struct ButtonStyleConfiguration {
+    /// A view of the button's label.
     public let label: Label
+    /// A Boolean value that is `true` while the button is being activated.
     public let isPressed: Bool
 
     init(label: AnyView, isPressed: Bool) {

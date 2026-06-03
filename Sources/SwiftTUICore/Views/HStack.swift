@@ -8,10 +8,28 @@
 import Foundation
 import Geometry
 
+/// A layout that arranges its subviews in a horizontal row.
+///
+/// Each subview is measured at its natural width; remaining space is divided
+/// among flexible subviews. The `alignment` controls how subviews of differing
+/// heights line up on the vertical axis.
+///
+/// ```swift
+/// HStack(spacing: 1) {
+///     Text("Left")
+///     Text("Right")
+/// }
+/// ```
 public struct HStack: Layout {
     private let alignment: VerticalAlignment
     private let spacing: GeometryUnit
 
+    /// Creates a horizontal stack with the given alignment and spacing.
+    ///
+    /// - Parameters:
+    ///   - alignment: The vertical alignment of subviews within the row.
+    ///     Defaults to `.center`.
+    ///   - spacing: The number of cells between adjacent subviews. Defaults to `0`.
     public init(
         alignment: VerticalAlignment = .center,
         spacing: GeometryUnit = 0

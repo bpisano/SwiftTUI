@@ -8,12 +8,20 @@
 import AttributeGraph
 import Foundation
 
+/// A reusable transformation applied to a ``View``.
+///
+/// Conform to `ViewModifier` and implement ``body(content:)`` to wrap or change the
+/// view passed in as `content`, returning a new view. Apply a modifier with the
+/// `modifier(_:)` method on a view.
 @MainActor
 public protocol ViewModifier {
+    /// The type of view produced by ``body(content:)``.
     associatedtype Body: View
 
     typealias MakeViewOutputs = (ViewInputs) -> ViewOutputs
     typealias MakeViewListOutputs = (ViewListInputs) -> ViewListOutputs
+
+    /// The view passed into ``body(content:)``, representing the view being modified.
     typealias Content = ViewModifierContent<Self>
 
     static func makeView(
@@ -28,6 +36,10 @@ public protocol ViewModifier {
         makeViewListOutputs: @escaping MakeViewListOutputs
     ) -> ViewListOutputs
 
+    /// Returns the modified view.
+    ///
+    /// - Parameter content: A proxy for the view being modified. Include it in the
+    ///   returned view to keep the original content.
     func body(content: Content) -> Body
 }
 
