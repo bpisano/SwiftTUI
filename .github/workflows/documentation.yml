@@ -1,0 +1,70 @@
+name: Documentation
+
+# Publishes the DocC documentation to GitHub Pages.
+# Runs on every version tag (e.g. 0.0.1, 1.2.4) and on manual dispatch.
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
+# Only the contents of the Pages artifact and the OIDC token are needed.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A newer publish supersedes an in-flight one; never cancel a run mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Print toolchain
+        run: swift --version
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # User-facing symbols live in SwiftTUICore; App lives in SwiftTUI.
+      # A combined archive documents both under one site. The home page is
+      # SwiftTUICore (it owns the symbols); App is reachable under swifttui.
+      # Rendered for static hosting under the repo base path so links resolve
+      # at https://<user>.github.io/SwiftTUI/.
+      - name: Build documentation
+        run: |
+          swift package \
+            --allow-writing-to-directory ./docs \
+            generate-documentation \
+            --enable-experimental-combined-documentation \
+            --target SwiftTUI \
+            --target SwiftTUICore \
+            --disable-indexing \
+            --transform-for-static-hosting \
+            --hosting-base-path SwiftTUI \
+            --output-path ./docs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

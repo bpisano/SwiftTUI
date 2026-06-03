@@ -8,6 +8,7 @@
 import Foundation
 import Geometry
 
+@_documentation(visibility: internal)
 public struct LayoutProxy {
     /// Lazily resolves the layout computer. Reading is deferred to the moment
     /// `sizeThatFits` is called, which mirrors OpenSwiftUI's `LayoutProxy`

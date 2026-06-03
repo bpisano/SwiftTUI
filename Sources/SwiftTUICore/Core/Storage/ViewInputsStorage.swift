@@ -7,6 +7,7 @@
 
 import Foundation
 
+@_documentation(visibility: internal)
 @MainActor
 public final class ViewInputsStorage {
     private var storage: [ObjectIdentifier: Any]

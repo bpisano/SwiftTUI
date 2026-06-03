@@ -9,6 +9,7 @@ import Foundation
 import Geometry
 import AttributeGraph
 
+@_documentation(visibility: internal)
 public struct ViewOutputs: Sendable {
     public let displayList: Attribute<DisplayList>
     public let focusList: Attribute<FocusList>?

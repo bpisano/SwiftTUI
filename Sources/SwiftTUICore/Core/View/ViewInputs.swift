@@ -9,6 +9,7 @@ import Foundation
 import Geometry
 import AttributeGraph
 
+@_documentation(visibility: internal)
 public struct ViewInputs: InputStorage, Sendable {
     let position: Attribute<Point>
     let size: Attribute<Size>

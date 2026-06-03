@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@_documentation(visibility: internal)
 public struct ViewListOutputs {
     let views: Views
     let nextImplicitId: Int

@@ -15,15 +15,15 @@ Before changing any of the following areas, read the reference projects first:
 
 Reference repositories:
 
-- `/Users/bpisano/Dev/OpenSwiftUI`
-- `/Users/bpisano/Dev/OpenAttributeGraph`
+- `../../OpenSwiftUI`
+- `../../OpenAttributeGraph`
 
 Recommended starting points in the reference code:
 
-- `/Users/bpisano/Dev/OpenSwiftUI/Sources/OpenSwiftUICore/View/Input/ViewList.swift`
-- `/Users/bpisano/Dev/OpenSwiftUI/Sources/OpenSwiftUICore/View/DynamicViewContent/ForEach.swift`
-- `/Users/bpisano/Dev/OpenSwiftUI/Sources/OpenSwiftUICore/Layout/Dynamic/DynamicLayoutView.swift`
-- `/Users/bpisano/Dev/OpenAttributeGraph/Sources/OpenAttributeGraph/Graph/Subgraph.swift`
+- `../../OpenSwiftUI/Sources/OpenSwiftUICore/View/Input/ViewList.swift`
+- `../../OpenSwiftUI/Sources/OpenSwiftUICore/View/DynamicViewContent/ForEach.swift`
+- `../../OpenSwiftUI/Sources/OpenSwiftUICore/Layout/Dynamic/DynamicLayoutView.swift`
+- `../../OpenAttributeGraph/Sources/OpenAttributeGraph/Graph/Subgraph.swift`
 
 Do not make architectural changes to the local view list or graph model without checking how those concepts are represented in the two reference repos.
 
@@ -216,8 +216,8 @@ Performance validation is mandatory after every code change, not only after grap
 
 - Run the benchmark suites with:
   `swift test --filter 'HStackPerformanceTests|VStackPerformanceTests|PerformanceBenchmarkTests'`
-- Compare the new measurements against the latest Markdown baseline under `Docs/Performance`.
-- If there is no newer file, use `Docs/Performance/2026-04-10-performance-baseline.md` as the comparison point.
+- Compare the new measurements against the latest Markdown baseline under `benchmarks/Performance`.
+- If there is no newer file, use `benchmarks/Performance/2026-04-10-performance-baseline.md` as the comparison point.
 - Call out any regression before considering the work complete.
 - When the new numbers are acceptable, update or add a Markdown baseline file with readable tables so future runs have a stable comparison target.
 

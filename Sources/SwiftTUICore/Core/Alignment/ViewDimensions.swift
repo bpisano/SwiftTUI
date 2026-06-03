@@ -8,6 +8,7 @@
 import Foundation
 import Geometry
 
+@_documentation(visibility: internal)
 public struct ViewDimensions: Sendable {
     public let size: Size
 

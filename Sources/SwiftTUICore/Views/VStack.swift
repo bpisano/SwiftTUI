@@ -63,9 +63,13 @@ extension VStack {
         }
 
         // Miss: compute, store in slot 0, evict slot 0 → slot 1
-        let containerWidth = proposal.width ?? 10
+        // Pass proposal.width through verbatim (including nil). A nil width means
+        // "unspecified — report natural size": children must receive nil so they
+        // measure naturally. Substituting a magic number here makes wide children
+        // under-report at natural width, which a parent HStack then misreads as
+        // horizontal flexibility.
         let layout = calculateLayout(
-            subviews: subviews, width: containerWidth, availableHeight: proposal.height)
+            subviews: subviews, width: proposal.width, availableHeight: proposal.height)
         cache.slot1 = cache.slot0
         cache.slot0 = (proposal, layout)
         cache.activeLayout = layout
@@ -120,7 +124,7 @@ extension VStack {
 
     private func calculateLayout(
         subviews: [Subview],
-        width: GeometryUnit,
+        width: GeometryUnit?,
         availableHeight: GeometryUnit?
     ) -> StackLayout {
         let count = subviews.count

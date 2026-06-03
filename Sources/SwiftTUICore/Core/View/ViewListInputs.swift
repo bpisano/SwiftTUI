@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@_documentation(visibility: internal)
 public struct ViewListInputs: InputStorage {
     var implicitId: Int
     var environment: Attribute<EnvironmentValues>

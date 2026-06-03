@@ -7,6 +7,7 @@
 
 import Foundation
 
+@_documentation(visibility: internal)
 public struct ShapeStyleOutputs: Sendable {
     let commands: [DisplayList.Command]
 }

@@ -8,6 +8,7 @@
 import Foundation
 import AttributeGraph
 
+@_documentation(visibility: internal)
 public struct ViewModifierContent<Modifier: ViewModifier>: View, PrimitiveView { }
 
 extension ViewModifierContent {

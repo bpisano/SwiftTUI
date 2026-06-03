@@ -7,6 +7,7 @@
 
 import Foundation
 
+@_documentation(visibility: internal)
 public struct RenderingConfiguration: Sendable {
     public let emptyChar: Character
     public let lineJoinSeparator: String

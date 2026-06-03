@@ -65,10 +65,14 @@ extension HStack {
         }
 
         // Miss: compute, store in slot 0, evict slot 0 → slot 1
-        let containerHeight = proposal.height ?? 10
+        // Pass proposal.height through verbatim (including nil). A nil height means
+        // "unspecified — report natural size": children must receive nil so they
+        // measure naturally. Substituting a magic number here makes tall children
+        // under-report at natural height, which a parent VStack then misreads as
+        // vertical flexibility.
         let layout = calculateLayout(
             subviews: subviews,
-            height: containerHeight,
+            height: proposal.height,
             availableWidth: proposal.width
         )
         cache.slot1 = cache.slot0
@@ -128,7 +132,7 @@ extension HStack {
 
     private func calculateLayout(
         subviews: [Subview],
-        height: GeometryUnit,
+        height: GeometryUnit?,
         availableWidth: GeometryUnit?
     ) -> StackLayout {
         let count = subviews.count

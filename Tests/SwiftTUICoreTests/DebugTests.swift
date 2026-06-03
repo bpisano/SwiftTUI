@@ -32,6 +32,16 @@ struct MyView: View {
     }
 }
 
+struct TestView: View {
+    var body: some View {
+        ZStack {
+            Color.red
+                .frame(width: 8, height: 3)
+            Text("SwiftTUI")
+        }
+    }
+}
+
 @Test @MainActor
 func debugPlaygroundCode() {
     @Attribute var screenPosition: Point = .zero
@@ -46,7 +56,7 @@ func debugPlaygroundCode() {
         storage: .init()
     )
 
-    @Attribute var view = MyView()
+    @Attribute var view = TestView()
 
     let outputs = type(of: view).makeView($view, inputs: inputs)
 
@@ -59,13 +69,13 @@ func debugPlaygroundCode() {
     let _ = outputs.displayList.wrappedValue
     CallbackQueue.shared.executeAll()
 
-    view.users = [
-        .init(id: 1, name: "Alice"),
-        .init(id: 2, name: "Bob")
-    ]
+//    view.users = [
+//        .init(id: 1, name: "Alice"),
+//        .init(id: 2, name: "Bob")
+//    ]
 
-    let _ = outputs.displayList.wrappedValue
-    CallbackQueue.shared.executeAll()
+//    let _ = outputs.displayList.wrappedValue
+//    CallbackQueue.shared.executeAll()
 
     Graph.current.copyToClipboard()
 }
