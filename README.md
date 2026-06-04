@@ -2,6 +2,9 @@
 
 A SwiftUI engine that renders to the terminal.
 
+![SwiftTUI chess demo](.github/resources/swifttui-chess.gif)
+*Credits: Nicolas Dominati with its chess app created with SwiftTUI*
+
 ## Requirements
 
 - macOS 26 or later
