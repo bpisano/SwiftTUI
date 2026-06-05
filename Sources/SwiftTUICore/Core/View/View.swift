@@ -50,9 +50,12 @@ extension View {
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let body = view.map(\.body)
-        body.label = "\(Body.self)"
-        view.updateDynamicProperties(environment: inputs.environment)
+        let cache: DynamicPropertyCache = .init()
+        let environment: Attribute<EnvironmentValues> = inputs.environment
+        let body: Attribute<Body> = Attribute("\(Body.self)") {
+            view.updateDynamicProperties(cache: cache, environment: environment)
+            return view.wrappedValue.body
+        }
         return Body.makeView(body, inputs: inputs)
     }
 
@@ -60,9 +63,12 @@ extension View {
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let body = view.map(\.body)
-        body.label = "\(Body.self)"
-        view.updateDynamicProperties(environment: inputs.environment)
+        let cache: DynamicPropertyCache = .init()
+        let environment: Attribute<EnvironmentValues> = inputs.environment
+        let body: Attribute<Body> = Attribute("\(Body.self)") {
+            view.updateDynamicProperties(cache: cache, environment: environment)
+            return view.wrappedValue.body
+        }
         return Body.makeViewList(body, inputs: inputs)
     }
 }

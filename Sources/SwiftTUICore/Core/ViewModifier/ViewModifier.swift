@@ -51,12 +51,13 @@ extension ViewModifier {
     ) -> ViewOutputs {
         inputs.append(.view(makeViewOutputs), to: MakeViewOutputsInputStorageKey.self)
 
+        let cache: DynamicPropertyCache = .init()
+        let environment: Attribute<EnvironmentValues> = inputs.environment
         let modifiedBody = Attribute("\(Self.self) body") {
+            modifier.updateDynamicProperties(cache: cache, environment: environment)
             let modifierContent: ViewModifierContent<Self> = .init()
             return modifier.wrappedValue.body(content: modifierContent)
         }
-
-        modifier.updateDynamicProperties(environment: inputs.environment)
 
         return Body.makeView(modifiedBody, inputs: inputs)
     }
@@ -68,12 +69,13 @@ extension ViewModifier {
     ) -> ViewListOutputs {
         inputs.append(.viewList(makeViewListOutputs), to: MakeViewOutputsInputStorageKey.self)
 
+        let cache: DynamicPropertyCache = .init()
+        let environment: Attribute<EnvironmentValues> = inputs.environment
         let modifiedBody = Attribute("\(Self.self) body") {
+            modifier.updateDynamicProperties(cache: cache, environment: environment)
             let modifierContent: ViewModifierContent<Self> = .init()
             return modifier.wrappedValue.body(content: modifierContent)
         }
-
-        modifier.updateDynamicProperties(environment: inputs.environment)
 
         return Body.makeViewList(modifiedBody, inputs: inputs)
     }

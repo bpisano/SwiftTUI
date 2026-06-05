@@ -74,6 +74,15 @@ public final class State<Value>: @MainActor DynamicProperty {
         guard storage == nil else { return }
         storage = StateStorage(initialValue: value)
     }
+
+    public func reconnect(using cache: DynamicPropertyCache, at index: Int) {
+        if let existing = cache[index] as? StateStorage<Value> {
+            storage = existing
+            return
+        }
+        update()
+        cache[index] = storage
+    }
 }
 
 extension State: Sendable where Value: Sendable {}

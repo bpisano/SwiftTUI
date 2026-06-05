@@ -626,6 +626,58 @@ struct ForEachTests {
     }
 
     @Test
+    func `Stateful child survives parent re-render`() async throws {
+        @Attribute var screenPosition: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 9, height: 4)
+        @Attribute var viewPhase: ViewPhase = .active
+        let inputs = ViewInputs(
+            position: $screenPosition,
+            size: $screenSize,
+            phase: $viewPhase,
+            environment: .init(wrappedValue: .init()),
+            storage: .init()
+        )
+
+        @Attribute var users: [User] = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Bob")
+        ]
+        @Attribute var view = VStack(alignment: .leading) {
+            ForEach(users) { user in
+                StatefulRow(name: user.name)
+            }
+        }
+
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+
+        await expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Bob......
+            .........
+            .........
+            """
+        }
+
+        // Mutating the collection recreates every child struct (and its @State).
+        // Re-rendering must reconnect the persisted storage instead of crashing
+        // with "Accessing a @State variable outside of a View context".
+        users = [
+            User(id: 1, name: "Alice"),
+            User(id: 2, name: "Ben")
+        ]
+
+        await expectDisplayList(outputs.displayList, in: screenSize) {
+            """
+            Alice....
+            Ben......
+            .........
+            .........
+            """
+        }
+    }
+
+    @Test
     func `Element identifier stability`() async throws {
         @Attribute var items1: [String] = []
         @Attribute var items2: [String] = ["X"]
@@ -692,6 +744,16 @@ struct ForEachTests {
 private struct User: Identifiable {
     let id: Int
     let name: String
+}
+
+private struct StatefulRow: View {
+    let name: String
+
+    @State private var isPressed: Bool = false
+
+    var body: some View {
+        Text(isPressed ? "!" : name)
+    }
 }
 
 @MainActor
