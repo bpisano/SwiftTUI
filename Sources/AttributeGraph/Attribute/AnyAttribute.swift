@@ -16,6 +16,7 @@ public protocol AnyAttribute: AnyObject, DigraphRepresentable {
     var outgoingEdges: Set<Edge> { get }
     var state: AttributeState { get set }
     var didChangeInLatestPropagation: Bool { get set }
+    var owningSubgraph: Subgraph? { get set }
 
     func evaluateIfNeeded()
     @discardableResult func evaluateSelf() -> Bool

@@ -272,12 +272,15 @@ extension ViewListOutputs {
 
     @MainActor
     func makeUnaryViewOutputs(inputs: ViewInputs) -> ViewOutputs {
-        var index: Int = 0
-        let childOutputs: [ViewOutputs] = makeViewOutputs(
-            startIndex: &index,
-            inputs: inputs
-        )
-        return .combineViewOutputs(childOutputs)
+        let childViewList: Attribute<any ViewList> = makeViewListAttribute("Unary Child ViewList")
+        let container = RetainedUnaryContainer()
+
+        let info = Attribute("Unary ContainerInfo") {
+            container.update(from: childViewList.wrappedValue, inputs: inputs)
+            return container.orderedOutputs.count
+        }
+
+        return .combineViewOutputs(container: container, info: info)
     }
 }
 

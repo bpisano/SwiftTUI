@@ -154,24 +154,17 @@ public struct FocusMap: Sendable {
         _ other: FocusableNode,
         from node: FocusableNode,
         in direction: Direction
-    ) -> Double {
-        let primary: Double
-        let secondary: Double
+    ) -> (primary: Double, secondary: Double) {
         switch direction {
         case .up:
-            primary = node.frame.minY - other.frame.maxY
-            secondary = abs(other.frame.midX - node.frame.midX)
+            return (node.frame.minY - other.frame.maxY, abs(other.frame.midX - node.frame.midX))
         case .down:
-            primary = other.frame.minY - node.frame.maxY
-            secondary = abs(other.frame.midX - node.frame.midX)
+            return (other.frame.minY - node.frame.maxY, abs(other.frame.midX - node.frame.midX))
         case .left:
-            primary = node.frame.minX - other.frame.maxX
-            secondary = abs(other.frame.midY - node.frame.midY)
+            return (node.frame.minX - other.frame.maxX, abs(other.frame.midY - node.frame.midY))
         case .right:
-            primary = other.frame.minX - node.frame.maxX
-            secondary = abs(other.frame.midY - node.frame.midY)
+            return (other.frame.minX - node.frame.maxX, abs(other.frame.midY - node.frame.midY))
         }
-        return primary + secondary * 2
     }
 
     private static func nearest(
@@ -184,7 +177,12 @@ public struct FocusMap: Sendable {
         }
         guard !candidates.isEmpty else { return nil }
         return candidates.min { lhs, rhs in
-            cost(lhs, from: node, in: direction) < cost(rhs, from: node, in: direction)
+            let lhsCost = cost(lhs, from: node, in: direction)
+            let rhsCost = cost(rhs, from: node, in: direction)
+            if lhsCost.primary != rhsCost.primary {
+                return lhsCost.primary < rhsCost.primary
+            }
+            return lhsCost.secondary < rhsCost.secondary
         }?.id
     }
 }

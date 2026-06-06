@@ -118,6 +118,39 @@ struct DisabledTests {
         #expect(nodes.count == 1)
     }
 
+    @Test
+    func `Toggling disabled removes the focusable dynamically`() {
+        @Attribute var screenOrigin: Point = .zero
+        @Attribute var screenSize: Size = .init(width: 10, height: 1)
+        @Attribute var viewPhase: ViewPhase = .active
+        @Attribute var environment: EnvironmentValues = .init()
+        @Attribute var view = RootLayout {
+            Button("Hi") {}.disabled(false)
+        }
+
+        let inputs: ViewInputs = .init(
+            position: $screenOrigin,
+            size: $screenSize,
+            phase: $viewPhase,
+            environment: $environment,
+            storage: .init()
+        )
+        let outputs = type(of: view).makeView($view, inputs: inputs)
+        _ = outputs.displayList.wrappedValue
+        let enabledNodes = flattenNodes(outputs.focusList?.wrappedValue ?? .empty)
+        #expect(enabledNodes.count == 1)
+
+        // A unary modifier (`.disabled`) wraps a view whose body switches branches
+        // on `isEnabled`. Toggling it must re-materialize the wrapped content so the
+        // button stops contributing a focusable node.
+        view = RootLayout {
+            Button("Hi") {}.disabled(true)
+        }
+        _ = outputs.displayList.wrappedValue
+        let disabledNodes = flattenNodes(outputs.focusList?.wrappedValue ?? .empty)
+        #expect(disabledNodes.isEmpty)
+    }
+
     private func flattenNodes(_ list: FocusList) -> [FocusableNode] {
         var result: [FocusableNode] = []
         for item in list.items {

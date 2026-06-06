@@ -129,4 +129,32 @@ struct FocusMapTests {
         #expect(map.isEmpty)
         #expect(map.firstNode == nil)
     }
+
+    @Test
+    func `Down visits the immediate next row even when its label is wider`() {
+        // Left-aligned stacked nodes with different widths (so their midX differs).
+        // The second node is the widest; moving down from the first must still land
+        // on it and not skip to a narrower, more horizontally-aligned node below.
+        let list = FocusList(
+            .node(node("john", x: 0, y: 0, w: 11)),
+            .node(node("george", x: 0, y: 3, w: 15)),
+            .node(node("ringo", x: 0, y: 6, w: 11)),
+            .node(node("paul", x: 0, y: 9, w: 14))
+        )
+        let map = FocusMap(list: list)
+
+        var current = FocusNodeID("john")
+        var visited = [current]
+        for _ in 0..<3 {
+            let next = map.nextFocus(from: current, in: .down)!
+            visited.append(next)
+            current = next
+        }
+        #expect(visited == [
+            FocusNodeID("john"),
+            FocusNodeID("george"),
+            FocusNodeID("ringo"),
+            FocusNodeID("paul")
+        ])
+    }
 }

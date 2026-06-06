@@ -13,12 +13,18 @@ public final class Subgraph {
     private var attributeIDs: Set<ObjectIdentifier> = []
     private var attributes: [AnyAttribute] = []
 
+    private weak var parent: Subgraph?
+    private var children: [Subgraph] = []
+
     public var attributeLabels: [String] {
         attributes.map(\.label)
     }
 
     public init(graph: Graph = .current) {
         self.graph = graph
+        let parent = graph.subgraph
+        self.parent = parent
+        parent?.children.append(self)
     }
 
     public func withDependencyCapture<T>(_ body: () -> T) -> T {
@@ -31,6 +37,13 @@ public final class Subgraph {
     public var debugClean: Bool = false
 
     public func clean() {
+        let childrenToClean = children
+        children.removeAll()
+        for child in childrenToClean {
+            child.parent = nil
+            child.clean()
+        }
+
         for attribute in attributes {
             attribute.state = .clean
             if debugClean && !attribute.incomingEdges.isEmpty {
@@ -46,13 +59,22 @@ public final class Subgraph {
                 attribute.removeOutgoing(edge: outgoingEdge)
             }
             graph.unregister(attribute)
+            attribute.owningSubgraph = nil
         }
         attributes.removeAll()
         attributeIDs.removeAll()
+
+        parent?.removeChild(self)
+        parent = nil
+    }
+
+    private func removeChild(_ child: Subgraph) {
+        children.removeAll { $0 === child }
     }
 
     func register(_ attribute: AnyAttribute) {
         guard attributeIDs.insert(ObjectIdentifier(attribute)).inserted else { return }
         attributes.append(attribute)
+        attribute.owningSubgraph = self
     }
 }

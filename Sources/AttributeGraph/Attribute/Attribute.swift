@@ -69,12 +69,8 @@ public final class Attribute<T>: AnyAttribute {
     public var incomingEdges: Set<Edge> = []
     public var outgoingEdges: Set<Edge> = []
     public var state: AttributeState = .clean
-
-    /// Whether the most recent evaluation produced a value different from the
-    /// previous one. Set by `evaluateSelf`, cleared by `markDirty`.
-    /// Used by the pending-skip optimization across multiple `evaluateIfNeeded`
-    /// passes (e.g. when displayList and focusList are read separately).
     public var didChangeInLatestPropagation: Bool = false
+    public weak var owningSubgraph: Subgraph?
 
     private let rule: AnyRule<T>
     var value: T?
@@ -218,6 +214,9 @@ public final class Attribute<T>: AnyAttribute {
 
         Graph.current.reevaluate(self)
         Graph.current.withDependencyCapture(of: self) {
+            let previousSubgraph: Subgraph? = Graph.current.subgraph
+            Graph.current.subgraph = owningSubgraph
+            defer { Graph.current.subgraph = previousSubgraph }
             value = rule.evaluate()
         }
 
