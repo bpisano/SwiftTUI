@@ -12,42 +12,39 @@ extension Optional: PrimitiveView where Wrapped: View {}
 
 extension Optional: View where Wrapped: View {
     public typealias Body = Never
+}
 
-    public static func makeView(
+@MainActor
+extension Optional: DynamicView where Wrapped: View {
+    var dynamicBranchId: AnyHashable {
+        AnyHashable(self != nil)
+    }
+
+    static func makeDynamicChildView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let rule: OptionalViewOutputsRule<Wrapped> = .init(view: view, inputs: inputs)
-        let viewOutputs: Attribute<ViewOutputs> = Attribute(
-            "OptionalView ViewOutputs",
-            rule: rule
-        )
-
-        let layoutComputer = Attribute("OptionalView LayoutComputer") {
-            viewOutputs.wrappedValue.layoutComputer.wrappedValue
+        if view.wrappedValue != nil {
+            return Wrapped.makeView(contentChild(of: view), inputs: inputs)
+        } else {
+            let child: Attribute<EmptyView> = .init("Optional Empty Child") { .init() }
+            return EmptyView.makeView(child, inputs: inputs)
         }
-
-        let displayList = Attribute("OptionalView DisplayList") {
-            viewOutputs.wrappedValue.displayList.wrappedValue
-        }
-
-        let focusList = Attribute("OptionalView FocusList") {
-            viewOutputs.wrappedValue.focusList?.wrappedValue ?? .empty
-        }
-
-        return .init(
-            layoutComputer: layoutComputer,
-            displayList: displayList,
-            focusList: focusList
-        )
     }
 
-    public static func makeViewList(
+    static func makeDynamicChildViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let rule: OptionalViewListRule<Wrapped> = .init(view: view, inputs: inputs)
-        let viewList = Attribute("OptionalView ViewList", rule: rule)
-        return ViewListOutputs(views: .dynamicList(viewList), nextImplicitId: inputs.implicitId + 1)
+        if view.wrappedValue != nil {
+            return Wrapped.makeViewList(contentChild(of: view), inputs: inputs)
+        } else {
+            let child: Attribute<EmptyView> = .init("Optional Empty Child") { .init() }
+            return EmptyView.makeViewList(child, inputs: inputs)
+        }
+    }
+
+    private static func contentChild(of view: Attribute<Self>) -> Attribute<Wrapped> {
+        .init("Optional Content Child", rule: DynamicChildRule(parent: view) { $0 })
     }
 }

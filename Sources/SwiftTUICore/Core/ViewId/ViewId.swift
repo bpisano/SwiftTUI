@@ -53,4 +53,25 @@ extension ViewId {
     struct Scope: Hashable, Equatable, Sendable {
         let implicitId: Int
     }
+
+    struct Branch: Hashable, @unchecked Sendable {
+        // `AnyHashable` is not `Sendable` in general; the contained value is a branch
+        // discriminator (a `Bool`, a metatype identifier, …) staged on the main actor,
+        // so the contract is honored in practice.
+        let id: AnyHashable
+    }
+}
+
+extension ViewId {
+    /// Returns a copy of this id tagged with a `DynamicView` branch discriminator,
+    /// guaranteeing distinct identities across branch transitions.
+    func taggingBranch(_ branchId: AnyHashable) -> ViewId {
+        var explicit: [Explicit] = self.explicit
+        explicit.append(.init(id: Branch(id: branchId)))
+        return .init(
+            implicitId: implicitId,
+            index: index,
+            explicit: explicit
+        )
+    }
 }

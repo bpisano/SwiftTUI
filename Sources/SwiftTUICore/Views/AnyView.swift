@@ -8,7 +8,7 @@
 import Foundation
 import AttributeGraph
 
-public struct AnyView: View, PrimitiveView {
+public struct AnyView: View, PrimitiveView, DynamicView {
     private let storage: Any
     private let _makeView: @MainActor (Attribute<AnyView>, ViewInputs) -> ViewOutputs
     private let _makeViewList: @MainActor (Attribute<AnyView>, ViewListInputs) -> ViewListOutputs
@@ -16,31 +16,32 @@ public struct AnyView: View, PrimitiveView {
     public init<V: View>(_ view: V) {
         self.storage = view
         self._makeView = { anyViewAttribute, inputs in
-            let innerAttribute: Attribute<V> = anyViewAttribute.map {
-                $0.storage as! V
-            }
-            innerAttribute.label = "\(V.self)"
-            return V.makeView(innerAttribute, inputs: inputs)
+            V.makeView(Self.child(of: anyViewAttribute), inputs: inputs)
         }
         self._makeViewList = { anyViewAttribute, inputs in
-            let innerAttribute: Attribute<V> = anyViewAttribute.map {
-                $0.storage as! V
-            }
-            innerAttribute.label = "\(V.self)"
-            return V.makeViewList(innerAttribute, inputs: inputs)
+            V.makeViewList(Self.child(of: anyViewAttribute), inputs: inputs)
         }
+    }
+
+    private static func child<V: View>(of view: Attribute<Self>) -> Attribute<V> {
+        let child: Attribute<V> = .init("\(V.self)", rule: DynamicChildRule(parent: view) { $0.storage as? V })
+        return child
     }
 }
 
 extension AnyView {
-    public static func makeView(
+    var dynamicBranchId: AnyHashable {
+        AnyHashable(ObjectIdentifier(type(of: storage)))
+    }
+
+    static func makeDynamicChildView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
         view.wrappedValue._makeView(view, inputs)
     }
 
-    public static func makeViewList(
+    static func makeDynamicChildViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {

@@ -19,6 +19,8 @@ final class ForEachState<Data: RandomAccessCollection, ID: Hashable, Content: Vi
         with view: Attribute<ForEachType>,
         inputs: ViewListInputs
     ) {
+        guard Graph.current.isRegistered(view) else { return }
+
         orderedIds = []
 
         let forEach: ForEachType = view.wrappedValue

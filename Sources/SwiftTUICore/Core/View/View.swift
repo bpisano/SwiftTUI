@@ -53,8 +53,9 @@ extension View {
         let cache: DynamicPropertyCache = .init()
         let environment: Attribute<EnvironmentValues> = inputs.environment
         let body: Attribute<Body> = Attribute("\(Body.self)") {
-            view.updateDynamicProperties(cache: cache, environment: environment)
-            return view.wrappedValue.body
+            let value: Self = view.wrappedValue
+            cache.reconnectProperties(of: value, environment: environment)
+            return value.body
         }
         return Body.makeView(body, inputs: inputs)
     }
@@ -66,8 +67,9 @@ extension View {
         let cache: DynamicPropertyCache = .init()
         let environment: Attribute<EnvironmentValues> = inputs.environment
         let body: Attribute<Body> = Attribute("\(Body.self)") {
-            view.updateDynamicProperties(cache: cache, environment: environment)
-            return view.wrappedValue.body
+            let value: Self = view.wrappedValue
+            cache.reconnectProperties(of: value, environment: environment)
+            return value.body
         }
         return Body.makeViewList(body, inputs: inputs)
     }

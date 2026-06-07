@@ -21,51 +21,55 @@ public struct ConditionalView<TrueContent: View, FalseContent: View>: View, Prim
     }
 }
 
-extension ConditionalView {
-    public static func makeView(
+extension ConditionalView: DynamicView {
+    var dynamicBranchId: AnyHashable {
+        switch storage {
+        case .trueContent: AnyHashable(true)
+        case .falseContent: AnyHashable(false)
+        }
+    }
+
+    static func makeDynamicChildView(
         _ view: Attribute<Self>,
         inputs: ViewInputs
     ) -> ViewOutputs {
-        let viewOutputsRule: ConditionalViewOutputsRule<TrueContent, FalseContent> = .init(
-            view: view,
-            inputs: inputs
-        )
-        let viewOutputs: Attribute<ViewOutputs> = Attribute(
-            "ConditionalView ViewOutputs",
-            rule: viewOutputsRule
-        )
-
-        let layoutComputer = Attribute("ConditionalView LayoutComputer") {
-            viewOutputs.wrappedValue.layoutComputer.wrappedValue
+        switch view.wrappedValue.storage {
+        case .trueContent:
+            return TrueContent.makeView(trueChild(of: view), inputs: inputs)
+        case .falseContent:
+            return FalseContent.makeView(falseChild(of: view), inputs: inputs)
         }
-
-        let displayList = Attribute("ConditionalView DisplayList") {
-            viewOutputs.wrappedValue.displayList.wrappedValue
-        }
-
-        let focusList = Attribute("ConditionalView FocusList") {
-            viewOutputs.wrappedValue.focusList?.wrappedValue ?? .empty
-        }
-
-        return .init(
-            layoutComputer: layoutComputer,
-            displayList: displayList,
-            focusList: focusList
-        )
     }
 
-    public static func makeViewList(
+    static func makeDynamicChildViewList(
         _ view: Attribute<Self>,
         inputs: ViewListInputs
     ) -> ViewListOutputs {
-        let viewListRule: ConditionalViewListRule<TrueContent, FalseContent> = .init(
-            view: view,
-            inputs: inputs
+        switch view.wrappedValue.storage {
+        case .trueContent:
+            return TrueContent.makeViewList(trueChild(of: view), inputs: inputs)
+        case .falseContent:
+            return FalseContent.makeViewList(falseChild(of: view), inputs: inputs)
+        }
+    }
+
+    private static func trueChild(of view: Attribute<Self>) -> Attribute<TrueContent> {
+        .init(
+            "Conditional True Child",
+            rule: DynamicChildRule(parent: view) { view in
+                guard case let .trueContent(content) = view.storage else { return nil }
+                return content
+            }
         )
-        let viewList = Attribute(
-            "ConditionalView ViewList",
-            rule: viewListRule
+    }
+
+    private static func falseChild(of view: Attribute<Self>) -> Attribute<FalseContent> {
+        .init(
+            "Conditional False Child",
+            rule: DynamicChildRule(parent: view) { view in
+                guard case let .falseContent(content) = view.storage else { return nil }
+                return content
+            }
         )
-        return ViewListOutputs(views: .dynamicList(viewList), nextImplicitId: inputs.implicitId + 1)
     }
 }

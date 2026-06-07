@@ -57,37 +57,9 @@ public final class Graph {
         try await GraphStorage.$current.withValue(graph, operation: perform)
     }
 
-    /// Total number of registered attributes in the graph. Useful for growth tests.
-    public var attributeCount: Int { attributes.count }
-
-    /// Total number of directed edges across all registered attributes. Useful for growth tests.
-    public var totalEdgeCount: Int {
-        attributes.values.reduce(0) { $0 + $1.outgoingEdges.count }
-    }
-
-    /// Returns (label, outgoingEdgeCount) for all attributes that have at least one outgoing edge.
-    /// Useful for diagnosing edge accumulation in tests.
-    public var outgoingEdgeSummary: [(label: String, count: Int)] {
-        attributes.values
-            .filter { !$0.outgoingEdges.isEmpty }
-            .map { ($0.label, $0.outgoingEdges.count) }
-            .sorted { $0.label < $1.label }
-    }
-
-    /// Returns all (label, outgoingEdgeCount) for every registered attribute, including those with 0 edges.
-    public var allAttributeSummary: [(label: String, outgoing: Int, incoming: Int)] {
-        attributes.values
-            .map { ($0.label, $0.outgoingEdges.count, $0.incomingEdges.count) }
-            .sorted { $0.label < $1.label }
-    }
-
-    /// Returns outgoing edge destination labels for the first attribute whose label contains `substr`.
-    public func outgoingEdgeDestinations(containing substr: String) -> [(from: String, to: String)] {
-        attributes.values
-            .filter { $0.label.contains(substr) }
-            .flatMap { attr in attr.outgoingEdges.map { (attr.label, $0.to.label) } }
-            .sorted { $0.from < $1.from }
-    }
+    /// Every attribute currently registered in the graph. Internal: consumed by test-only
+    /// diagnostics (see the `Graph` extension in the test target).
+    var registeredAttributes: [AnyAttribute] { Array(attributes.values) }
 
     public func beginTransactionTracking() {
         transaction = .init()
@@ -111,7 +83,7 @@ public final class Graph {
         attributes.removeValue(forKey: ObjectIdentifier(attribute))
     }
 
-    func isRegistered(_ attribute: AnyAttribute) -> Bool {
+    public func isRegistered(_ attribute: AnyAttribute) -> Bool {
         attributes[ObjectIdentifier(attribute)] != nil
     }
 

@@ -75,6 +75,54 @@ struct StepSwitchTests {
         #expect(s2.contains("CCC"))
     }
 
+    /// Cycling a nested conditional must not grow the graph: each transition tears the
+    /// previous branch's subgraph down completely.
+    @Test
+    func `Cycling a nested switch does not grow the graph`() {
+        let graph: Graph = .init()
+        Graph.withCurrent(graph) {
+            @Attribute var screenOrigin: Point = .zero
+            @Attribute var screenSize: Size = .init(width: 20, height: 8)
+            @Attribute var viewPhase: ViewPhase = .active
+            @Attribute var environment: EnvironmentValues = .init()
+            @Attribute var view = RootLayout { ThreeCase(which: 0) }
+
+            let inputs: ViewInputs = .init(
+                position: $screenOrigin,
+                size: $screenSize,
+                phase: $viewPhase,
+                environment: $environment,
+                storage: .init()
+            )
+            let outputs = type(of: view).makeView($view, inputs: inputs)
+
+            let render: @MainActor (Int) -> Void = { which in
+                view = RootLayout { ThreeCase(which: which) }
+                _ = outputs.displayList.wrappedValue
+                _ = outputs.focusList?.wrappedValue
+                CallbackQueue.shared.executeAll()
+            }
+
+            // Warm up through every branch so all attributes exist.
+            render(0); render(1); render(2); render(0); render(1); render(2)
+            let attributesAfterWarmup: Int = graph.attributeCount
+            let edgesAfterWarmup: Int = graph.totalEdgeCount
+
+            for _ in 0..<20 {
+                render(0); render(1); render(2)
+            }
+
+            #expect(
+                graph.attributeCount == attributesAfterWarmup,
+                "Attribute count grew from \(attributesAfterWarmup) to \(graph.attributeCount)"
+            )
+            #expect(
+                graph.totalEdgeCount <= edgesAfterWarmup,
+                "Edge count grew from \(edgesAfterWarmup) to \(graph.totalEdgeCount)"
+            )
+        }
+    }
+
     // MARK: - helpers
 
     private func makeOutputs<V: View>(_ view: Attribute<V>) -> ViewOutputs {

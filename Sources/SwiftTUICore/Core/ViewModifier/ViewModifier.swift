@@ -54,9 +54,10 @@ extension ViewModifier {
         let cache: DynamicPropertyCache = .init()
         let environment: Attribute<EnvironmentValues> = inputs.environment
         let modifiedBody = Attribute("\(Self.self) body") {
-            modifier.updateDynamicProperties(cache: cache, environment: environment)
+            let value: Self = modifier.wrappedValue
+            cache.reconnectProperties(of: value, environment: environment)
             let modifierContent: ViewModifierContent<Self> = .init()
-            return modifier.wrappedValue.body(content: modifierContent)
+            return value.body(content: modifierContent)
         }
 
         return Body.makeView(modifiedBody, inputs: inputs)
@@ -72,9 +73,10 @@ extension ViewModifier {
         let cache: DynamicPropertyCache = .init()
         let environment: Attribute<EnvironmentValues> = inputs.environment
         let modifiedBody = Attribute("\(Self.self) body") {
-            modifier.updateDynamicProperties(cache: cache, environment: environment)
+            let value: Self = modifier.wrappedValue
+            cache.reconnectProperties(of: value, environment: environment)
             let modifierContent: ViewModifierContent<Self> = .init()
-            return modifier.wrappedValue.body(content: modifierContent)
+            return value.body(content: modifierContent)
         }
 
         return Body.makeViewList(modifiedBody, inputs: inputs)
