@@ -10,11 +10,11 @@ import Geometry
 import AttributeGraph
 
 struct FocusedConditionViewModifier<Value: Hashable & Sendable>: ViewModifier, PrimitiveViewModifier, UnaryViewModifier {
-    let binding: Binding<Value>
+    let binding: Binding<Value?>
     let target: Value
 
     init(
-        binding: Binding<Value>,
+        binding: Binding<Value?>,
         target: Value
     ) {
         self.binding = binding
@@ -58,6 +58,9 @@ extension FocusedConditionViewModifier {
             let childList = resolvedChildOutputs.focusList?.wrappedValue ?? .empty
             let effectiveID = firstFocusableID(in: childList) ?? ownNodeID
 
+            let isFocused = current == effectiveID
+            let matches = bound == target
+
             var nextLastBound = bound
             var nextLastCurrent = current
 
@@ -68,15 +71,18 @@ extension FocusedConditionViewModifier {
             }
 
             if !syncState.hasObserved {
-                // First run: natural reconciliation without change detection.
-                if bound == target, current != effectiveID {
+                if matches, !isFocused {
                     CallbackQueue.shared.enqueue {
-                        manager.setFocus(effectiveID)
+                        if modifierValue.binding.wrappedValue == target {
+                            manager.setFocus(effectiveID)
+                        }
                     }
                     nextLastCurrent = effectiveID
-                } else if current == effectiveID, bound != target {
+                } else if isFocused, !matches {
                     CallbackQueue.shared.enqueue {
-                        modifierValue.binding.wrappedValue = target
+                        if manager.currentFocus == effectiveID {
+                            modifierValue.binding.wrappedValue = target
+                        }
                     }
                     nextLastBound = target
                 }
@@ -86,29 +92,44 @@ extension FocusedConditionViewModifier {
             let boundChanged = syncState.lastBound != bound
             let currentChanged = syncState.lastCurrent != current
 
-            // Only-manager-moved → mirror to binding.
             if currentChanged, !boundChanged {
-                if current == effectiveID, bound != target {
+                if isFocused, !matches {
                     CallbackQueue.shared.enqueue {
-                        modifierValue.binding.wrappedValue = target
+                        if manager.currentFocus == effectiveID {
+                            modifierValue.binding.wrappedValue = target
+                        }
                     }
                     nextLastBound = target
+                } else if !isFocused, matches {
+                    CallbackQueue.shared.enqueue {
+                        if modifierValue.binding.wrappedValue == target {
+                            modifierValue.binding.wrappedValue = nil
+                        }
+                    }
+                    nextLastBound = nil
                 }
                 return
             }
 
-            // Only-binding-changed → claim focus when matching target.
             if boundChanged, !currentChanged {
-                if bound == target, current != effectiveID {
+                if matches, !isFocused {
                     CallbackQueue.shared.enqueue {
-                        manager.setFocus(effectiveID)
+                        if modifierValue.binding.wrappedValue == target {
+                            manager.setFocus(effectiveID)
+                        }
                     }
                     nextLastCurrent = effectiveID
+                } else if bound == nil, isFocused {
+                    CallbackQueue.shared.enqueue {
+                        if modifierValue.binding.wrappedValue == nil,
+                           manager.currentFocus == effectiveID {
+                            manager.clearFocus()
+                        }
+                    }
+                    nextLastCurrent = nil
                 }
                 return
             }
-
-            // Both changed in the same cycle → don't fight. State will settle.
         }
 
         let focusList = Attribute("FocusedCondition FocusList") {
@@ -159,12 +180,14 @@ extension View {
     /// Binds the view's focus state to the given value.
     ///
     /// Focus is two-way: setting `binding` to `value` moves focus to this view,
-    /// and when this view gains focus the binding is set to `value`.
+    /// and when this view gains focus the binding is set to `value`. When focus
+    /// leaves this view the binding is reset to `nil`, so the binding always
+    /// reflects which value — if any — currently holds focus.
     ///
     /// ```swift
     /// enum Field { case name, email }
     ///
-    /// @State private var focus: Field = .name
+    /// @State private var focus: Field?
     ///
     /// TextField("Name", text: $name)
     ///     .focused($focus, equals: .name)
@@ -172,11 +195,14 @@ extension View {
     ///     .focused($focus, equals: .email)
     /// ```
     ///
+    /// Set the binding to `nil` to drop focus, or to a value to move focus to the
+    /// matching view.
+    ///
     /// - Parameters:
-    ///   - binding: A binding whose value drives and reflects focus.
+    ///   - binding: A binding whose optional value drives and reflects focus.
     ///   - value: The value that corresponds to this view being focused.
     public func focused<Value: Hashable & Sendable>(
-        _ binding: Binding<Value>,
+        _ binding: Binding<Value?>,
         equals value: Value
     ) -> some View {
         modifier(FocusedConditionViewModifier(binding: binding, target: value))

@@ -14,7 +14,6 @@ import Testing
 @testable import SwiftTUICore
 
 nonisolated enum MockFocus: Hashable, Sendable {
-    case none
     case save
     case cancel
 }
@@ -90,7 +89,7 @@ struct FocusModifiersTests {
 
     @Test
     func `focused binding equals target -> manager focuses node`() async {
-        let probe = BindingProbe<MockFocus>(initial: .save)
+        let probe = BindingProbe<MockFocus?>(initial: .save)
         let manager: FocusManager = .init()
         var env: EnvironmentValues = .init()
         env.focusManager = manager
@@ -111,7 +110,7 @@ struct FocusModifiersTests {
 
     @Test
     func `Manager focusing node writes target into binding`() async {
-        let probe = BindingProbe<MockFocus>(initial: .none)
+        let probe = BindingProbe<MockFocus?>(initial: nil)
         let manager: FocusManager = .init()
         var env: EnvironmentValues = .init()
         env.focusManager = manager
@@ -136,7 +135,7 @@ struct FocusModifiersTests {
 
     @Test
     func `Two focused() siblings sharing a binding settle without ping-pong`() async {
-        let probe = BindingProbe<MockFocus>(initial: .none)
+        let probe = BindingProbe<MockFocus?>(initial: nil)
         let manager: FocusManager = .init()
         var env: EnvironmentValues = .init()
         env.focusManager = manager
@@ -170,6 +169,74 @@ struct FocusModifiersTests {
         }
         #expect(probe.value == .cancel)
         #expect(manager.currentFocus == nodes[1].id)
+    }
+
+    @Test
+    func `Value binding resets to nil when focus moves to a plain focusable`() async {
+        let probe = BindingProbe<MockFocus?>(initial: .save)
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+
+        let outputs = makeOutputsWith(environment: env) {
+            VStack {
+                Text("button").focused(probe.binding, equals: .save)
+                Text("square").focusable()
+            }
+        }
+
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        let nodes = flattenNodes(list)
+        #expect(nodes.count == 2)
+
+        // Binding starts on the button → it claims focus.
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(manager.currentFocus == nodes[0].id)
+        #expect(probe.value == .save)
+
+        // Focus moves to the plain focusable, which does not share the binding.
+        manager.setFocus(nodes[1].id)
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(manager.currentFocus == nodes[1].id)
+        #expect(probe.value == nil)
+    }
+
+    @Test
+    func `Setting value binding to nil clears focus`() async {
+        let probe = BindingProbe<MockFocus?>(initial: .save)
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+
+        let outputs = makeOutputsWith(environment: env) {
+            Text("button").focused(probe.binding, equals: .save)
+        }
+
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        let nodes = flattenNodes(list)
+        #expect(nodes.count == 1)
+
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(manager.currentFocus == nodes[0].id)
+
+        probe.binding.wrappedValue = nil
+        for _ in 0..<5 {
+            _ = outputs.focusList?.wrappedValue
+            CallbackQueue.shared.executeAll()
+        }
+        #expect(manager.currentFocus == nil)
+        #expect(probe.value == nil)
     }
 
     @Test

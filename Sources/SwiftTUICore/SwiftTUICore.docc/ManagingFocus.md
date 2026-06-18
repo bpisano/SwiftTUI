@@ -96,9 +96,11 @@ struct LoginForm: View {
 }
 ```
 
-When several views share one focus target, bind them to a value with
+When several views share one focus target, bind them to an optional value with
 ``View/focused(_:equals:)``. Setting the bound value to a view's tag moves focus
-there, and the binding updates to match whichever tagged view becomes focused.
+there, the binding updates to match whichever tagged view becomes focused, and it
+resets to `nil` when focus leaves every tagged view. Set it to `nil` to drop
+focus.
 
 ```swift
 enum Field {
@@ -109,7 +111,7 @@ enum Field {
 struct LoginForm: View {
     @State private var username = ""
     @State private var password = ""
-    @State private var focus: Field = .username
+    @State private var focus: Field?
 
     var body: some View {
         VStack {
