@@ -64,6 +64,106 @@ struct ButtonTests {
         #expect(textsAfter.contains("<"))
     }
 
+    @Test
+    func `Focused button runs its action on Return`() {
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+        var fired: Int = 0
+
+        let outputs = makeOutputs(env: env) {
+            Button("OK") { fired += 1 }
+        }
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        let nodes = flattenNodes(list)
+        #expect(nodes.count == 1)
+
+        manager.setFocus(nodes[0].id)
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        #expect(fired == 1)
+    }
+
+    @Test
+    func `Unfocused button does not run its action`() {
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+        var fired: Int = 0
+
+        let outputs = makeOutputs(env: env) {
+            VStack {
+                Button("OK") { fired += 1 }
+                Text("other").focusable()
+            }
+        }
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        let nodes = flattenNodes(list)
+        #expect(nodes.count == 2)
+
+        manager.setFocus(nodes[1].id) // focus the other node, not the button
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        #expect(fired == 0)
+    }
+
+    @Test
+    func `Only Return triggers the button`() {
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+        var fired: Int = 0
+
+        let outputs = makeOutputs(env: env) {
+            Button("OK") { fired += 1 }
+        }
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        manager.setFocus(flattenNodes(list)[0].id)
+
+        manager.dispatchKeyToFocused(.keyDown(.space))
+        manager.dispatchKeyToFocused(.keyDown(.character("a")))
+        #expect(fired == 0)
+
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        #expect(fired == 1)
+    }
+
+    @Test
+    func `Disabled button is not focusable`() {
+        let outputs = makeOutputs(env: .init()) {
+            Button("OK") {}
+                .disabled(true)
+        }
+        let nodes = flattenNodes(outputs.focusList?.wrappedValue ?? .empty)
+        #expect(nodes.isEmpty)
+    }
+
+    /// Regression: activation reads the live focus at keystroke time, so it
+    /// keeps working across repeated Return presses without the view's `body`
+    /// (or focus list) being re-evaluated in between — the exact condition that
+    /// left the old `@State`-mirror guard stale.
+    @Test
+    func `Button keeps activating on repeated Return without re-rendering`() {
+        let manager: FocusManager = .init()
+        var env: EnvironmentValues = .init()
+        env.focusManager = manager
+        var fired: Int = 0
+
+        let outputs = makeOutputs(env: env) {
+            Button("OK") { fired += 1 }
+        }
+        // Build the focus map once; never touch displayList/focusList again.
+        let list = outputs.focusList?.wrappedValue ?? .empty
+        manager.rebuild(from: list)
+        manager.setFocus(flattenNodes(list)[0].id)
+
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        manager.dispatchKeyToFocused(.keyDown(.enter))
+        #expect(fired == 3)
+    }
+
     // MARK: - helpers
 
     private func collectTextLines(_ displayList: DisplayList) -> [String] {

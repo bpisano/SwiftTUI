@@ -45,6 +45,13 @@ public final class FocusKeyboardRouter {
     func handle(_ event: Keyboard.Event) {
         guard !event.isConsumed else { return }
         guard event.isPressed else { return }
+
+        // The focused view gets first dibs on the key (e.g. a Button consuming
+        // Return). Only if it leaves the event unconsumed do we treat it as
+        // focus navigation.
+        manager.dispatchKeyToFocused(event)
+        guard !event.isConsumed else { return }
+
         guard let move = focusMove(for: event) else { return }
         execute(move)
     }

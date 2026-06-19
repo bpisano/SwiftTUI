@@ -21,14 +21,15 @@ import Terminal
 ///     Text("Continue")
 /// }
 /// ```
+///
+/// Activation is delivered through the focus system: Return reaches the button
+/// only while it holds focus, checked live at the keystroke, rather than mirrored
+/// through view state.
 public struct Button<Label: View>: View {
     private let action: @MainActor () -> Void
     private let label: Label
 
-    @State private var isFocused: Bool = false
     @State private var isPressed: Bool = false
-
-    @Environment(\.isEnabled) private var isEnabled
 
     /// Creates a button with an action and a custom label view.
     ///
@@ -44,26 +45,22 @@ public struct Button<Label: View>: View {
     }
 
     public var body: some View {
-        let styled = StyledButtonContent(
+        StyledButtonContent(
             label: AnyView(label),
             isPressed: isPressed
         )
-
-        if isEnabled {
-            styled
-                .focused($isFocused)
-                .onKeyDown(.enter) { _ in
-                    guard isFocused else { return }
-                    isPressed = true
-                    action()
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(80))
-                        isPressed = false
-                    }
+        .modifier(
+            FocusKeyHandlerViewModifier { event in
+                guard event.phase == .down, event.key == .enter else { return }
+                event.consume()
+                isPressed = true
+                action()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    isPressed = false
                 }
-        } else {
-            styled
-        }
+            }
+        )
     }
 }
 
