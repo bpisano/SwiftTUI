@@ -1,4 +1,4 @@
-import Foundation
+@preconcurrency import Foundation
 import Geometry
 
 public final class Cursor {

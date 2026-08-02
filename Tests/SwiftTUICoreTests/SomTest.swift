@@ -5,7 +5,6 @@
 //  Created by Benjamin Pisano on 05/03/2026.
 //
 
-import AppKit
 import AttributeGraph
 import Geometry
 import Testing
