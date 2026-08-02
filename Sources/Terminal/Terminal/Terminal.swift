@@ -31,9 +31,9 @@ public final class Terminal {
     public func enableRawMode() {
         tcgetattr(STDIN_FILENO, &termios)
         var raw: termios = termios
-        raw.c_lflag &= ~(UInt(ECHO | ICANON | IEXTEN))
-        raw.c_iflag &= ~(UInt(IXON | ICRNL))
-        raw.c_oflag &= ~(UInt(OPOST))
+        raw.c_lflag &= ~(.init(ECHO | ICANON | IEXTEN))
+        raw.c_iflag &= ~(.init(IXON | ICRNL))
+        raw.c_oflag &= ~(.init(OPOST))
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
     }
 

@@ -1,5 +1,5 @@
 
-#if canImport(XCTest)
+#if canImport(XCTest) && os(Darwin)
 import Foundation
 import AttributeGraph
 import XCTest

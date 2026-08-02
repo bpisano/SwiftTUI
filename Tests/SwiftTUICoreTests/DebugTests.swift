@@ -76,6 +76,7 @@ func debugPlaygroundCode() {
 
 //    let _ = outputs.displayList.wrappedValue
 //    CallbackQueue.shared.executeAll()
-
+#if os(Darwin)
     Graph.current.copyToClipboard()
+#endif
 }
